@@ -1,2 +1,2 @@
 # x16-RallySpeedway
-A topdown racing game for the retro computer Commander X16
+A topdown racing game for the retro computer Commander X16.
