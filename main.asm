@@ -1,8 +1,8 @@
 ;*** main.asm - Entry point for game,setup and main game loop **************************************
 !cpu 65c02
-!to "rally.prg", cbm
-!src "Rally/definitions.asm"
-!src "Rally/macros.asm"
+!to "rallyspeedway.prg", cbm
+!src "x16-rallyspeedway/definitions.asm"
+!src "x16-rallyspeedway/macros.asm"
 
 ;Status for game
 ST_MENU         = 0     ;show start screen or menu
@@ -35,6 +35,7 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 ;*** Main program ***********************************************************************
 
 StartGame:
+        jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;set type of joysticks (game controllers) being used 
         lda #ST_MENU
@@ -222,26 +223,28 @@ _anglecos       !word  16, 16, 16, 15, 15, 14, 13, 12, 11, 10,  9,  8,  6,  5,  
 ;*** Other source files ****************************************************************************
 
 !zone
-!src "Rally/menu.asm"
+!src "x16-rallyspeedway/menu.asm"
 !zone
-!src "Rally/map.asm"
+!src "x16-rallyspeedway/map.asm"
 !zone
-!src "Rally/view.asm"
-!src "Rally/camera.asm"
+!src "x16-rallyspeedway/view.asm"
+!src "x16-rallyspeedway/camera.asm"
 !zone;
-!src "Rally/yellowcar.asm"
+!src "x16-rallyspeedway/yellowcar.asm"
 !zone
-!src "Rally/bluecar.asm"
+!src "x16-rallyspeedway/bluecar.asm"
 !zone
-!src "Rally/interaction.asm"
+!src "x16-rallyspeedway/interaction.asm"
 !zone
-!src "Rally/joystick.asm"
+!src "x16-rallyspeedway/joystick.asm"
 !zone
-!src "Rally/debug.asm"
+!src "x16-rallyspeedway/debug.asm"
 !zone
-!src "Rally/screen.asm"
+!src "x16-rallyspeedway/screen.asm"
 !zone
-!src "Rally/init.asm"
+!src "x16-rallyspeedway/init.asm"
 !zone
-!src "Rally/helpers.asm"
+!src "x16-rallyspeedway/vload.asm"
+!zone
+!src "x16-rallyspeedway/helpers.asm"
 !zone

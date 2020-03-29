@@ -61,5 +61,5 @@ _ycarclashangle = .clashangle
 
 .ID = 0
 
-!src "Rally/car.asm"    ;add an instance of car class
-!src "Rally/timer.asm"  ;add an instance of timer class
+!src "x16-rallyspeedway/car.asm"    ;add an instance of car class
+!src "x16-rallyspeedway/timer.asm"  ;add an instance of timer class

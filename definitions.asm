@@ -175,24 +175,19 @@
 
 ;*** Kernal routines ***
 !addr SCNKEY    = $FF9F
-!addr GETIN     = $FFE4
+!addr SETLFS    = $FFBA
+!addr SETNAM    = $FFBD
 !addr BSOUT     = $FFD2
+!addr LOAD      = $FFD5
+!addr RDTIM     = $FFDE
+!addr GETIN     = $FFE4
 !addr PLOT      = $FFF0
 !addr MOUSE     = $FF09
 !addr CINT      = $FF81
-!addr RDTIM     = $FFDE
 
 !addr joystick_scan         = $FF53
 !addr joystick_get          = $FF56
 !addr screen_set_charset    = $ff62
-
-ESC_KEY         = $03
-RETURN_KEY      = $0d
-SPACE_KEY       = $20
-LEFT_KEY        = $9d
-RIGHT_KEY       = $1d
-UP_KEY          = $91
-DOWN_KEY        = $11
 
 ;*** Zeropage ***
 ZP0             = $00
