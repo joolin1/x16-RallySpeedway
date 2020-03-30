@@ -1,42 +1,60 @@
 ;*** Load graphic resources to VRAM ****************************************************************
 
 ;Memory layout for screen and graphic resources
-!addr MAP_ADDR          = $4000
-!addr TILE_ADDR         = $6000                     ;Room for 32 tiles. Now 23 tiles x 128 bytes each = 2944 bytes. (Tile mode 4bpp = 2 pixels per byte, tile 16x16 pixels = 8 bytes per row) 
-!addr CARS_ADDR         = $8000                     ;17 car sprites       (32 rows x 16 bytes/row) -> 17 x 32 x 16 = $2200 bytes 
-!addr EXPLOSION_ADDR    = CARS_ADDR + $2200         ;12 explosion sprites (32 rows x 16 bytes/row) -> 12 x 32 x 16 = $1800 bytes
-!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800    ;10 text sprites      (64 rows x 16 bytes/row) -> 10 x 64 x 16 = $2800 bytes
-!addr SPRITE_ADDR       = $8000
+!addr LAYER1_ADDR       = $0000                     ;       8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
+                                                    ;            | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = $1e00
+!addr LAYER0_ADDR       = $2000                     ;       8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode
 
-;(17 car sprites + 12 explosion sprites) x 32 rows x 16 bytes per row + 7 text sprites x 64 rows x 16 bytes per row = 98 x 256 
+!addr TILE_ADDR         = $4000                     ;      16 Kb | 128 tiles (room for) (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes (16K)
+!addr CARS_ADDR         = $8000                     ;            | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16 = $2200 bytes 
+!addr EXPLOSION_ADDR    = CARS_ADDR + $2200         ;       8 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16 = $1800 bytes
+!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800    ;      10 Kb | 10 text sprites       (64 rows x 16 bytes/row) ->  10 x 64 x 16 = $2800 bytes
+                                                    ;Total 50 Kb | (memory free from $e200)
 
 !addr CAR_PALETTES      = PALETTE + $20
 !addr YCAR_PALETTE      = PALETTE + $20
 !addr BCAR_PALETTE      = PALETTE + $40
 
 ;Graphic resources to load
-.tilesname              !raw "x16-rallyspeedway/tiles.bin"
-.end_tilesname
-.carsname               !raw "x16-rallyspeedway/cars.bin"
-.end_carsname
-.explosionname          !raw "x16-rallyspeedway/explosion.bin"
-.end_explosionname
-.textname               !raw "x16-rallyspeedway/text.bin"
-.end_textname
+.tilesname              !raw "X16-RALLYSPEEDWAY/TILES.BIN",0
+.carsname               !raw "X16-RALLYSPEEDWAY/CARS.BIN",0
+.explosionname          !raw "X16-RALLYSPEEDWAY/EXPLOSION.BIN",0
+.textname               !raw "X16-RALLYSPEEDWAY/TEXT.BIN",0
 
-.filename_lo             = ZP0
-.filename_hi             = ZP1
-.filenamelength          = ZP2
-.loadaddr_lo             = ZP3
-.loadaddr_hi             = ZP4
+.filename_lo            !byte   0
+.filename_hi            !byte   0
+.loadaddr_lo            !byte   0
+.loadaddr_hi            !byte   0
+
+;Error messages
+.message1       !scr 13,"FAILED TO LOAD ",0
+.message2       !scr 13,"I/O ERROR #",0
+.errorarray     !scr 0
+                !scr ": TOO MANY FILES",0
+                !scr ": FILE OPEN",0
+                !scr ": FILE NOT OPEN",0
+                !scr ": FILE NOT FOUND",0
+                !scr ": DEVICE NOT PRESENT",0
+                !scr ": NOT INPUT FILE",0
+                !scr ": NOT OUTPUT FILE",0
+                !scr ": MISSING FILENAME",0
+                !scr ": ILLEGAL DEVICE NUMBER",0
+
+.errorflag      !byte   0   ;at least one i/o error has occured if set
 
 LoadGraphics:
+        stz .errorflag
         jsr .LoadTiles
         jsr .LoadCars
         jsr .LoadExplosion
         jsr .LoadText
-        jsr .CopySpritePalettesToVRAM
+        lda .errorflag
+        beq +
+        sec                             ;set carry to flag error
+        rts
++       jsr .CopySpritePalettesToVRAM
         jsr .CopyCharactersToVRAM
+        clc                             ;clear carry to flag everything is ok
         rts
 
 .LoadTiles:
@@ -44,8 +62,6 @@ LoadGraphics:
         sta .filename_lo
         lda #>.tilesname
         sta .filename_hi
-        lda #.end_tilesname-.tilesname
-        sta .filenamelength
         lda #<TILE_ADDR
         sta .loadaddr_lo
         lda #>TILE_ADDR
@@ -58,8 +74,6 @@ LoadGraphics:
         sta .filename_lo
         lda #>.carsname
         sta .filename_hi
-        lda #.end_carsname-.carsname
-        sta .filenamelength
         lda #<CARS_ADDR
         sta .loadaddr_lo
         lda #>CARS_ADDR
@@ -72,8 +86,6 @@ LoadGraphics:
         sta .filename_lo
         lda #>.explosionname
         sta .filename_hi
-        lda #.end_explosionname-.explosionname
-        sta .filenamelength
         lda #<EXPLOSION_ADDR
         sta .loadaddr_lo
         lda #>EXPLOSION_ADDR
@@ -86,8 +98,6 @@ LoadGraphics:
         sta .filename_lo
         lda #>.textname
         sta .filename_hi
-        lda #.end_textname-.textname
-        sta .filenamelength
         lda #<TEXT_ADDR
         sta .loadaddr_lo
         lda #>TEXT_ADDR
@@ -96,9 +106,9 @@ LoadGraphics:
         rts
 
 .Vload:
-        lda .filenamelength
         ldx .filename_lo
         ldy .filename_hi
+        jsr GetStringLength
         jsr SETNAM
         lda #$02
         ldx #$08            ;device
@@ -108,10 +118,31 @@ LoadGraphics:
         ldx .loadaddr_lo    ;low address  
         ldy .loadaddr_hi    ;high address  
         jsr LOAD
-        bcs +               ;branch if error
-        rts
-+       !byte $ff
-        rts
+        bcc +
+        jsr PrintErrorMessage
+        lda #1
+        sta .errorflag
++       rts
+
+PrintErrorMessage:
+        pha    
+        ldx #<.message1
+        ldy #>.message1
+        jsr PrintString                 ;print "failed to load"          
+        ldx .filename_lo
+        ldy .filename_hi
+        jsr PrintString                 ;print filename
+        ldx #<.message2
+        ldy #>.message2
+        jsr PrintString                 ;print "i/o error"
+        pla
+        pha
+        jsr PrintDigit                  ;print error number
+        pla
+        ldx #<.errorarray
+        ldy #>.errorarray
+        jsr PrintStringArrayElement     ;print error message
+        rts   
 
 .CopySpritePalettesToVRAM:
         lda #<CAR_PALETTES
@@ -202,5 +233,3 @@ LoadGraphics:
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0EE7, $0FFF, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;yellow car (color 2 = yellow)
         !word $0000, $0000, $008F, $008F, $0FFF, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;blue car   (color 2 = light blue)
-
-

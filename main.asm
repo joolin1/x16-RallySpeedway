@@ -36,7 +36,9 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 
 StartGame:
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
-        jsr InitScreenAndSprites
+        bcc +
+        rts                             ;exit if some resource failed to load
++       jsr InitScreenAndSprites
         jsr InitJoysticks               ;set type of joysticks (game controllers) being used 
         lda #ST_MENU
         sta _gamestatus	
@@ -98,10 +100,6 @@ EndGame:
 	sta IRQ_HANDLER_HI
 	cli
         jsr RestoreScreenAndSprites
-        lda #147
-        jsr BSOUT
-        lda #$8e       
-        jsr BSOUT                       ;trigger kernal to upload original character set from ROM to VRAM
         rts
 
 .defaulthandler_lo 	!byte 0
@@ -114,11 +112,11 @@ GameTick:
 
         cmp #ST_MENU
         bne +                    
-        inc _gamestatus                 ;TEMP - skip menu, start race
-	jsr SetLayer0ToTileMode         ;TEMP
-	jsr ClearTextLayer1             ;TEMP
-        ;jsr HideCars                   ;comment out to skip status menu
-        ;jsr MenuHandler                ;comment out to skip status menu
+        ;inc _gamestatus                 ;TEMP - skip menu, start race
+	;jsr SetLayer0ToTileMode         ;TEMP
+	;jsr ClearTextLayer1             ;TEMP
+        jsr HideCars                   ;comment out to skip status menu
+        jsr MenuHandler                ;comment out to skip status menu
         jsr YCar_TimeReset
         jsr BCar_TimeReset
         rts

@@ -1,7 +1,5 @@
 ;*** Init screen and sprites ************************************************************************
 
-COLLISION_MASK = %00010000
-
 InitScreenAndSprites:
 
         stz VERA_CTRL
@@ -83,5 +81,11 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         jsr VPoke               ;disable sprites globally
         !word SPR_CTRL
         !byte 0
+
+        lda #$8e       
+        jsr BSOUT               ;trigger kernal to upload original character set from ROM to VRAM
+
+        lda #147
+        jsr BSOUT               ;clear screen
 
         rts

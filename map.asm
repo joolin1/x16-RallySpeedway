@@ -88,8 +88,11 @@ InitMap:
 .rowcounter     !byte 0
 .tableindex     !byte 0
 
-.blockdestaddresses     !word $4000, $4010, $4020, $4030, $4200, $4210, $4220, $4230, $4400, $4410, $4420, $4430, $4600, $4610, $4620, $4630
-
+.blockdestaddresses     !word LAYER0_ADDR     , LAYER0_ADDR+ $10, LAYER0_ADDR+ $20, LAYER0_ADDR+ $30
+                        !word LAYER0_ADDR+$200, LAYER0_ADDR+$210, LAYER0_ADDR+$220, LAYER0_ADDR+$230
+                        !word LAYER0_ADDR+$400, LAYER0_ADDR+$410, LAYER0_ADDR+$420, LAYER0_ADDR+$430
+                        !word LAYER0_ADDR+$600, LAYER0_ADDR+$610, LAYER0_ADDR+$620, LAYER0_ADDR+$630
+                        
 UpdateMapColumn:                        ;IN: column offset in .A (0 = update for scrolling left, 3 = update for scrolling right)
         sta .columnoffset               
 
@@ -159,7 +162,7 @@ UpdateMapColumn:                        ;IN: column offset in .A (0 = update for
         sta ZP3                         
 
         clc
-        adc #>MAP_ADDR
+        adc #>LAYER0_ADDR
         sta ZP3                         ;finally destination address in tile map is in ZP2 and ZP3
 
         ;Copy block
@@ -259,7 +262,7 @@ UpdateMapRow:                           ;IN: row offset in .A (0 = update for sc
         sta ZP3
 
         clc
-        adc #>MAP_ADDR
+        adc #>LAYER0_ADDR
         sta ZP3                         ;finally destination address in tile map is in ZP2 and ZP3
 
         ;Copy block

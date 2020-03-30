@@ -390,14 +390,14 @@ FillLayer0WithColorBlocks:
 	sta ZP1
 	lda	#$10				;increment 1
 	sta	VERA_ADDR_HI
-	lda #>MAP_ADDR
+	lda #>LAYER0_ADDR
 	sta	VERA_ADDR_MID
 
 	ldy #0					;color and block index	
 --- lda (ZP0),y				;get number of rows for current block
 	beq +					;if 0 then return, table with number of rows for each block is terminated with 0
 	tax
-	lda #<MAP_ADDR
+	lda #<LAYER0_ADDR
 	sta	VERA_ADDR_LO		;set col 0
 	phy
 	tya
@@ -419,7 +419,7 @@ FillLayer0WithColorBlocks:
 	dex	
 	bne -
 
-	lda #<MAP_ADDR
+	lda #<LAYER0_ADDR
 	sta	VERA_ADDR_LO		;set col 0
 	inc VERA_ADDR_MID		;next row with same color
 	plx
@@ -432,16 +432,16 @@ FillLayer0WithColorBlocks:
 UpdateRandomBgColor:		;update two following random rows with new random color
 	lda #$20
 	sta VERA_ADDR_HI
-	lda #>MAP_ADDR
+	lda #>LAYER0_ADDR
 -	jsr GetRandomNumber
 	and #30
 	cmp #28					;get even random number from 0-26
 	bcc +
 	bra -
 +	clc
-	adc #>MAP_ADDR
+	adc #>LAYER0_ADDR
 	sta VERA_ADDR_MID		;set random row
-	lda #<MAP_ADDR
+	lda #<LAYER0_ADDR
 	inc						
 	sta VERA_ADDR_LO		;set col 0 second byte which contains color information
 
@@ -457,7 +457,7 @@ UpdateRandomBgColor:		;update two following random rows with new random color
 -	sta VERA_DATA0
 	dex
 	bne -
-	ldy #<MAP_ADDR
+	ldy #<LAYER0_ADDR
 	iny
 	sty VERA_ADDR_LO		;set col 0
 	inc VERA_ADDR_MID		;next row

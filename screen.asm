@@ -1,5 +1,7 @@
 ;*** screen.asm - handle graphic modes and sprites *************************************************
 
+COLLISION_MASK = %00010000
+
 SetLayer0ToTileMode:
         jsr VPoke                       ;enable layer 0 in mode 3 (=tile mode with 4 bits per pixel)
         !word Ln0_CTRL0
@@ -14,7 +16,7 @@ SetLayer0ToTileMode:
         !byte $00
         jsr VPoke
         !word Ln0_MAP_BASE_H
-        !byte >MAP_ADDR/4
+        !byte >LAYER0_ADDR/4
 
         jsr VPoke                       ;set base address of tiles to $6000 ($6000/4=$1800)
         !word Ln0_TILE_BASE_L
@@ -38,7 +40,7 @@ SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode backgroun
         !byte $00
         jsr VPoke
         !word Ln0_MAP_BASE_H
-        !byte >MAP_ADDR/4
+        !byte >LAYER0_ADDR/4
 
         jsr VPoke                       ;set base address of characters to$F800 ($F800/4=$3E00)
         !word Ln0_TILE_BASE_L
