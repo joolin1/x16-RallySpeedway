@@ -173,6 +173,15 @@
 !addr SPR12_ATTR_0       = $5066
 !addr SPR12_ATTR_1       = $5067
 
+!addr SPR13_ADDR_L       = $5068
+!addr SPR13_MODE_ADDR_H  = $5069
+!addr SPR13_XPOS_L       = $506a
+!addr SPR13_XPOS_H       = $506b
+!addr SPR13_YPOS_L       = $506c
+!addr SPR13_YPOS_H       = $506d
+!addr SPR13_ATTR_0       = $506e
+!addr SPR13_ATTR_1       = $506f
+
 ;*** Kernal routines ***
 !addr SCNKEY    = $FF9F
 !addr SETLFS    = $FFBA

@@ -108,7 +108,7 @@ LoadGraphics:
 .Vload:
         ldx .filename_lo
         ldy .filename_hi
-        jsr GetStringLength
+        jsr GetStringLength ;will return length of filename in .A
         jsr SETNAM
         lda #$02
         ldx #$08            ;device
