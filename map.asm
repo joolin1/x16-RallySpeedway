@@ -40,15 +40,15 @@ InitMap:
 
         ;2 - get destination address from predefined table and set VERA registers
         lda #$10
-        sta VERA_ADDR_HI        ;Auto increment one when writing to VERA RAM
+        sta VERA_ADDR_H        ;Auto increment one when writing to VERA RAM
         lda .tableindex         ;counter for the blocks that will be drawn on tile map       
         asl                     ;multiply block counter with 2 (dest addresses are 2 bytes each)
         tay
         lda (ZP2),y             ;read where in tile map to put block (low byte)
-        sta VERA_ADDR_LO
+        sta VERA_ADDR_L
         iny
         lda (ZP2),y             ;read where in tile map to put block (high byte)
-        sta VERA_ADDR_MID 
+        sta VERA_ADDR_M 
         inc .tableindex
 
         ;3 - read current block and copy it to tilemap
@@ -88,10 +88,10 @@ InitMap:
 .rowcounter     !byte 0
 .tableindex     !byte 0
 
-.blockdestaddresses     !word LAYER0_ADDR     , LAYER0_ADDR+ $10, LAYER0_ADDR+ $20, LAYER0_ADDR+ $30
-                        !word LAYER0_ADDR+$200, LAYER0_ADDR+$210, LAYER0_ADDR+$220, LAYER0_ADDR+$230
-                        !word LAYER0_ADDR+$400, LAYER0_ADDR+$410, LAYER0_ADDR+$420, LAYER0_ADDR+$430
-                        !word LAYER0_ADDR+$600, LAYER0_ADDR+$610, LAYER0_ADDR+$620, LAYER0_ADDR+$630
+.blockdestaddresses     !word L0_MAP_ADDR     , L0_MAP_ADDR+ $10, L0_MAP_ADDR+ $20, L0_MAP_ADDR+ $30
+                        !word L0_MAP_ADDR+$200, L0_MAP_ADDR+$210, L0_MAP_ADDR+$220, L0_MAP_ADDR+$230
+                        !word L0_MAP_ADDR+$400, L0_MAP_ADDR+$410, L0_MAP_ADDR+$420, L0_MAP_ADDR+$430
+                        !word L0_MAP_ADDR+$600, L0_MAP_ADDR+$610, L0_MAP_ADDR+$620, L0_MAP_ADDR+$630
                         
 UpdateMapColumn:                        ;IN: column offset in .A (0 = update for scrolling left, 3 = update for scrolling right)
         sta .columnoffset               
@@ -106,7 +106,7 @@ UpdateMapColumn:                        ;IN: column offset in .A (0 = update for
         sta .blockypos
 
         lda #$10
-        sta VERA_ADDR_HI                ;Auto increment one when writing to VERA RAM
+        sta VERA_ADDR_H                ;Auto increment one when writing to VERA RAM
 
         ;Loop through the 4 blocks in column
         ldx #0                          ;counter for the 4 blocks that will be drawn on tile map 
@@ -162,14 +162,14 @@ UpdateMapColumn:                        ;IN: column offset in .A (0 = update for
         sta ZP3                         
 
         clc
-        adc #>LAYER0_ADDR
+        adc #>L0_MAP_ADDR
         sta ZP3                         ;finally destination address in tile map is in ZP2 and ZP3
 
         ;Copy block
         lda ZP2
-        sta VERA_ADDR_LO
+        sta VERA_ADDR_L
         lda ZP3
-        sta VERA_ADDR_MID               ;set tile map destination address        
+        sta VERA_ADDR_M               ;set tile map destination address        
         lda (ZP0)                       ;read block index from block map
         phx
         phy
@@ -202,7 +202,7 @@ UpdateMapRow:                           ;IN: row offset in .A (0 = update for sc
         sta .blockypos
 
         lda #$10
-        sta VERA_ADDR_HI                ;Auto increment one when writing to VERA RAM
+        sta VERA_ADDR_H                ;Auto increment one when writing to VERA RAM
 
         ;Loop through the 4 blocks in column
         ldx #0                          ;counter for the 4 blocks that will be drawn on tile map 
@@ -262,15 +262,15 @@ UpdateMapRow:                           ;IN: row offset in .A (0 = update for sc
         sta ZP3
 
         clc
-        adc #>LAYER0_ADDR
+        adc #>L0_MAP_ADDR
         sta ZP3                         ;finally destination address in tile map is in ZP2 and ZP3
 
         ;Copy block
 
         lda ZP2
-        sta VERA_ADDR_LO
+        sta VERA_ADDR_L
         lda ZP3
-        sta VERA_ADDR_MID               ;set tile map destination address        
+        sta VERA_ADDR_M               ;set tile map destination address        
         lda (ZP0)                       ;read block index from block map
         phx
         phy
@@ -292,7 +292,7 @@ UpdateMapRow:                           ;IN: row offset in .A (0 = update for sc
 .blockxpos      !byte 0
 .blockypos      !byte 0
 
-CopyMapBlock:           ;IN: Block index in .A, Destination in VERA_ADDR_LO and VERA_ADDR_MID
+CopyMapBlock:           ;IN: Block index in .A, Destination in VERA_ADDR_L and VERA_ADDR_M
         stz ZP4         ;use ZP4 and ZP5 for block index * 128
         lsr             ;interpret block index as the high byte, that means index * 256, shift right to get index * 128 which gives the address of the block
         sta ZP5         ;store high byte result
@@ -323,12 +323,12 @@ CopyMapBlock:           ;IN: Block index in .A, Destination in VERA_ADDR_LO and 
         sta ZP7
 
         clc             ;add 48 bytes to destination pointer (64 minus the 16 we just wrote) to jump to next row
-        lda VERA_ADDR_LO 
+        lda VERA_ADDR_L 
         adc #48         
-        sta VERA_ADDR_LO
-        lda VERA_ADDR_MID
+        sta VERA_ADDR_L
+        lda VERA_ADDR_M
         adc #0
-        sta VERA_ADDR_MID
+        sta VERA_ADDR_M
 
         inx
         cpx #8          ;8 rows in a block

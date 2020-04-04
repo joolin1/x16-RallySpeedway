@@ -78,14 +78,14 @@ VPoke:  ;routine for poking VRAM that takes inline parameters
         
         ldy #1              ;The return address is actually pointing to the return address-1
         lda (ZP0),y         ;therefore access the first argument with an offset of 1 and so on
-        sta VERA_ADDR_LO
+        sta VERA_ADDR_L
             
         ldy #2
         lda (ZP0),y
-        sta VERA_ADDR_MID
+        sta VERA_ADDR_M
 
-        lda #$f         
-        sta VERA_ADDR_HI
+        lda #1         
+        sta VERA_ADDR_H
 
         stz VERA_CTRL
         ldy #3

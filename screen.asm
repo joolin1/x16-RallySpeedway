@@ -3,58 +3,29 @@
 COLLISION_MASK = %00010000
 
 SetLayer0ToTileMode:
-        jsr VPoke                       ;enable layer 0 in mode 3 (=tile mode with 4 bits per pixel)
-        !word Ln0_CTRL0
-        !byte %01100001            
- 
-        jsr VPoke                       ;map width and height = 32, tiles width and height = 16
-        !word Ln0_CTRL1
-        !byte %00110000
 
-        jsr VPoke                       ;set base address of maps to $4000 ($4000/4=$1000)
-        !word Ln0_MAP_BASE_L
-        !byte $00
-        jsr VPoke
-        !word Ln0_MAP_BASE_H
-        !byte >LAYER0_ADDR/4
-
-        jsr VPoke                       ;set base address of tiles to $6000 ($6000/4=$1800)
-        !word Ln0_TILE_BASE_L
-        !byte $00
-        jsr VPoke
-        !word Ln0_TILE_BASE_H
-        !byte >TILE_ADDR/4
+        lda #2                          ;set map size to 32x32, color depth 4bpp
+        sta L0_CONFIG 
+        lda #L0_MAP_ADDR>>9             ;set map base address
+        sta L0_MAPBASE
+        lda #TILE_ADDR>>9               ;set tile address and tile size to 16x16
+        ora #%00000011
+        sta L0_TILEBASE
         rts
 
 SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode background in shifting colors for start screen and menus
-        jsr VPoke                       ;enable layer 0 in mode 0 (=text mode 1 bit per pixel)
-        !word Ln0_CTRL0
-        !byte %00000001            
- 
-        jsr VPoke                       ;128 cols and 64 rows
-        !word Ln0_CTRL1
-        !byte %00000110
 
-        jsr VPoke                       ;set base address of maps to $4000 ($4000/4=$1000)
-        !word Ln0_MAP_BASE_L
-        !byte $00
-        jsr VPoke
-        !word Ln0_MAP_BASE_H
-        !byte >LAYER0_ADDR/4
-
-        jsr VPoke                       ;set base address of characters to$F800 ($F800/4=$3E00)
-        !word Ln0_TILE_BASE_L
-        !byte $00
-        jsr VPoke
-        !word Ln0_TILE_BASE_H
-        !byte >CHAR_ADDR/4
-
-        jsr VPoke                       ;set vertical scroll to -4, this is a necessary alignment because of text layout in layer 1
-        !word Ln0_VSCROLL_L
-        !byte $fc
-        jsr VPoke
-        !word Ln0_VSCROLL_H
-        !byte $0f
+        lda #%00100000                  ;set map size to 128x32 (128 columns = 256 bytes/row which is practical, 32 rows because screen holds 30 rows at 320x200), color depth 1bpp    
+        sta L0_CONFIG
+        lda #L0_MAP_ADDR>>9             ;set map base address
+        sta L0_MAPBASE
+        lda #CHAR_ADDR>>9               ;set tile (char) address and tile (char) size to 8x8
+        and #%11111100
+        sta L0_TILEBASE
+        lda #$fc                        ;set vertical scroll to -4, this is a necessary alignment because of text layout in layer 1
+        sta L0_VSCROLL_L
+        lda #$0f
+        sta L0_VSCROLL_H
         rts
 
 ShowCars:
@@ -149,7 +120,7 @@ TextDelay:
 .textdelay      !byte 0
 
 HideText:
-        +VPokeSpritesI SPR3_ATTR_0, 11, 0        ;disable all text sprites
+        +VPokeSpritesI SPR3_ATTR_0, 11, 0       ;disable all text sprites
         rts
 
 

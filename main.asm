@@ -43,14 +43,14 @@ StartGame:
         lda #ST_MENU
         sta _gamestatus	
         sei
-	lda IRQ_HANDLER_LO	        ;save original IRQ handler
+	lda IRQ_HANDLER_L	        ;save original IRQ handler
 	sta .defaulthandler_lo
-	lda IRQ_HANDLER_HI
+	lda IRQ_HANDLER_H
 	sta .defaulthandler_hi
 	lda #<IrqHandler	        ;set custom IRQ handler
-	sta IRQ_HANDLER_LO
+	sta IRQ_HANDLER_L
 	lda #>IrqHandler
-	sta IRQ_HANDLER_HI	
+	sta IRQ_HANDLER_H	
 	;lda #5                         ;enable vertical blanking and sprite collision interrupts
         lda #1                          				
 	sta VERA_IEN		        ;enable Vera vertical blanking interrupts
@@ -58,7 +58,7 @@ StartGame:
 
         ;main loop
 -       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
-        lda .vsynctrigger               ;check if interrupt is triggered by VERA on vertical blank
+        lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
         beq -
         jsr GameTick
         stz .vsynctrigger
@@ -72,7 +72,6 @@ IrqHandler:
         ; lda VERA_ISR  ;no support for hardware sprite collisions yet
         ; and #$04
         ; beq +
-        ; !byte $ff
 +       lda VERA_ISR
         and #$01
         beq +
@@ -95,9 +94,9 @@ IrqHandler:
 EndGame:                       
  	sei                             ;restore default irq handler
 	lda .defaulthandler_lo
-	sta IRQ_HANDLER_LO
+	sta IRQ_HANDLER_L
 	lda .defaulthandler_hi
-	sta IRQ_HANDLER_HI
+	sta IRQ_HANDLER_H
 	cli
         jsr RestoreScreenAndSprites
         rts
@@ -161,14 +160,12 @@ GameTick:
 +       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
         jsr YCar_DetectCollision        ;check if the car has collided
-        jsr YCar_DisplayTime
         lda _noofplayers
         cmp #1
         beq +        
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
         jsr BCar_DetectCollision
-
         jsr DetectClash                 ;check if one car has outrun the other or if cars have collided
 +       jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
         rts

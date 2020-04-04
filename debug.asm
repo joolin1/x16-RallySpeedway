@@ -46,18 +46,17 @@ DebugPrintNumber:
 
 DebugPrint:
     ldx .cursorX
-    stx VERA_ADDR_LO
+    stx VERA_ADDR_L
     ldx .cursorY
-    stx VERA_ADDR_MID
+    stx VERA_ADDR_M
     ldx #0
-    stx VERA_ADDR_HI
+    stx VERA_ADDR_H
     sta VERA_DATA0
     inc .cursorX
     inc .cursorX
     rts
 
 DebugBusyLoop:
-    !byte $ff
 --- ldx #255
 --  ldy #80
 -   dey

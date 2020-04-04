@@ -1,9 +1,9 @@
 ;*** Load graphic resources to VRAM ****************************************************************
 
 ;Memory layout for screen and graphic resources
-!addr LAYER1_ADDR       = $0000                     ;       8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
+!addr L1_MAP_ADDR       = $0000                     ;       8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
                                                     ;            | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = $1e00
-!addr LAYER0_ADDR       = $2000                     ;       8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode
+!addr L0_MAP_ADDR       = $2000                     ;       8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode
 
 !addr TILE_ADDR         = $4000                     ;      16 Kb | 128 tiles (room for) (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes (16K)
 !addr CARS_ADDR         = $8000                     ;            | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16 = $2200 bytes 
@@ -146,11 +146,11 @@ PrintErrorMessage:
 
 .CopySpritePalettesToVRAM:
         lda #<CAR_PALETTES
-        sta VERA_ADDR_LO
+        sta VERA_ADDR_L
         lda #>CAR_PALETTES                       
-        sta VERA_ADDR_MID
-        lda #$1f                
-        sta VERA_ADDR_HI                ;increment = 1
+        sta VERA_ADDR_M
+        lda #$11                
+        sta VERA_ADDR_H                ;increment = 1
 
         ldy #0           
 -       lda .carspritepalettes,y        ;loop through 2 * 16 colors * 2 bytes = 64
@@ -165,16 +165,15 @@ PrintErrorMessage:
     ;lda #0
     ;ldx #<_charset
     ;ldy #>_charset
-    ;!byte $ff
     ;jsr screen_set_charset
 
 	stz	VERA_CTRL
 	lda	#$00		
-	sta	VERA_ADDR_LO
+	sta	VERA_ADDR_L
 	lda	#$F8		        ;base address of font is $F800
-	sta	VERA_ADDR_MID
+	sta	VERA_ADDR_M
 	lda	#$10		        ;increment by 1, bank 0
-	sta	VERA_ADDR_HI
+	sta	VERA_ADDR_H
 	lda	#<.charset	
 	sta	ZP0
 	lda	#>.charset

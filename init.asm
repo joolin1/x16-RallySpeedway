@@ -2,19 +2,15 @@
 
 InitScreenAndSprites:
 
-        stz VERA_CTRL
+        stz VERA_CTRL           ;R-----DA (R=RESET, D=DCSEL, A=ADDRSEL)
 
-        ;Display
-        jsr VPoke                       ;set horizontal scale to 2:1
-        !word DC_HSCALE
-        !byte 64
-        jsr VPoke                       ;set vertical scale to 2:1
-        !word DC_VSCALE
-        !byte 64
-
-        jsr VPoke                       ;enable sprites globally           
-        !word SPR_CTRL
-        !byte 1
+        ;Display (DCSEL=0)
+        lda DC_VIDEO
+        ora #%01110000
+        sta DC_VIDEO            ;enable sprites, layer 1 and layer 0
+        lda #64
+        sta DC_HSCALE           ;set horizontal scale to 2:1
+        sta DC_VSCALE
 
         ;Init text sprites
         lda #<TEXT_ADDR 
@@ -66,11 +62,11 @@ InitScreenAndSprites:
 
 .VPokeSpriteAddr:                ;set address attributes for sprites
         lda ZP2                 ;which sprite attribute address is in ZP2
-        sta VERA_ADDR_LO
-        lda #$50
-        sta VERA_ADDR_MID
-        lda #$1f
-        sta VERA_ADDR_HI
+        sta VERA_ADDR_L
+        lda #>SPR_ADDR
+        sta VERA_ADDR_M
+        lda #$11
+        sta VERA_ADDR_H
         lda ZP0                 ;address of sprite is in ZP0 and ZP1
         sta VERA_DATA0
         lda ZP1
@@ -78,25 +74,20 @@ InitScreenAndSprites:
         rts
 
 RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
-        jsr VPoke               ;set horizontal scale to 1:1
-        !word DC_HSCALE
-        !byte 128
+        
+        stz VERA_CTRL           ;R-----DA (R=RESET, D=DCSEL, A=ADDRSEL)
 
-        jsr VPoke               ;set vertical scale to 1:1
-        !word DC_VSCALE
-        !byte 128
+        ;Display (DCSEL=0)
+        lda DC_VIDEO
+        and #%10101111          
+        sta DC_VIDEO            ;disable sprites and layer 0
+        
+        lda #128
+        sta DC_HSCALE           ;set horizontal scale to 1:1
+        sta DC_VSCALE           ;set vertical scale to 1:1
 
-        jsr VPoke               ;disable layer 0
-        !word Ln0_CTRL0
-        !byte 0
-
-        jsr VPoke               ;enable layer 1 mode 0
-        !word Ln1_CTRL0
-        !byte 1                 
-
-        jsr VPoke               ;disable sprites globally
-        !word SPR_CTRL
-        !byte 0
+        lda #%01100000
+        sta L1_CONFIG           ;enable layer 1 in 16 color text mode 
 
         lda #$8e       
         jsr BSOUT               ;trigger kernal to upload original character set from ROM to VRAM

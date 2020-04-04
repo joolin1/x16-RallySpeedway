@@ -229,11 +229,11 @@ HandleUserInput:
 
 ClearHand:
 	lda #8					;print hand from col 4 to 6
-	sta	VERA_ADDR_LO
+	sta	VERA_ADDR_L
 	lda	.handrow
-	sta	VERA_ADDR_MID
+	sta	VERA_ADDR_M
 	lda	#$20				;increment 2, leave color
-	sta	VERA_ADDR_HI
+	sta	VERA_ADDR_H
 	lda #SPACE
 	sta VERA_DATA0
 	sta VERA_DATA0
@@ -242,11 +242,11 @@ ClearHand:
 
 PrintHand:
 	lda #8					;print hand from col 4 to 6
-	sta	VERA_ADDR_LO
+	sta	VERA_ADDR_L
 	lda	.handrow
-	sta	VERA_ADDR_MID
+	sta	VERA_ADDR_M
 	lda	#$20				;increment 2, leave color
-	sta	VERA_ADDR_HI
+	sta	VERA_ADDR_H
 	lda #HAND
 	sta VERA_DATA0
 	lda #HAND+1
@@ -259,9 +259,14 @@ PrintHand:
 
 ShowStartScreen:
     jsr SetLayer0ToTextMode
-	jsr ClearTextLayer1
+	ldx #<L0_MAP_ADDR
+	ldy #>L0_MAP_ADDR
+	jsr ClearTextLayer
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
 	lda #0
-	+VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black due to the fact that black is transparent
+	+VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black because orginal black is transparent
 	+VPoke PALETTE+23
 
 	lda #<.startscreenbgblocks	;set block table pointer as in parameter
@@ -301,7 +306,9 @@ ShowStartScreen:
     rts
 
 ShowMainMenu:
-	jsr ClearTextLayer1
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
 
 	lda #<.mainmenubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
@@ -374,11 +381,33 @@ CloseMainMenu:
 	lda #$03
 	+VPoke PALETTE+23
 	jsr SetLayer0ToTileMode
-	jsr ClearTextLayer1
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
 	lda M_SHOW_MAIN_MENU
 	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and goes directly to the main menu
 	lda #START_RACE
 	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
+	rts
+
+ClearTextLayer:
+	stx VERA_ADDR_L
+	tya
+	clc
+	adc #30
+	sta VERA_ADDR_M
+	lda	#$10				;increment 1
+	sta	VERA_ADDR_H
+	lda #SPACE
+	ldy #$01				;bg = black (transparent), fg = white
+--	ldx #40
+-	sta VERA_DATA0			;.A = char						
+	sty VERA_DATA0			;color
+	dex
+	bne -
+	stz VERA_ADDR_L
+	dec VERA_ADDR_M
+	bpl --
 	rts
 
 ;*** Methods on layer 0 ********************************************************
@@ -389,16 +418,16 @@ FillLayer0WithColorBlocks:
 	lda .blocktable_hi
 	sta ZP1
 	lda	#$10				;increment 1
-	sta	VERA_ADDR_HI
-	lda #>LAYER0_ADDR
-	sta	VERA_ADDR_MID
+	sta	VERA_ADDR_H
+	lda #>L0_MAP_ADDR
+	sta	VERA_ADDR_M
 
 	ldy #0					;color and block index	
 --- lda (ZP0),y				;get number of rows for current block
 	beq +					;if 0 then return, table with number of rows for each block is terminated with 0
 	tax
-	lda #<LAYER0_ADDR
-	sta	VERA_ADDR_LO		;set col 0
+	lda #<L0_MAP_ADDR
+	sta	VERA_ADDR_L			;set col 0
 	phy
 	tya
 	and #7
@@ -411,17 +440,12 @@ FillLayer0WithColorBlocks:
 	asl						;shift color to 4 upper bits = bg color
 	sta ZP2
 --	phx
-	ldx #40					;40 columns in row
--	lda #SPACE
-	sta VERA_DATA0			;write space character, only bg color is relevant							
-	lda ZP2
-	sta VERA_DATA0			;write bg color that is read from table
-	dex	
-	bne -
 
-	lda #<LAYER0_ADDR
-	sta	VERA_ADDR_LO		;set col 0
-	inc VERA_ADDR_MID		;next row with same color
+	jsr FillLayer0Row
+
+	lda #<L0_MAP_ADDR
+	sta	VERA_ADDR_L		;set col 0
+	inc VERA_ADDR_M		;next row with same color
 	plx
 	dex
 	bne --
@@ -429,21 +453,31 @@ FillLayer0WithColorBlocks:
 	bra ---
 +	rts
 
+FillLayer0Row:
+	ldx #40					;40 columns in row
+-	lda #SPACE
+	sta VERA_DATA0			;write space character, only bg color is relevant							
+	lda ZP2
+	sta VERA_DATA0			;write bg color that is read from table
+	dex	
+	bne -
+	rts
+
 UpdateRandomBgColor:		;update two following random rows with new random color
 	lda #$20
-	sta VERA_ADDR_HI
-	lda #>LAYER0_ADDR
+	sta VERA_ADDR_H
+	lda #>L0_MAP_ADDR
 -	jsr GetRandomNumber
 	and #30
 	cmp #28					;get even random number from 0-26
 	bcc +
 	bra -
 +	clc
-	adc #>LAYER0_ADDR
-	sta VERA_ADDR_MID		;set random row
-	lda #<LAYER0_ADDR
+	adc #>L0_MAP_ADDR
+	sta VERA_ADDR_M			;set random row
+	lda #<L0_MAP_ADDR
 	inc						
-	sta VERA_ADDR_LO		;set col 0 second byte which contains color information
+	sta VERA_ADDR_L			;set col 0 second byte which contains color information
 
 	jsr GetRandomNumber
 	and #7					;only 8 colors in table
@@ -457,10 +491,10 @@ UpdateRandomBgColor:		;update two following random rows with new random color
 -	sta VERA_DATA0
 	dex
 	bne -
-	ldy #<LAYER0_ADDR
+	ldy #<L0_MAP_ADDR
 	iny
-	sty VERA_ADDR_LO		;set col 0
-	inc VERA_ADDR_MID		;next row
+	sty VERA_ADDR_L		;set col 0
+	inc VERA_ADDR_M		;next row
 	ldx #40
 -	sta VERA_DATA0
 	dex
@@ -481,30 +515,12 @@ GetRandomNumber:
 
 ;*** methods on layer 1 ********************************************************
 
-ClearTextLayer1:
-	stz	VERA_ADDR_LO
-	lda #30
-	sta VERA_ADDR_MID
-	lda	#$10				;increment 1
-	sta	VERA_ADDR_HI
-	lda #SPACE
-	ldy #$01				;bg = black (transparent), fg = white
---	ldx #40
--	sta VERA_DATA0			;.A = char						
-	sty VERA_DATA0			;color
-	dex
-	bne -
-	stz VERA_ADDR_LO
-	dec VERA_ADDR_MID
-	bpl --
-	rts
-
 UpdateMainMenu:
 	lda #1
-	sta	VERA_ADDR_LO
-	stz VERA_ADDR_MID
+	sta	VERA_ADDR_L
+	stz VERA_ADDR_M
 	lda	#$20				;increment 2
-	sta	VERA_ADDR_HI
+	sta	VERA_ADDR_H
 	ldy #0
 
 --	lda .mainmenu,y			;read color for row (updated by handler for user input)
@@ -514,19 +530,19 @@ UpdateMainMenu:
 	dex
 	bne -
 	lda #1
-	sta VERA_ADDR_LO
-+	inc VERA_ADDR_MID
+	sta VERA_ADDR_L
++	inc VERA_ADDR_M
 	iny 
 	cpy #32					;menu always holds 32 rows including dividers and fillers in the end
 	bne --
 	rts
 
 PrintLineLayer1:			;IN: .A = screen code of char
-	stz	VERA_ADDR_LO
+	stz	VERA_ADDR_L
 	ldx	.currentrow
-	stx	VERA_ADDR_MID
+	stx	VERA_ADDR_M
 	ldx	#$10				;increment 1
-	stx	VERA_ADDR_HI
+	stx	VERA_ADDR_H
 	cmp #SPACE
 	bne +
 	ldy #$00				;transparent if empty row
@@ -541,11 +557,11 @@ PrintLineLayer1:			;IN: .A = screen code of char
 	rts
 
 PrintTextLineLayer1:
-	stz	VERA_ADDR_LO
+	stz	VERA_ADDR_L
 	lda	.currentrow
-	sta	VERA_ADDR_MID
+	sta	VERA_ADDR_M
 	lda	#$10				;increment 1
-	sta	VERA_ADDR_HI
+	sta	VERA_ADDR_H
 
 	;get start address for text
 	lda .text_lo

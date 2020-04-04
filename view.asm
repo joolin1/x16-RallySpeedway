@@ -51,27 +51,22 @@ InitView:
 UpdateView:
         ;First thing to do when interrupt is triggered is always to update the view, then the rest of the time before next interrupt is used to calculate new data.
         
-        ;get x and y scroll of tile map from cam position
+        ;set x and y scroll of tile map from cam position
         lda .camxpos_lo
         sec
         sbc scrollxoffs_lo
-        sta ZP0
+        sta L0_HSCROLL_L
         lda .camxpos_hi
         sbc scrollxoffs_hi
-        sta ZP1
+        sta L0_HSCROLL_H
 
         lda .camypos_lo
         sec
         sbc scrollyoffs_lo        
-        sta ZP2
+        sta L0_VSCROLL_L
         lda .camypos_hi
         sbc scrollyoffs_hi
-        sta ZP3
-
-        +VPoke Ln0_HSCROLL_L, ZP0       ;update horizontal scroll
-        +VPoke Ln0_HSCROLL_H, ZP1
-        +VPoke Ln0_VSCROLL_L, ZP2       ;update vertical scroll
-        +VPoke Ln0_VSCROLL_H, ZP3
+        sta L0_VSCROLL_H
 
         ;Set position and select sprite for yellow car
         lda _ycarxpos_lo                ;sprite x pos = 160-16 + (car pos-cam pos)

@@ -46,10 +46,10 @@ color = ZP0
         sta color
         txa
         asl
-        sta VERA_ADDR_LO        ;set start column      
-        sty VERA_ADDR_MID       ;set row
+        sta VERA_ADDR_L        ;set start column      
+        sty VERA_ADDR_M       ;set row
         lda #$10
-        sta VERA_ADDR_HI
+        sta VERA_ADDR_H
         ldx color
 
         lda .minutes
