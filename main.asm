@@ -1,37 +1,14 @@
 ;*** main.asm - Entry point for game,setup and main game loop **************************************
 !cpu 65c02
 !to "rallyspeedway.prg", cbm
-!src "x16-rallyspeedway/definitions.asm"
-!src "x16-rallyspeedway/macros.asm"
-
-;Status for game
-ST_MENU         = 0     ;show start screen or menu
-ST_SETUPRACE    = 1     ;draw track, position cars
-ST_READYTORACE  = 2     ;wait for player/s to start race
-ST_RACING       = 3     ;race on
-ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
-ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
-ST_RACEOVER     = 7     ;race is over, winner is announced
-ST_QUITGAME     = 8     ;end game
-
-;Constants for car behaviour
-SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
-MAX_SPEED = 24          ;maximum speed that car accelerates to by itself when on road
-MIN_SPEED = 14          ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
-MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
-SPEED_DELAY = 2         ;how fast the car is accelerating
-BRAKE_DELAY = 4         ;how fast the car is braking/slowing down when off road
-ANIMATION_DELAY = 4     ;how fast an exploding car is animated
-
-CAR_START_DISTANCE = 24
-PENALTY_TIME = 1        ;how much time that is added to a car that has been outrun
-COLLISION_TIME = 1      ;how much time that is added for a car that has collided with the background 
+!src "x16-rallyspeedway/x16.inc"
+!src "x16-rallyspeedway/macros.inc"
+!src "x16-rallyspeedway/constants.inc"
 
 *=$0801
 	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
 *=$0810
 
-!zone
 ;*** Main program ***********************************************************************
 
 StartGame:
@@ -186,35 +163,6 @@ WaitForStart:
         inc _gamestatus         ;update status to "racing"
 +       rts
 
-;*** Global variables ******************************************************************************
-
-_gamestatus     !byte   0       
-_noofplayers	!byte   2	;number of players
-_track		!byte   1	;selected track
-_xstartblock    !byte   2       ;race start position
-_ystartblock    !byte   2
-_startdirection !byte   0       ;race start direction
-
-_debug          !byte   0       ;DEBUG - flag for breaking into debugger
-
-;tables for which sprite (0-4) represents the current angle and how it is flipped (0 = no flip, 1 = horizontal flip, 2 vertical flip, 3 = flipped both ways)
-_anglespritetable       !byte   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15
-                        !byte  16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1                       
-                        !byte   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15
-                        !byte  16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1
-_anglefliptable         !byte   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                        !byte   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-                        !byte   1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
-                        !byte   3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
-
-;table for sine and cosine values. Fractions in fixed point numbers used are represented by 4 bits. For example sin(45) = 0.707 * 16 = 11.3.
-;NOTE! words are used because of the negative values!
-_anglesin       !word   0,  2,  3,  5,  6,  8,  9, 10, 11, 12, 13, 14, 15, 15, 16, 16 ;sin angles 0-
-_anglecos       !word  16, 16, 16, 15, 15, 14, 13, 12, 11, 10,  9,  8,  6,  5,  3,  2 ;sin angles 90-
-                !word   0, -2, -3, -5, -6, -8, -9,-10,-11,-12,-13,-14,-15,-15,-16,-16 ;sin angles 180-
-                !word -16,-16,-16,-15,-15,-14,-13,-12,-11,-10, -9, -8, -6, -5, -3, -2 ;sin angles 270-
-                !word   0,  2,  3,  5,  6,  8,  9, 10, 11, 12, 13, 14, 15, 15, 16, 16 ;cos angles 270-
-
 ;*** Other source files ****************************************************************************
 
 !zone
@@ -243,3 +191,5 @@ _anglecos       !word  16, 16, 16, 15, 15, 14, 13, 12, 11, 10,  9,  8,  6,  5,  
 !zone
 !src "x16-rallyspeedway/helpers.asm"
 !zone
+!src "x16-rallyspeedway/globals.asm"
+!src "x16-rallyspeedway/tracks.asm"

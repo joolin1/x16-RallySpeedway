@@ -1,5 +1,10 @@
 ;*** View.asm *****************************************************************
 
+scrollxoffs_lo  = $10
+scrollxoffs_hi  = $11
+scrollyoffs_lo  = $12
+scrollyoffs_hi  = $13
+
 InitView:
         ;Set start scroll offset for tilemap. If start position is on block 5, tile map will initially be drawn from block 4.
         ;Cam will have an inital position of 5x128+160 (160=half screen) and this is where the scrolling of the tile map starts.

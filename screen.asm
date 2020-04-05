@@ -1,7 +1,5 @@
 ;*** screen.asm - handle graphic modes and sprites *************************************************
 
-COLLISION_MASK = %00010000
-
 SetLayer0ToTileMode:
 
         lda #2                          ;set map size to 32x32, color depth 4bpp
