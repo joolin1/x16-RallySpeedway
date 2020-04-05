@@ -169,7 +169,6 @@ WaitForStart:
 !src "x16-rallyspeedway/menu.asm"
 !zone
 !src "x16-rallyspeedway/map.asm"
-!zone
 !src "x16-rallyspeedway/view.asm"
 !src "x16-rallyspeedway/camera.asm"
 !zone;

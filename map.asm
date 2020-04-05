@@ -96,11 +96,11 @@ InitMap:
 UpdateMapColumn:                        ;IN: column offset in .A (0 = update for scrolling left, 3 = update for scrolling right)
         sta .columnoffset               
 
-        lda _newcamblockxpos            ;tile map is always drawn with topleft corner one block above and one block left of camera position
+        lda .newcamblockxpos            ;tile map is always drawn with topleft corner one block above and one block left of camera position
         dec
         and #31
         sta .blockxpos
-        lda _newcamblockypos
+        lda .newcamblockypos
         dec
         and #31
         sta .blockypos
@@ -192,11 +192,11 @@ UpdateMapColumn:                        ;IN: column offset in .A (0 = update for
 UpdateMapRow:                           ;IN: row offset in .A (0 = update for scrolling up, 3 = update for scrolling down)
         sta .rowoffset
 
-        lda _newcamblockxpos            ;tile map is always drawn with topleft corner one block above and one block left of camera position
+        lda .newcamblockxpos            ;tile map is always drawn with topleft corner one block above and one block left of camera position
         dec
         and #31
         sta .blockxpos
-        lda _newcamblockypos
+        lda .newcamblockypos
         dec
         and #31
         sta .blockypos

@@ -1,5 +1,9 @@
 ;*** Car.asm - Class definition ********************************************************************
 
+;This file works as a class definition. Therefore every label is local. An instance of the class is made by including this source file
+;in another file and then map the public funtions here to global instance specifig labels.
+;By including the file, all variables will be added once for every instance. The drawback is that the code is also duplicated. 
+
 ;*** Public functions ******************************************************************************
 
 .ReactOnPlayerInput:
@@ -445,8 +449,8 @@
         jsr .TimeAddSeconds
         rts
 
-.animationindex !byte 0 ;current sprite in explosion animation
-.animationdelay !byte 0 ;delay counter to slow down animation 
+.animationindex !byte 0         ;current sprite in explosion animation
+.animationdelay !byte 0         ;delay counter to slow down animation 
 
 ;Private functions *************************************************************
 

@@ -7,11 +7,11 @@
 InitCamera:
         ;set initial cam BLOCK position (0-31)
         lda _xstartblock
-        sta _camblockxpos
-        sta _newcamblockxpos
+        sta .camblockxpos
+        sta .newcamblockxpos
         lda _ystartblock
-        sta _camblockypos
-        sta _newcamblockypos
+        sta .camblockypos
+        sta .newcamblockypos
 
         ;set initial cam position (0-4095)
         stz .camxpos_lo
@@ -90,7 +90,7 @@ UpdateCamera:
         lda ZP1
         rol                                  
         and #31                      
-        sta _newcamblockxpos
+        sta .newcamblockxpos
  
         lda .camypos_lo
         sec
@@ -104,15 +104,15 @@ UpdateCamera:
         lda ZP1
         rol                             ;convert cam y position (0-4095) to block y position (0-31)     
         and #31
-        sta _newcamblockypos         
+        sta .newcamblockypos         
 
         ;check if leftmost or rightmost column needs to be updated
-        lda _camblockxpos
-        cmp _newcamblockxpos
+        lda .camblockxpos
+        cmp .newcamblockxpos
         beq ++                          ;nothing has changed - no column updating
         inc                             ;increase old position for testing
         and #31                         ;wrap around
-        cmp _newcamblockxpos               
+        cmp .newcamblockxpos               
         bne +                           ;not same means camera is moving to the left
         lda #3
         jsr UpdateMapColumn
@@ -121,12 +121,12 @@ UpdateCamera:
         jsr UpdateMapColumn
 
         ;check if top or bottom column needs to be updated
-++      lda _camblockypos
-        cmp _newcamblockypos
+++      lda .camblockypos
+        cmp .newcamblockypos
         beq ++
         inc                             ;increase old position for testing
         and #31                         ;wrap around
-        cmp _newcamblockypos
+        cmp .newcamblockypos
         bne +                           ;not same means camera is moving upwards
         lda #3
         jsr UpdateMapRow
@@ -134,10 +134,10 @@ UpdateCamera:
 +       lda #0
         jsr UpdateMapRow
 
-++      lda _newcamblockxpos               ;save new position as current positon
-        sta _camblockxpos
-        lda _newcamblockypos
-        sta _camblockypos
+++      lda .newcamblockxpos               ;save new position as current positon
+        sta .camblockxpos
+        lda .newcamblockypos
+        sta .camblockypos
         rts
 
 ;camera position
@@ -145,7 +145,7 @@ UpdateCamera:
 .camxpos_hi             !byte 0
 .camypos_lo             !byte 0         ;an integer value locating camera vertickally on block map that is 4096 pixels wide (bits 12-15 are ignored)
 .camypos_hi             !byte 0
-_camblockxpos           !byte 0         ;which horizontal block (0-31) cam is set on (0-31)
-_camblockypos           !byte 0         ;which vertical block (0-31) cam is set on (0-31)
-_newcamblockxpos        !byte 0         ;where cam is set next frame
-_newcamblockypos        !byte 0         ;where cam is set next frame
+.camblockxpos           !byte 0         ;which horizontal block (0-31) cam is set on (0-31)
+.camblockypos           !byte 0         ;which vertical block (0-31) cam is set on (0-31)
+.newcamblockxpos        !byte 0         ;where cam is set next frame
+.newcamblockypos        !byte 0         ;where cam is set next frame

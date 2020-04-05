@@ -17,28 +17,28 @@ InitScreenAndSprites:
         sta ZP0
         lda #>TEXT_ADDR
         sta ZP1
-        +DivideBy32 ZP0                 ;address of first sprite in ZP0 and ZP1
+        +DivideBy32 ZP0         ;address of first sprite in ZP0 and ZP1
 
-        lda #<SPR3_ADDR_L               ;low byte of address attribute for first text sprite
+        lda #<SPR3_ADDR_L       ;low byte of address attribute for first text sprite
         sta ZP2
 
-        ldx #10                         ;number of sprites
+        ldx #10                 ;number of sprites
 -       jsr .VPokeSpriteAddr
-        lda ZP0                         ;add 1024/32=32 to get address of next sprite
+        lda ZP0                 ;add 1024/32=32 to get address of next sprite
         clc
         adc #32
         sta ZP0
         lda ZP1
         adc #0
         sta ZP1
-        lda ZP2                         ;add 8 to get address attribute of next sprite
+        lda ZP2                 ;add 8 to get address attribute of next sprite
         clc
         adc #8
         sta ZP2
         dex
         bne -
 
-        ;Add an extra "N"-sprite due to the fact that "WINNER" i spelled with two n:s
+        ;Add an extra "N"-sprite due to the fact that "WINNER" is spelled with two n:s
         lda #<TEXT_ADDR      
         sta ZP0
         lda #>TEXT_ADDR
