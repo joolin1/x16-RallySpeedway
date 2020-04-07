@@ -6,6 +6,20 @@
 
 ;*** Public functions ******************************************************************************
 
+.Show:
+        +VPokeI .SPR_ATTR_0,COLLISION_MASK+8     ;enable sprite 
+        lda #.ID
+        bne +
+        +VPokeI .SPR_ATTR_1, %10100001   ;set palette offset to 1 (yellow car colors) when car explodes palette 0 is used
+        rts
++       +VPokeI .SPR_ATTR_1, %10100010   ;set palette offset to 2 (blue car colors)
+        rts
+
+.Hide:
+        +VPokeI .SPR_ATTR_0,0    ;disable sprite
+        jsr .StopCarSound
+        rts
+
 .ReactOnPlayerInput:
         lda .joy
         pha
@@ -119,7 +133,8 @@
         sta .old_block_ypos
         sta .older_block_ypos
 
-        jsr .UpdatePosition
+        jsr .StartEngineSound
+        jsr .UpdatePosition        
         rts
 
 .xstartoffset   !byte 0
@@ -164,18 +179,24 @@
         cmp #SKID_LIMIT             ;don't increase extra rotation if car is not skidding
         bcc +    
         jsr .IncreaseExtraRotation
+        jsr .StartSkiddingSound
         bra ++
 +       jsr .DecreaseExtraRotation
+        jsr .StopSkiddingSound
 ++      lda .angle                  ;add extra rotation to direction car is moving
         clc
         adc .plusangle             
         sta .displayangle        
 
-        jsr .UpdateCarProperties
-        jsr .TimeTick               ;add a jiffy to the timer       
+        jsr .UpdateCarProperties 
         rts
 
 .UpdateCarProperties:
+
+        jsr .TimeTick               ;add a jiffy to the timer
+        lda .speed
+        jsr .UpdateEngineSound      ;change engine sound depending on speed   
+
         ;update integer value of cars position
         lda .xpos_lo
         clc
@@ -400,13 +421,17 @@
         sta .collisionflag
         lda #%10100000
         +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
+        jsr .StopCarSound
+        jsr .StartExplosionSound
         rts
 
 .Explode:
         lda .collisionflag
         bne +
+        jsr .StopCarSound               ;this car has not collided, but stop engine sound while the other car explodes
         rts
-+       lda .animationindex             ;load current animation index
++       jsr .PlayExplosionSound
+        lda .animationindex             ;load current animation index
         cmp #12                         ;12 sprites in explosion animation
         beq ++    
 

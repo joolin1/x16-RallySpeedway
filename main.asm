@@ -11,7 +11,7 @@
 
 ;*** Main program ***********************************************************************
 
-StartGame:
+.StartGame:
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
@@ -24,9 +24,9 @@ StartGame:
 	sta .defaulthandler_lo
 	lda IRQ_HANDLER_H
 	sta .defaulthandler_hi
-	lda #<IrqHandler	        ;set custom IRQ handler
+	lda #<.IrqHandler	        ;set custom IRQ handler
 	sta IRQ_HANDLER_L
-	lda #>IrqHandler
+	lda #>.IrqHandler
 	sta IRQ_HANDLER_H	
 	;lda #5                         ;enable vertical blanking and sprite collision interrupts
         lda #1                          				
@@ -37,15 +37,15 @@ StartGame:
 -       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
         lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
         beq -
-        jsr GameTick
+        jsr .GameTick
         stz .vsynctrigger
         lda _gamestatus
         cmp #ST_QUITGAME
         bne -
-        jsr EndGame
+        jsr .EndGame
         rts
 
-IrqHandler:
+.IrqHandler:
         ; lda VERA_ISR  ;no support for hardware sprite collisions yet
         ; and #$04
         ; beq +
@@ -68,7 +68,7 @@ IrqHandler:
         ; pla
         ; rti
 
-EndGame:                       
+.EndGame:                       
  	sei                             ;restore default irq handler
 	lda .defaulthandler_lo
 	sta IRQ_HANDLER_L
@@ -82,58 +82,29 @@ EndGame:
 .defaulthandler_hi	!byte 0
 .vsynctrigger           !byte 0
 
-GameTick:
+.GameTick:                              ;Main game loop
         jsr GetJoys                     ;read gamepads and store for all functions to use
         lda _gamestatus               
-
-        cmp #ST_MENU
-        bne +                    
-        ;inc _gamestatus                 ;TEMP - skip menu, start race
-	;jsr SetLayer0ToTileMode         ;TEMP
-	;jsr ClearTextLayer1             ;TEMP
-        jsr HideCars                   ;comment out to skip status menu
-        jsr MenuHandler                ;comment out to skip status menu
-        jsr YCar_TimeReset
-        jsr BCar_TimeReset
-        rts
-
-+       cmp #ST_SETUPRACE               ;ready to race, cars in position, waiting for user input to start/continue race
-        bne +                   
-        jsr InitMap
-	jsr ShowCars
-	jsr YCar_Init
-        jsr BCar_Init
-	jsr InitCamera
-        jsr InitView
-        jsr UpdateView
-        inc _gamestatus
-        rts
-
-+       cmp #ST_READYTORACE
+        cmp #ST_MENU                    ;show start screen and menu
         bne +
-        jsr WaitForStart
-        rts
-
+        bra .ShowMenu
++       cmp #ST_SETUPRACE               ;set up race, prepare everything
+        bne +
+        bra .SetUpRace
++       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
+        bne +
+        bra .WaitForStart
 +       cmp #ST_COLLISION               ;one car has collided, animate explosion
         bne +
-        jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
-        jsr BCar_Explode
-        jsr UpdateStartPosition
-        rts
-
-+       cmp #ST_OUTRUN                  ;one car has outrun the other, this will of course never happen if there is only one player 
+        bra .HandleCollision
++       cmp #ST_OUTRUN                  ;one car has outrun the other (only two players) 
         bne +
-        jsr HideCars
-        lda _bcaroutrun
-        jsr ShowPenaltyText
-        jsr UpdateStartPosition
-        rts
-
+        bra .HandleOutrun
 +       cmp #ST_RACEOVER                ;race over, announce winner
         bne + 
-        ;jsr AnnounceWinner             ;TODO
-        rts
+        ;bra AnnounceWinner             ;TODO
 
+        ;race is on
 +       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
         jsr YCar_DetectCollision        ;check if the car has collided
@@ -147,7 +118,33 @@ GameTick:
 +       jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
         rts
 
-WaitForStart:
+.ShowMenu:
+        ;inc _gamestatus                ;TEMP - skip menu, start race
+	;jsr SetLayer0ToTileMode        ;TEMP
+	;jsr ClearTextLayer1            ;TEMP
+        jsr YCar_Hide                   ;comment out to skip status menu
+        jsr BCar_Hide                   ;comment out to skip status menu
+        jsr MenuHandler                 ;comment out to skip status menu
+        jsr YCar_TimeReset
+        jsr BCar_TimeReset
+        rts
+
+.SetUpRace:
+        jsr InitMap
+	jsr YCar_Init
+        jsr YCar_Show
+        lda _noofplayers
+        cmp #1
+        beq +
+        jsr BCar_Init
+        jsr BCar_Show
++	jsr InitCamera
+        jsr InitView
+        jsr UpdateView
+        inc _gamestatus
+        rts
+
+.WaitForStart:
         lda _joy0
         and #8                  ;player 1 - up pressed?
         bne +
@@ -163,6 +160,21 @@ WaitForStart:
         inc _gamestatus         ;update status to "racing"
 +       rts
 
+.HandleCollision:
+        jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
+        jsr BCar_Explode
+        jsr UpdateStartPosition
+        rts
+
+.HandleOutrun:
+        jsr YCar_Hide
+        jsr BCar_Hide
+        lda _bcaroutrun
+        jsr ShowPenaltyText
+        jsr PlayOutrunSound
+        jsr UpdateStartPosition
+        rts
+
 ;*** Other source files ****************************************************************************
 
 !zone
@@ -177,6 +189,7 @@ WaitForStart:
 !src "x16-rallyspeedway/bluecar.asm"
 !zone
 !src "x16-rallyspeedway/interaction.asm"
+!src "x16-rallyspeedway/soundfx.asm"
 !zone
 !src "x16-rallyspeedway/joystick.asm"
 !zone

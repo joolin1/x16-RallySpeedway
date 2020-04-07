@@ -63,6 +63,8 @@ UpdateStartPosition:                       ;set new start position after collisi
         rts
 
 DetectClash:
+        jsr PlayClashSound
+
         ;calculate horizontal distance      
         lda _bcarxpos_lo                ;bcar pos - ycar pos
         sec
@@ -138,6 +140,7 @@ DetectClash:
         rts
 
 SetOutrun:                              ;if one car is outrun - decide which and set new game status
+        jsr StartOutrunSound
         lda #ST_OUTRUN
         sta _gamestatus
         lda _ycardistance
@@ -155,7 +158,9 @@ SetOutrun:                              ;if one car is outrun - decide which and
 
 _bcaroutrun     !byte   0       ;1 = blue car outrun, 0 = yellow car outrun
 
-SetClash:     
+SetClash:
+        jsr StartClashSound
+
         ;calculate collision angle
         jsr GetClashAngle
         lda .collisionangle        

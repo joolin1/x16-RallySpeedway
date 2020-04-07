@@ -114,6 +114,11 @@ PSG_V3_FREQ_H           = $F9CD
 PSG_V3_PAN_VOL          = $F9CE
 PSG_V3_WF_PW            = $F9CF
 
+PSG_V4_FREQ_L           = $F9D0
+PSG_V4_FREQ_H           = $F9D1
+PSG_V4_PAN_VOL          = $F9D2
+PSG_V4_WF_PW            = $F9D3
+
 ;Palette, base $1FA00
 !addr PALETTE           = $FA00
 

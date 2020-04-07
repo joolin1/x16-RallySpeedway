@@ -26,40 +26,6 @@ SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode backgroun
         sta L0_VSCROLL_H
         rts
 
-ShowCars:
-        jsr VPoke                       ;set palette offset to 1 (yellow car colors), when car explodes palette 0 is used
-        !word SPR1_ATTR_1               
-        !byte %10100001                 
-        jsr VPoke                       ;set palette offset to 2 (blue car colors)
-        !word SPR2_ATTR_1
-        !byte %10100010                 
-
-        jsr VPoke                       ;always enable sprite 1 (yellow car)
-        !word SPR1_ATTR_0
-        !byte COLLISION_MASK + 8 
-
-        lda _noofplayers                ;disable blue car if only one player
-        cmp #1
-        bne +
-        jsr VPoke                       ;one player - disable sprite 2 (blue car)
-        !word SPR2_ATTR_0
-        !byte 0                         
-        rts
-
-+       jsr VPoke                       ;two players - enable sprite 2 (blue car)
-        !word SPR2_ATTR_0
-        !byte COLLISION_MASK + 8
-        rts
-
-HideCars:
-        jsr VPoke                       ;disable sprite 1 (yellow car)
-        !word SPR1_ATTR_0
-        !byte 0
-        jsr VPoke                       ;disable sprite 2 (blue car)
-        !word SPR2_ATTR_0
-        !byte 0
-        rts
-
 ShowPenaltyText:                                ;.A = text color. 0 = yellow, 1 = blue
         clc
         adc #224 + 1                            ;add width and height specification

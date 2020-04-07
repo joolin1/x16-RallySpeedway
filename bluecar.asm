@@ -2,6 +2,8 @@
 
 ;**** Public functions and properties **************************************************************
 
+BCar_Show                       = .Show
+BCar_Hide                       = .Hide
 BCar_ReactOnPlayerInput         = .ReactOnPlayerInput
 BCar_Init                       = .Init
 BCar_UpdatePosition             = .UpdatePosition
@@ -10,7 +12,6 @@ BCar_UpdateStartPosition        = .UpdateStartPosition
 BCar_DetectCollision            = .DetectCollision
 BCar_Explode                    = .Explode
 BCar_TimeReset                  = .TimeReset
-BCar_TimeTick                   = .TimeTick
 BCar_TimeAddSeconds             = .TimeAddSeconds
 
 BCar_DisplayTime:
@@ -54,12 +55,23 @@ _bcarclashangle = .clashangle
 
 .joy = _joy1
 
-.SPR_ADDR_L       = SPR2_ADDR_L
+.SPR_ADDR_L       = SPR2_ADDR_L         ;blue car is sprite 2
 .SPR_MODE_ADDR_H  = SPR2_MODE_ADDR_H
 .SPR_ATTR_0       = SPR2_ATTR_0
 .SPR_ATTR_1       = SPR2_ATTR_1
+
+.PSG_V0_FREQ_L  = PSG_V2_FREQ_L         ;blue car disposes vocice 0 and 1
+.PSG_V0_FREQ_H  = PSG_V2_FREQ_H
+.PSG_V0_PAN_VOL = PSG_V2_PAN_VOL
+.PSG_V0_WF_PW   = PSG_V2_WF_PW
+
+.PSG_V1_FREQ_L  = PSG_V3_FREQ_L
+.PSG_V1_FREQ_H  = PSG_V3_FREQ_H
+.PSG_V1_PAN_VOL = PSG_V3_PAN_VOL
+.PSG_V1_WF_PW   = PSG_V3_WF_PW
 
 .ID = 1
 
 !src "x16-rallyspeedway/car.asm"    ;add an instance of car class
 !src "x16-rallyspeedway/timer.asm"  ;add an instance of timer class
+!src "x16-rallyspeedway/carsoundfx.asm"   ;add an instance of carsound class
