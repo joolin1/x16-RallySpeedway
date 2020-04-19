@@ -1,9 +1,9 @@
 ;*** main.asm - Entry point for game,setup and main game loop **************************************
 !cpu 65c02
 !to "rallyspeedway.prg", cbm
-!src "x16-rallyspeedway/x16.inc"
-!src "x16-rallyspeedway/macros.inc"
-!src "x16-rallyspeedway/constants.inc"
+!src "x16-rallyspeedway/x16.asm"
+!src "x16-rallyspeedway/macros.asm"
+!src "x16-rallyspeedway/constants.asm"
 
 *=$0801
 	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00

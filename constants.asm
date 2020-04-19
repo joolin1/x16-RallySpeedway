@@ -1,4 +1,4 @@
-;*** constants.inc *********************************************************************************
+;*** constants.asm *********************************************************************************
 
 ;Memory layout for screen and graphic resources
 !addr L1_MAP_ADDR       = $0000                     ;       8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
