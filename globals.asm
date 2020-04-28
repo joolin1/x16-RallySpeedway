@@ -1,11 +1,11 @@
 ;*** globals.asm ***********************************************************************************
 
 _gamestatus     !byte   0       
-_noofplayers	!byte   2	;number of players
-_track		    !byte   1	;selected track
-_xstartblock    !byte   2   ;race start position
+_noofplayers	!byte   2       ;number of players
+_track		!byte   1	;selected track
+_xstartblock    !byte   2       ;race start position
 _ystartblock    !byte   2
-_startdirection !byte   0   ;race start direction
+_startdirection !byte   0       ;race start direction
 
 _debug          !byte   0   ;DEBUG - flag for breaking into debugger
 

@@ -17,7 +17,6 @@
 
 .Hide:
         +VPokeI .SPR_ATTR_0,0    ;disable sprite
-        jsr .StopCarSound
         rts
 
 .ReactOnPlayerInput:
@@ -133,7 +132,7 @@
         sta .old_block_ypos
         sta .older_block_ypos
 
-        jsr .StartEngineSound
+        jsr .PlayEngineSound
         jsr .UpdatePosition        
         rts
 
@@ -179,7 +178,7 @@
         cmp #SKID_LIMIT             ;don't increase extra rotation if car is not skidding
         bcc +    
         jsr .IncreaseExtraRotation
-        jsr .StartSkiddingSound
+        jsr .PlaySkiddingSound
         bra ++
 +       jsr .DecreaseExtraRotation
         jsr .StopSkiddingSound
@@ -195,7 +194,6 @@
 
         jsr .TimeTick               ;add a jiffy to the timer
         lda .speed
-        jsr .UpdateEngineSound      ;change engine sound depending on speed   
 
         ;update integer value of cars position
         lda .xpos_lo
@@ -421,17 +419,15 @@
         sta .collisionflag
         lda #%10100000
         +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
-        jsr .StopCarSound
-        jsr .StartExplosionSound
+        jsr StopCarSounds
+        jsr PlayExplosionSound
         rts
 
 .Explode:
         lda .collisionflag
         bne +
-        jsr .StopCarSound               ;this car has not collided, but stop engine sound while the other car explodes
         rts
-+       jsr .PlayExplosionSound
-        lda .animationindex             ;load current animation index
++       lda .animationindex             ;load current animation index
         cmp #12                         ;12 sprites in explosion animation
         beq ++    
 

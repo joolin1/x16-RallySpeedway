@@ -72,7 +72,7 @@ ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 
 TextDelay:
         inc .textdelay                          ;display text for a certain amount of ticks before changing game status
         lda .textdelay
-        cmp #80
+        cmp #140
         beq +
         rts
 +       jsr HideText

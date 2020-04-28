@@ -53,25 +53,18 @@ _ycarclashangle = .clashangle
 
 ;*** Private variables and constants ***************************************************************
 
-.joy = _joy0
+.ID     = 0
+.joy    = _joy0
+
+.PlayEngineSound        = PlayYCarEngineSound
+.PlaySkiddingSound      = PlayYCarSkiddingSound
+.StopSkiddingSound      = StopYCarSkiddingSound
 
 .SPR_ADDR_L       = SPR1_ADDR_L         ;yellow car is sprite 1
 .SPR_MODE_ADDR_H  = SPR1_MODE_ADDR_H
 .SPR_ATTR_0       = SPR1_ATTR_0
 .SPR_ATTR_1       = SPR1_ATTR_1
 
-.PSG_V0_FREQ_L  = PSG_V0_FREQ_L         ;yellow car disposes vocice 0 and 1
-.PSG_V0_FREQ_H  = PSG_V0_FREQ_H
-.PSG_V0_PAN_VOL = PSG_V0_PAN_VOL
-.PSG_V0_WF_PW   = PSG_V0_WF_PW
-
-.PSG_V1_FREQ_L  = PSG_V1_FREQ_L
-.PSG_V1_FREQ_H  = PSG_V1_FREQ_H
-.PSG_V1_PAN_VOL = PSG_V1_PAN_VOL
-.PSG_V1_WF_PW   = PSG_V1_WF_PW
-
-.ID = 0
 
 !src "x16-rallyspeedway/car.asm"        ;add an instance of car class
 !src "x16-rallyspeedway/timer.asm"      ;add an instance of timer class
-!src "x16-rallyspeedway/carsoundfx.asm"   ;add an instance of carsound class

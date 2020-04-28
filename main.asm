@@ -84,6 +84,7 @@
 
 .GameTick:                              ;Main game loop
         jsr GetJoys                     ;read gamepads and store for all functions to use
+        jsr SfxTick                     ;update all sound effects that are currently playing
         lda _gamestatus               
         cmp #ST_MENU                    ;show start screen and menu
         bne +
@@ -99,32 +100,32 @@
         bra .HandleCollision
 +       cmp #ST_OUTRUN                  ;one car has outrun the other (only two players) 
         bne +
-        bra .HandleOutrun
+        jmp .HandleOutrun
 +       cmp #ST_RACEOVER                ;race over, announce winner
         bne + 
-        ;bra AnnounceWinner             ;TODO
+        jmp .AnnounceWinner
 
         ;race is on
 +       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
-        jsr YCar_DetectCollision        ;check if the car has collided
+        ;jsr YCar_DetectCollision        ;check if the car has collided
         lda _noofplayers
         cmp #1
         beq +        
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
-        jsr BCar_DetectCollision
+        ;jsr BCar_DetectCollision
         jsr DetectClash                 ;check if one car has outrun the other or if cars have collided
 +       jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
         rts
 
 .ShowMenu:
-        ;inc _gamestatus                ;TEMP - skip menu, start race
-	;jsr SetLayer0ToTileMode        ;TEMP
-	;jsr ClearTextLayer1            ;TEMP
-        jsr YCar_Hide                   ;comment out to skip status menu
-        jsr BCar_Hide                   ;comment out to skip status menu
-        jsr MenuHandler                 ;comment out to skip status menu
+        inc _gamestatus                ;TEMP - skip menu, start race
+	jsr SetLayer0ToTileMode        ;TEMP
+	jsr ClearTextLayer             ;TEMP
+        ; jsr YCar_Hide                   ;comment out to skip status menu
+        ; jsr BCar_Hide                   ;comment out to skip status menu
+        ; jsr MenuHandler                 ;comment out to skip status menu
         jsr YCar_TimeReset
         jsr BCar_TimeReset
         rts
@@ -171,8 +172,12 @@
         jsr BCar_Hide
         lda _bcaroutrun
         jsr ShowPenaltyText
-        jsr PlayOutrunSound
         jsr UpdateStartPosition
+        rts
+
+.AnnounceWinner:
+        jsr ShowWinnerText
+        ;TODO...
         rts
 
 ;*** Other source files ****************************************************************************
@@ -189,6 +194,7 @@
 !src "x16-rallyspeedway/bluecar.asm"
 !zone
 !src "x16-rallyspeedway/interaction.asm"
+!zone
 !src "x16-rallyspeedway/soundfx.asm"
 !zone
 !src "x16-rallyspeedway/joystick.asm"
