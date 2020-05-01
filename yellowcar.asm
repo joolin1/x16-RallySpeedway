@@ -50,6 +50,7 @@ _ycarspeed = .speed
 _ycarangle = .angle
 _ycarclashpush = .clashpush
 _ycarclashangle = .clashangle
+_ycarfinishflag = .finishflag
 
 ;*** Private variables and constants ***************************************************************
 

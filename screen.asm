@@ -64,9 +64,7 @@ ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 
         +VPokeI SPR13_XPOS_L, 52 + 104
         +VPokeI  SPR4_XPOS_L, 52 + 144
         +VPokeI SPR12_XPOS_L, 52 + 184
-        +VPokeSpritesI SPR3_XPOS_H, 10, 0
-
-        jsr TextDelay        
+        +VPokeSpritesI SPR3_XPOS_H, 10, 0     
         rts
 
 TextDelay:

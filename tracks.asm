@@ -1,9 +1,19 @@
 ;*** tracks.asm - definitions of tracks ************************************************************
 
+;Tile status used for collision detection
+TILE_ROAD = 0                   ;car is on road
+TILE_TERRAIN = 1                ;car is off road, slow down speed
+TILE_OBSTACLE = 2               ;car has collided and will explode
+TILE_FINISH = 3                 ;car has finished race 
 
+;Table for character of tiles
+_tilecollisionstatus:   !byte TILE_TERRAIN,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,TILE_FINISH,TILE_FINISH,TILE_OBSTACLE
 
-;Table for character of tiles (0 = road, 1 = terrain, slows down speed, 2 = objects that cause a collision)
-_tilecollisionstatus:   !byte TILE_TERRAIN,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,TILE_OBSTACLE
+;Block status used for counting distance
+BLOCK_TERRAIN = 0
+BLOCK_ROAD = 1
+BLOCK_HOR_ROAD = 2
+BLOCK_VER_ROAD = 3
 
 ;Table for character of blocks
 _blockroadstatus: !byte BLOCK_TERRAIN
@@ -19,7 +29,7 @@ _blockmap:
         ;track 0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,2,5,5,5,5,5,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 0,2,8,5,5,5,5,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,6,0,0,0,0,0,0,0,3,5,5,5,5,5,5,1,0,0,0,5,5,5,5,5,5,5,5,5,1,0,0
         !byte 0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0
         !byte 0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0
@@ -52,13 +62,13 @@ _blockmap:
 
 _blocks:
         ;0 - grass
-        !word 22, 0, 0, 0 ,0, 0, 0, 0
-        !word  0, 0, 0, 0, 0, 0,22, 0
+        !word 24, 0, 0, 0 ,0, 0, 0, 0
+        !word  0, 0, 0, 0, 0, 0,24, 0
         !word  0, 0, 0, 0, 0, 0, 0, 0
-        !word  0, 0, 0,22, 0, 0, 0, 0
+        !word  0, 0, 0,24, 0, 0, 0, 0
         !word  0, 0, 0, 0, 0, 0, 0, 0
-        !word 22, 0, 0, 0, 0, 0, 0, 0
-        !word  0, 0, 0, 0, 0,22, 0, 0
+        !word 24, 0, 0, 0, 0, 0, 0, 0
+        !word  0, 0, 0, 0, 0,24, 0, 0
         !word  0, 0, 0, 0, 0, 0, 0, 0
 
         ;1 - curve 0-90
@@ -130,3 +140,13 @@ _blocks:
         !word    1,   1,   1,   1,   1,   1,   1,   1
         !word   19,   1,   1,   1,   1,   1,   1,$413
         !word   20,  21,   1,   1,   1,   1,$415,$414
+
+        ;8 - start/goal
+        !word    0,   0,   0,   0,   0,   0,   0,   0
+        !word    2,   2,$016,   2,   2,   2,   2,   2
+        !word    1,   1,  23,   1,   1,   1,   1,   1
+        !word    1,   1,  23,   1,   1,   1,   1,   1
+        !word    1,   1,  23,   1,   1,   1,   1,   1
+        !word    1,   1,  23,   1,   1,   1,   1,   1
+        !word $802,$802,$816,$802,$802,$802,$802,$802
+        !word    0,   0,   0,   0,   0,   0,   0,   0

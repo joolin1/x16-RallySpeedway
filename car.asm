@@ -403,17 +403,20 @@
         tay
         lda _tilecollisionstatus,y       ;read collision status for current tile
 
+        cmp #TILE_ROAD
         bne +
         stz .offroadflag                 ;car is on road
         rts
 
 +       cmp #TILE_TERRAIN
-        bne ++
+        bne +
         lda #1                          ;car is off road
         sta .offroadflag
         rts
 
-++      lda #ST_COLLISION               ;car has collided
+        cmp #TILE_OBSTACLE
+        bne +
+        lda #ST_COLLISION               ;car has collided
         sta _gamestatus
         lda #1
         sta .collisionflag
@@ -421,6 +424,14 @@
         +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
         jsr StopCarSounds
         jsr PlayExplosionSound
+        rts
+
++       lda #ST_RACEOVER                ;car has finished race!
+        sta _gamestatus
+        lda #1
+        sta .finishflag
+        jsr StopCarSounds
+        jsr PlayWinnerSound
         rts
 
 .Explode:
@@ -609,6 +620,7 @@
 
 .offroadflag            !byte 0         ;flag for offroad driving
 .collisionflag          !byte 0         ;flag for collision between car and background
+.finishflag             !byte 0         ;flag for finished race
 .clashpush              !byte 0         ;the force car is pushed by the other car when clashing
 .clashangle             !byte 0         ;direction car is pushed by the other car when clashing
 .speed                  !byte 0         ;fixed point 6.2. 256 = 64.0 = theoretical max speed (+1)

@@ -9,7 +9,7 @@
 	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
 *=$0810
 
-;*** Main program ***********************************************************************
+;*** Main program **********************************************************************************
 
 .StartGame:
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
@@ -94,7 +94,7 @@
         bra .SetUpRace
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
-        bra .WaitForStart
+        jmp .WaitForStart
 +       cmp #ST_COLLISION               ;one car has collided, animate explosion
         bne +
         bra .HandleCollision
@@ -108,13 +108,13 @@
         ;race is on
 +       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
-        ;jsr YCar_DetectCollision        ;check if the car has collided
+        jsr YCar_DetectCollision        ;check if the car has collided
         lda _noofplayers
         cmp #1
         beq +        
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
-        ;jsr BCar_DetectCollision
+        jsr BCar_DetectCollision
         jsr DetectClash                 ;check if one car has outrun the other or if cars have collided
 +       jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
         rts
@@ -145,11 +145,30 @@
         inc _gamestatus
         rts
 
+.HandleCollision:
+        jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
+        jsr BCar_Explode
+        jsr UpdateStartPosition
+        rts
+
+.HandleOutrun:
+        lda _bcaroutrun
+        jsr ShowPenaltyText
+        jsr UpdateStartPosition
+        rts
+
+.AnnounceWinner:
+        lda _ycarfinishflag
+        jsr ShowWinnerText
+        jsr .WaitForEnd
+        rts
+
 .WaitForStart:
         lda _joy0
         and #8                  ;player 1 - up pressed?
         bne +
-        inc _gamestatus
+        lda #ST_RACING
+        sta _gamestatus
         rts
 +       lda _noofplayers
         cmp #2
@@ -158,30 +177,52 @@
 +       lda _joy1               ;give both players the chance to start race
         and #8
         bne +
-        inc _gamestatus         ;update status to "racing"
+        lda #ST_RACING
+        sta _gamestatus
 +       rts
 
-.HandleCollision:
-        jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
-        jsr BCar_Explode
-        jsr UpdateStartPosition
+.WaitForEnd:
+        lda _joy0
+        and #64                 ;player 1 - button A pressed?
+        bne +
+        lda #ST_MENU
+        sta _gamestatus
         rts
++       lda _noofplayers
+        cmp #2
+        beq +
+        rts
++       lda _joy1               ;give both players the chance to end race
+        and #64
+        bne +
+        lda #ST_MENU
+        sta _gamestatus         ;update status to "racing"
++       rts
 
-.HandleOutrun:
-        jsr YCar_Hide
-        jsr BCar_Hide
-        lda _bcaroutrun
-        jsr ShowPenaltyText
-        jsr UpdateStartPosition
-        rts
+;*** Game globals **********************************************************************************
 
-.AnnounceWinner:
-        jsr ShowWinnerText
-        ;TODO...
-        rts
+;Status for game
+ST_MENU         = 0     ;show start screen or menu
+ST_SETUPRACE    = 1     ;draw track, position cars
+ST_READYTORACE  = 2     ;wait for player/s to start race
+ST_RACING       = 3     ;race on
+ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
+ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
+ST_RACEOVER     = 7     ;race is over, winner is announced
+ST_QUITGAME     = 8     ;end game
+
+_gamestatus     !byte   0       
+_noofplayers	!byte   1       ;number of players
+_track		!byte   1	;selected track
+_xstartblock    !byte   2       ;race start position
+_ystartblock    !byte   2
+_startdirection !byte   0       ;race start direction
+
+_debug          !byte   0       ;DEBUG - flag for breaking into debugger
 
 ;*** Other source files ****************************************************************************
 
+!src "x16-rallyspeedway/math.asm"
 !zone
 !src "x16-rallyspeedway/menu.asm"
 !zone
@@ -209,5 +250,4 @@
 !zone
 !src "x16-rallyspeedway/helpers.asm"
 !zone
-!src "x16-rallyspeedway/globals.asm"
 !src "x16-rallyspeedway/tracks.asm"

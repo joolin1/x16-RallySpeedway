@@ -15,16 +15,6 @@
 !addr YCAR_PALETTE      = PALETTE + $20
 !addr BCAR_PALETTE      = PALETTE + $40
 
-;Status for game
-ST_MENU         = 0     ;show start screen or menu
-ST_SETUPRACE    = 1     ;draw track, position cars
-ST_READYTORACE  = 2     ;wait for player/s to start race
-ST_RACING       = 3     ;race on
-ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
-ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
-ST_RACEOVER     = 7     ;race is over, winner is announced
-ST_QUITGAME     = 8     ;end game
-
 ;Menu status
 M_SHOW_START_SCREEN 	= 0
 M_UPDATE_START_SCREEN	= 1
@@ -63,17 +53,6 @@ ANIMATION_DELAY = 4     ;how fast an exploding car is animated
 CAR_START_DISTANCE = 24
 PENALTY_TIME = 1        ;how much time that is added to a car that has been outrun
 COLLISION_TIME = 1      ;how much time that is added for a car that has collided with the background 
-
-;Tile status used for collision detection
-TILE_ROAD = 0                   ;car is on road
-TILE_TERRAIN = 1                ;car is off road, slow down speed
-TILE_OBSTACLE = 2               ;car has collided and will explode
-
-;Block status used for counting distance
-BLOCK_TERRAIN = 0
-BLOCK_ROAD = 1
-BLOCK_HOR_ROAD = 2
-BLOCK_VER_ROAD = 3
 
 ;Sprite collisions
 COLLISION_MASK = %00010000
