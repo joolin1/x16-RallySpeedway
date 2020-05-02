@@ -147,10 +147,13 @@ SetOutrun:                              ;if one car is outrun - decide which and
         bcc +
         lda #1
         sta _bcaroutrun
+        jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr BCar_TimeAddSeconds
         rts
-+       stz _bcaroutrun
++       lda #0
+        sta _bcaroutrun
+        jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr YCar_TimeAddSeconds
         rts        

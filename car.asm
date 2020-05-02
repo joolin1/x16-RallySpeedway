@@ -1,18 +1,14 @@
 ;*** Car.asm - Class definition ********************************************************************
 
 ;This file works as a class definition. Therefore every label is local. An instance of the class is made by including this source file
-;in another file and then map the public funtions here to global instance specifig labels.
-;By including the file, all variables will be added once for every instance. The drawback is that the code is also duplicated. 
+;in another file and then map the public funtions here to global instance specific labels.
+;By including the file, all variables will be added once for every instance. The drawback is that the code is will as well (like a macro). 
 
 ;*** Public functions ******************************************************************************
 
 .Show:
-        +VPokeI .SPR_ATTR_0,COLLISION_MASK+8     ;enable sprite 
-        lda #.ID
-        bne +
-        +VPokeI .SPR_ATTR_1, %10100001   ;set palette offset to 1 (yellow car colors) when car explodes palette 0 is used
-        rts
-+       +VPokeI .SPR_ATTR_1, %10100010   ;set palette offset to 2 (blue car colors)
+        +VPokeI .SPR_ATTR_0,COLLISION_MASK+8            ;enable sprite 
+        +VPokeI .SPR_ATTR_1, %10100000 + .CAR_PALETTE   ;set palette 1 for yellow car and palette 2 for blue car
         rts
 
 .Hide:
@@ -38,12 +34,12 @@
 ++
         pla                     ;DEBUG
         pha                    
-        and #64                 
+        and #JOY_BUTTON_B                 
         bne +
         lda #1
         sta _debug              ;END DEBUG
 +       pla
-        and #128                ;button A?
+        and #JOY_BUTTON_A       ;button A?
         bne +
         jsr .DecreaseSpeed      ;car is braking - slow down
         rts
@@ -72,11 +68,12 @@
         stz .turncount
         stz .clashpush
         stz .clashangle
+        stz .finishflag
 
         lda _noofplayers
         cmp #1
         bne +
-        lda #64                 ;if one player center the only car
+        ldx #64                 ;if one player center the only car
         bra ++        
 +       lda #.ID                ;if two players position cars side by side
         beq +
@@ -84,7 +81,7 @@
         bra ++
 +       ldx #64-CAR_START_DISTANCE/2
 ++      lda _startdirection
-        bit #64
+        bit #64                 ;start direction horizontal or vertical?
         beq +
         stx .xstartoffset
         ldx #64
@@ -414,7 +411,7 @@
         sta .offroadflag
         rts
 
-        cmp #TILE_OBSTACLE
++       cmp #TILE_OBSTACLE
         bne +
         lda #ST_COLLISION               ;car has collided
         sta _gamestatus
@@ -430,6 +427,7 @@
         sta _gamestatus
         lda #1
         sta .finishflag
+        jsr ShowWinnerText
         jsr StopCarSounds
         jsr PlayWinnerSound
         rts

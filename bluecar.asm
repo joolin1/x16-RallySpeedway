@@ -56,6 +56,7 @@ _bcarfinishflag = .finishflag
 
 .ID     = 1
 .joy    = _joy1
+.CAR_PALETTE = 2        ;use palette 2 to make car blue
 
 .PlayEngineSound        = PlayBCarEngineSound
 .PlaySkiddingSound      = PlayBCarSkiddingSound

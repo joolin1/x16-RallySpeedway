@@ -40,9 +40,9 @@ ShowPenaltyText:                                ;.A = text color. 0 = yellow, 1 
         +VPokeI SPR8_XPOS_L, 24 + 200
         +VPokeI SPR9_XPOS_L, 24 + 240 - 256        
         +VPokeSpritesI SPR3_XPOS_H, 6, 0
-        +VPokeI SPR9_XPOS_H, 1           
-        
-        jsr TextDelay
+        +VPokeI SPR9_XPOS_H, 1
+        lda #140
+        sta .textdelay                
         rts
 
 ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 = blue
@@ -64,19 +64,20 @@ ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 
         +VPokeI SPR13_XPOS_L, 52 + 104
         +VPokeI  SPR4_XPOS_L, 52 + 144
         +VPokeI SPR12_XPOS_L, 52 + 184
-        +VPokeSpritesI SPR3_XPOS_H, 10, 0     
+        +VPokeSpritesI SPR3_XPOS_H, 10, 0
+        lda #255
+        sta .textdelay     
         rts
 
 TextDelay:
-        inc .textdelay                          ;display text for a certain amount of ticks before changing game status
+        dec .textdelay          ;display text for a certain amount of ticks before changing game status
         lda .textdelay
-        cmp #140
         beq +
+        lda #0
         rts
 +       jsr HideText
-        lda #ST_SETUPRACE
-        sta _gamestatus
         stz .textdelay
+        lda #1                  ;flag delay finished
         rts
 
 .textdelay      !byte 0

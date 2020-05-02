@@ -1,8 +1,17 @@
 ;*** Joystick functions ********************************************************
 
-JOYSTICK_NOT_PRESENT = 0
-JOYSTICK_TYPE_NES = 1
-JOYSTICK_TYPE_SNES = 2
+JOYSTICK_NOT_PRESENT    = 0
+JOYSTICK_TYPE_NES       = 1
+JOYSTICK_TYPE_SNES      = 2
+
+JOY_BUTTON_A    = 128
+JOY_BUTTON_B    = 64
+JOY_SELECT      = 32
+JOY_START       = 16
+JOY_UP          = 8
+JOY_DOWN        = 4
+JOY_LEFT        = 2
+JOY_RIGHT       = 1
 
 _joy0type:	!byte 0
 _joy1type:	!byte 0

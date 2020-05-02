@@ -152,14 +152,18 @@
         rts
 
 .HandleOutrun:
-        lda _bcaroutrun
-        jsr ShowPenaltyText
+        jsr TextDelay
+        bne +
+        rts
         jsr UpdateStartPosition
+        lda #ST_READYTORACE
+        sta _gamestatus
         rts
 
 .AnnounceWinner:
-        lda _ycarfinishflag
-        jsr ShowWinnerText
+        jsr TextDelay
+        bne +
+        rts
         jsr .WaitForEnd
         rts
 
@@ -183,21 +187,20 @@
 
 .WaitForEnd:
         lda _joy0
-        and #64                 ;player 1 - button A pressed?
-        bne +
-        lda #ST_MENU
-        sta _gamestatus
-        rts
-+       lda _noofplayers
+        and #JOY_BUTTON_A       ;player 1 - button A pressed?
+        beq ++
+        lda _noofplayers
         cmp #2
         beq +
         rts
 +       lda _joy1               ;give both players the chance to end race
-        and #64
-        bne +
+        and #JOY_BUTTON_A
+        beq ++
+        rts      
+++      jsr HideText
         lda #ST_MENU
-        sta _gamestatus         ;update status to "racing"
-+       rts
+        sta _gamestatus
+        rts
 
 ;*** Game globals **********************************************************************************
 

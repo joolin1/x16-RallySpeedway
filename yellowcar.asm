@@ -55,6 +55,7 @@ _ycarfinishflag = .finishflag
 ;*** Private variables and constants ***************************************************************
 
 .ID     = 0
+.CAR_PALETTE = 1        ;use palette 1 to make car yellow
 .joy    = _joy0
 
 .PlayEngineSound        = PlayYCarEngineSound
