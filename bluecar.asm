@@ -51,11 +51,13 @@ _bcarangle = .angle
 _bcarclashpush = .clashpush
 _bcarclashangle = .clashangle
 _bcarfinishflag = .finishflag
+_bcarpenaltycount = .penaltycount       ;decimal mode
+_bcarcollisioncount = .collisioncount   ;decimal mode
 
 ;*** Private variables and constants ***************************************************************
 
 .ID     = 1
-.joy    = _joy1
+.joy    = _joy1         ;use gamepad 2
 .CAR_PALETTE = 2        ;use palette 2 to make car blue
 
 .PlayEngineSound        = PlayBCarEngineSound

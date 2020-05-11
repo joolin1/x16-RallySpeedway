@@ -69,6 +69,8 @@
         stz .clashpush
         stz .clashangle
         stz .finishflag
+        stz .penaltycount
+        stz .collisioncount
 
         lda _noofplayers
         cmp #1
@@ -417,6 +419,9 @@
         sta _gamestatus
         lda #1
         sta .collisionflag
+        sed
+        inc .collisioncount             ;count number of collisions in decimal mode
+        cld
         lda #%10100000
         +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
         jsr StopCarSounds
@@ -427,9 +432,10 @@
         sta _gamestatus
         lda #1
         sta .finishflag
-        jsr ShowWinnerText
+        jsr ShowFinishedText
+        ;jsr ShowDetailsText
         jsr StopCarSounds
-        jsr PlayWinnerSound
+        jsr PlayFinishedSound
         rts
 
 .Explode:
@@ -647,3 +653,5 @@
 .checkpointdirection    !byte 0         ;direction last checkpoint was passed. 
 .block                  !byte 0         ;which type of block car is on
 .distance               !byte 0         ;how many blocks the car has passed
+.penaltycount           !byte 0         ;how many times the car has got a time penalty (decimal mode!)
+.collisioncount         !byte 0         ;how many times the cas has collided/crashed (decimal mode!)

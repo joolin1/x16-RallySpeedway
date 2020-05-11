@@ -1,5 +1,17 @@
 ;*** Load graphic resources to VRAM ****************************************************************
 
+;Memory layout for screen and graphic resources
+!addr L1_MAP_ADDR       = $0000                   ;         8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
+                                                  ;              | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = $1e00
+!addr L0_MAP_ADDR       = $2000                   ;         8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode
+                                                  ;Total   16 Kb of screen memory
+                                                  
+!addr TILE_ADDR         = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes
+!addr CARS_ADDR         = $8000                   ;       8.5 Kb | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16 = $2200 bytes 
+!addr EXPLOSION_ADDR    = CARS_ADDR + $2200       ;         6 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16 = $1800 bytes
+!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        14 Kb | 14 text sprites      (64 rows x 16 bytes/row) ->  14 x 64 x 16 = $3800 bytes
+                                                  ;Total 44.5 Kb of graphical resources
+
 ;Graphic resources to load
 .tilesname              !raw "X16-RALLYSPEEDWAY/TILES.BIN",0
 .carsname               !raw "X16-RALLYSPEEDWAY/CARS.BIN",0
@@ -25,7 +37,7 @@
                 !scr ": MISSING FILENAME",0
                 !scr ": ILLEGAL DEVICE NUMBER",0
 
-.errorflag      !byte   0   ;at least one i/o error has occured if set
+.errorflag      !byte   0   ;at least one i/o error has occurred if set
 
 LoadGraphics:
         stz .errorflag
@@ -99,7 +111,7 @@ LoadGraphics:
         ldx #$08            ;device
         ldy #$00  
         jsr SETLFS
-        lda #2              ;0 = load, 1 - verify, 2 - VRAM bank 0, 3 - VRAM bank 1...
+        lda #2              ;0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
         ldx .loadaddr_lo    ;low address  
         ldy .loadaddr_hi    ;high address  
         jsr LOAD

@@ -45,7 +45,7 @@ ShowPenaltyText:                                ;.A = text color. 0 = yellow, 1 
         sta .textdelay                
         rts
 
-ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 = blue
+ShowFinishedText:                                 ;.A = text color. 0 = yellow, 1 = blue
         clc
         adc #224 + 1                            ;add width and height specification
         +VPokeSprites SPR3_ATTR_1, 11           ;set color for all text sprites
@@ -65,19 +65,17 @@ ShowWinnerText:                                 ;.A = text color. 0 = yellow, 1 
         +VPokeI  SPR4_XPOS_L, 52 + 144
         +VPokeI SPR12_XPOS_L, 52 + 184
         +VPokeSpritesI SPR3_XPOS_H, 10, 0
-        lda #255
+        lda #200
         sta .textdelay     
         rts
 
 TextDelay:
-        dec .textdelay          ;display text for a certain amount of ticks before changing game status
+        dec .textdelay          ;display text for a certain amount of ticks before changing game status. OUT: .A = jiffies left (0 = delay finished)
         lda .textdelay
         beq +
-        lda #0
         rts
 +       jsr HideText
-        stz .textdelay
-        lda #1                  ;flag delay finished
+        lda #0
         rts
 
 .textdelay      !byte 0
@@ -85,6 +83,14 @@ TextDelay:
 HideText:
         +VPokeSpritesI SPR3_ATTR_0, 11, 0       ;disable all text sprites
         rts
+
+ShowDetailsText:
+        ldx #<.ycardetails
+        ldy #>.ycardetails
+        jsr PrintString
+        rts
+
+.ycardetails    !scr "Yellow car",0
 
 
 

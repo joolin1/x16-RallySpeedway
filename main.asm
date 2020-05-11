@@ -85,7 +85,8 @@
 .GameTick:                              ;Main game loop
         jsr GetJoys                     ;read gamepads and store for all functions to use
         jsr SfxTick                     ;update all sound effects that are currently playing
-        lda _gamestatus               
+
+        lda _gamestatus
         cmp #ST_MENU                    ;show start screen and menu
         bne +
         bra .ShowMenu
@@ -98,7 +99,7 @@
 +       cmp #ST_COLLISION               ;one car has collided, animate explosion
         bne +
         bra .HandleCollision
-+       cmp #ST_OUTRUN                  ;one car has outrun the other (only two players) 
++       cmp #ST_OUTRUN                  ;one car has outrun the other (only when two players) 
         bne +
         jmp .HandleOutrun
 +       cmp #ST_RACEOVER                ;race over, announce winner
@@ -153,18 +154,18 @@
 
 .HandleOutrun:
         jsr TextDelay
-        bne +
+        beq +
         rts
-        jsr UpdateStartPosition
++       jsr UpdateStartPosition
         lda #ST_READYTORACE
         sta _gamestatus
         rts
 
 .AnnounceWinner:
         jsr TextDelay
-        bne +
+        beq +
         rts
-        jsr .WaitForEnd
++       jsr .WaitForEnd
         rts
 
 .WaitForStart:

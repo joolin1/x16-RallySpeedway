@@ -150,12 +150,18 @@ SetOutrun:                              ;if one car is outrun - decide which and
         jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr BCar_TimeAddSeconds
+        sed
+        inc _bcarpenaltycount           ;count number of penalties in decimal mode
+        cld
         rts
 +       lda #0
         sta _bcaroutrun
         jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr YCar_TimeAddSeconds
+        sed
+        inc _ycarpenaltycount           ;count number of penalties in decimal mode
+        cld
         rts        
 
 _bcaroutrun     !byte   0       ;1 = blue car outrun, 0 = yellow car outrun

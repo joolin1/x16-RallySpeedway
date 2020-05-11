@@ -266,7 +266,7 @@ PlayExplosionSound:
 .explosion_index        !byte 0
 .explosion_delay        !byte 0
 
-PlayWinnerSound:
+PlayFinishedSound:
         ldy #PLAYING_WINNER1
         lda #1
         sta _playingtable,y

@@ -51,12 +51,14 @@ _ycarangle = .angle
 _ycarclashpush = .clashpush
 _ycarclashangle = .clashangle
 _ycarfinishflag = .finishflag
+_ycarpenaltycount = .penaltycount       ;decimal mode
+_ycarcollisioncount = .collisioncount   ;decimal mode
 
 ;*** Private variables and constants ***************************************************************
 
 .ID     = 0
+.joy    = _joy0         ;use gamepad 1
 .CAR_PALETTE = 1        ;use palette 1 to make car yellow
-.joy    = _joy0
 
 .PlayEngineSound        = PlayYCarEngineSound
 .PlaySkiddingSound      = PlayYCarSkiddingSound
