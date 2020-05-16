@@ -12,6 +12,10 @@ InitScreenAndSprites:
         sta DC_HSCALE           ;set horizontal scale to 2:1
         sta DC_VSCALE
 
+        lda #0
+       	+VPoke PALETTE+22	;change dark grey to black in first palette, otherwise we cannot show black because orginal black is transparent
+	+VPoke PALETTE+23
+
         ;Init text sprites
         lda #<TEXT_ADDR 
         sta ZP0
@@ -22,7 +26,7 @@ InitScreenAndSprites:
         lda #<SPR3_ADDR_L       ;low byte of address attribute for first text sprite
         sta ZP2
 
-        ldx #10                 ;number of sprites
+        ldx #14                 ;number of sprites
 -       jsr .VPokeSpriteAddr
         lda ZP0                 ;add 1024/32=32 to get address of next sprite
         clc
@@ -38,29 +42,46 @@ InitScreenAndSprites:
         dex
         bne -
 
-        ;Add an extra "N"-sprite due to the fact that "WINNER" is spelled with two n:s
+        ;Add an extra "I"-sprite due to the fact that "FINISHED" is spelled with two n:s
         lda #<TEXT_ADDR      
         sta ZP0
         lda #>TEXT_ADDR
         sta ZP1
         +DivideBy32 ZP0
-        lda ZP0                         ;add 64 to get address of "N" sprite
+        lda ZP0                 
         clc
-        adc #64
+        adc #160                ;add 32 * 5 (= index for sprite) = 160 to get address of "I" sprite
         sta ZP0
         lda ZP1
         adc #0
         sta ZP1
         jsr .VPokeSpriteAddr
 
-        +VPokeSpritesI SPR3_YPOS_L, 11, 98
-        +VPokeSpritesI SPR3_YPOS_H, 11, 0
+        lda ZP2                 
+        clc
+        adc #8                  ;add 8 to get address attribute of next sprite
+        sta ZP2
 
-        +VPokeSpritesI SPR3_ATTR_0, 11, 0         ;disable all text sprites for now
-        +VPokeSpritesI SPR3_ATTR_1, 11, %11100000 ;set height to 64 pixels and width to 32
+        ;Add an extra "N"-sprite due to the fact that "WINNER" is spelled with two n:s
+        lda #<TEXT_ADDR      
+        sta ZP0
+        lda #>TEXT_ADDR
+        sta ZP1
+        +DivideBy32 ZP0
+        lda ZP0                         
+        clc
+        adc #224                ;add 32 * 7 (= index for sprite) = 224 to get address of "N" sprite
+        sta ZP0
+        lda ZP1
+        adc #0
+        sta ZP1
+        jsr .VPokeSpriteAddr
+
+        +VPokeSpritesI SPR3_ATTR_0, 16, 0         ;disable all text sprites for now
+        +VPokeSpritesI SPR3_ATTR_1, 16, %11100000 ;set height to 64 pixels and width to 32
         rts
 
-.VPokeSpriteAddr:                ;set address attributes for sprites
+.VPokeSpriteAddr:               ;set address attributes for sprites
         lda ZP2                 ;which sprite attribute address is in ZP2
         sta VERA_ADDR_L
         lda #>SPR_ADDR
@@ -85,6 +106,11 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         lda #128
         sta DC_HSCALE           ;set horizontal scale to 1:1
         sta DC_VSCALE           ;set vertical scale to 1:1
+
+       	lda #$33
+	+VPoke PALETTE+22	;restore black to dark grey
+	lda #$03
+	+VPoke PALETTE+23
 
         lda #%01100000
         sta L1_CONFIG           ;enable layer 1 in 16 color text mode 

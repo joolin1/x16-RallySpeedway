@@ -241,3 +241,48 @@ PSG_V4_WF_PW            = $F9D3
 !addr SPR13_YPOS_H      = $FC6D
 !addr SPR13_ATTR_0      = $FC6E
 !addr SPR13_ATTR_1      = $FC6F
+
+!addr SPR14_ADDR_L      = $FC70
+!addr SPR14_MODE_ADDR_H = $FC71
+!addr SPR14_XPOS_L      = $FC72
+!addr SPR14_XPOS_H      = $FC73
+!addr SPR14_YPOS_L      = $FC74
+!addr SPR14_YPOS_H      = $FC75
+!addr SPR14_ATTR_0      = $FC76
+!addr SPR14_ATTR_1      = $FC77
+
+!addr SPR15_ADDR_L      = $FC78
+!addr SPR15_MODE_ADDR_H = $FC79
+!addr SPR15_XPOS_L      = $FC7A
+!addr SPR15_XPOS_H      = $FC7B
+!addr SPR15_YPOS_L      = $FC7C
+!addr SPR15_YPOS_H      = $FC7D
+!addr SPR15_ATTR_0      = $FC7E
+!addr SPR15_ATTR_1      = $FC7F
+
+!addr SPR16_ADDR_L      = $FC80
+!addr SPR16_MODE_ADDR_H = $FC81
+!addr SPR16_XPOS_L      = $FC82
+!addr SPR16_XPOS_H      = $FC83
+!addr SPR16_YPOS_L      = $FC84
+!addr SPR16_YPOS_H      = $FC85
+!addr SPR16_ATTR_0      = $FC86
+!addr SPR16_ATTR_1      = $FC87
+
+!addr SPR17_ADDR_L      = $FC88
+!addr SPR17_MODE_ADDR_H = $FC89
+!addr SPR17_XPOS_L      = $FC8A
+!addr SPR17_XPOS_H      = $FC8B
+!addr SPR17_YPOS_L      = $FC8C
+!addr SPR17_YPOS_H      = $FC8D
+!addr SPR17_ATTR_0      = $FC8E
+!addr SPR17_ATTR_1      = $FC8F
+
+!addr SPR18_ADDR_L      = $FC90
+!addr SPR18_MODE_ADDR_H = $FC91
+!addr SPR18_XPOS_L      = $FC92
+!addr SPR18_XPOS_H      = $FC93
+!addr SPR18_YPOS_L      = $FC94
+!addr SPR18_YPOS_H      = $FC95
+!addr SPR18_ATTR_0      = $FC96
+!addr SPR18_ATTR_1      = $FC97

@@ -12,6 +12,23 @@
 !addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        14 Kb | 14 text sprites      (64 rows x 16 bytes/row) ->  14 x 64 x 16 = $3800 bytes
                                                   ;Total 44.5 Kb of graphical resources
 
+;Special characters used for board shadow effect
+BOTTOM_RIGHT_BORDER = 27
+BOTTOM_LEFT_BORDER  = 28
+TOP_RIGHT_BORDER    = 29
+RIGHT_BORDER        = 31
+BOTTOM_BORDER       = 36
+
+;Special characters used in menu
+SPACE	 	= 32	;
+END_LINE_DIV	= 34 	;"
+BLOCK		= 35	;#
+MIDDLE_LINE_DIV	= 37 	;%
+FIRST_LINE_DIV 	= 38	;&
+HAND    	= 40 	;hand is char 40-42 = ()*
+COLON           = 58    ;:
+
+
 ;Graphic resources to load
 .tilesname              !raw "X16-RALLYSPEEDWAY/TILES.BIN",0
 .carsname               !raw "X16-RALLYSPEEDWAY/CARS.BIN",0
@@ -125,20 +142,20 @@ PrintErrorMessage:
         pha    
         ldx #<.message1
         ldy #>.message1
-        jsr PrintString                 ;print "failed to load"          
+        jsr KPrintString                ;print "failed to load"          
         ldx .filename_lo
         ldy .filename_hi
-        jsr PrintString                 ;print filename
+        jsr KPrintString                ;print filename
         ldx #<.message2
         ldy #>.message2
-        jsr PrintString                 ;print "i/o error"
+        jsr KPrintString                ;print "i/o error"
         pla
         pha
-        jsr PrintDigit                  ;print error number
+        jsr KPrintDigit                 ;print error number
         pla
         ldx #<.errorarray
         ldy #>.errorarray
-        jsr PrintStringArrayElement     ;print error message
+        jsr KPrintStringArrayElement    ;print error message
         rts   
 
 .CopySpritePalettesToVRAM:
@@ -206,12 +223,12 @@ PrintErrorMessage:
         !byte $00,$fe,$fe,$fe,$38,$38,$38,$38,$00,$e6,$e6,$e6,$e6,$fe,$fe,$fe
         !byte $00,$e6,$e6,$e6,$e6,$7c,$7c,$38,$00,$e6,$e6,$e6,$fe,$fe,$ee,$c6
         !byte $00,$e6,$e6,$3c,$3c,$fe,$e6,$e6,$00,$e6,$e6,$fe,$7c,$38,$38,$38
-        !byte $00,$7e,$1c,$38,$70,$fe,$fe,$fe,$00,$00,$00,$00,$00,$00,$00,$00
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
+        !byte $00,$7e,$1c,$38,$70,$fe,$fe,$fe,$f0,$f0,$f0,$f0,$00,$00,$00,$00
+        !byte $0f,$0f,$0f,$0f,$00,$00,$00,$00,$00,$00,$00,$00,$f0,$f0,$f0,$f0
+        !byte $00,$00,$00,$00,$0f,$0f,$0f,$0f,$f0,$f0,$f0,$f0,$f0,$f0,$f0,$f0
+        !byte $00,$00,$00,$00,$00,$00,$00,$00,$38,$38,$38,$38,$38,$00,$38,$38
         !byte $00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-        !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$ff
+        !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
         !byte $ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$38,$38,$38,$18,$30,$00,$00
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
         !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
@@ -225,6 +242,39 @@ PrintErrorMessage:
         !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00,$00
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de
+        ; !byte $00,$f8,$cc,$f8,$cc,$fe,$fe,$fc,$00,$7c,$e6,$c0,$e6,$fe,$fe,$7c
+        ; !byte $00,$f8,$ec,$e6,$ee,$fe,$fe,$fc,$00,$f0,$c0,$f8,$c0,$fe,$fe,$fe
+        ; !byte $00,$fe,$f0,$fc,$f0,$f0,$f0,$f0,$00,$7c,$e0,$ec,$e6,$fe,$fe,$7c
+        ; !byte $00,$e6,$e6,$e6,$fe,$e6,$e6,$e6,$00,$fe,$38,$38,$38,$fe,$fe,$fe
+        ; !byte $00,$06,$06,$e6,$e6,$fe,$fe,$7c,$00,$e4,$ec,$f8,$f8,$fc,$ee,$ee
+        ; !byte $00,$c0,$c0,$c0,$c0,$fe,$fe,$fe,$00,$c6,$ee,$fe,$fe,$fe,$e6,$e6
+        ; !byte $00,$e6,$e6,$f6,$fe,$fe,$ee,$e6,$00,$7c,$e6,$e6,$e6,$fe,$fe,$7c
+        ; !byte $00,$fc,$e6,$e6,$fe,$fc,$f0,$f0,$00,$7c,$e6,$e6,$ee,$fc,$fe,$7e
+        ; !byte $00,$fc,$e6,$e6,$fe,$fc,$ee,$ee,$00,$7c,$e0,$7c,$0e,$fe,$fe,$fc
+        ; !byte $00,$fe,$fe,$fe,$38,$38,$38,$38,$00,$e6,$e6,$e6,$e6,$fe,$fe,$fe
+        ; !byte $00,$e6,$e6,$e6,$e6,$7c,$7c,$38,$00,$e6,$e6,$e6,$fe,$fe,$ee,$c6
+        ; !byte $00,$e6,$e6,$3c,$3c,$fe,$e6,$e6,$00,$e6,$e6,$fe,$7c,$38,$38,$38
+        ; !byte $00,$7e,$1c,$38,$70,$fe,$fe,$fe,$f0,$f0,$f0,$f0,$00,$00,$00,$00
+        ; !byte $0f,$0f,$0f,$0f,$00,$00,$00,$00,$00,$00,$00,$00,$f0,$f0,$f0,$f0
+        ; !byte $00,$00,$00,$00,$0f,$0f,$0f,$0f,$f0,$f0,$f0,$f0,$f0,$f0,$f0,$f0
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
+        ; !byte $00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+        ; !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$ff
+        ; !byte $ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$38,$38,$38,$18,$30,$00,$00
+        ; !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
+        ; !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$7c,$7c,$00,$00,$00
+        ; !byte $00,$00,$00,$00,$00,$38,$38,$38,$00,$c0,$e0,$70,$38,$1c,$0e,$06
+        ; !byte $00,$7c,$e6,$ee,$f6,$fe,$fe,$7c,$00,$38,$78,$38,$38,$fe,$fe,$fe
+        ; !byte $00,$7c,$ce,$1c,$78,$fe,$fe,$fe,$00,$7e,$06,$1c,$c6,$fe,$fe,$7c
+        ; !byte $00,$1c,$3c,$7c,$dc,$fe,$fe,$1c,$00,$fe,$e0,$fc,$06,$e6,$fe,$7c
+        ; !byte $00,$7c,$e0,$fc,$e6,$fe,$fe,$7c,$00,$fe,$0e,$1e,$3c,$7c,$f8,$f8
+        ; !byte $00,$7c,$ee,$7c,$ee,$fe,$fe,$7c,$00,$7c,$e6,$7e,$0e,$fe,$fc,$f8
+        ; !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00,$00
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
 
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0EE7, $0FFF, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;yellow car (color 2 = yellow)

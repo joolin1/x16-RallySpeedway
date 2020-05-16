@@ -428,14 +428,10 @@
         jsr PlayExplosionSound
         rts
 
-+       lda #ST_RACEOVER                ;car has finished race!
++       lda #ST_FINISH                  ;car has finished race!
         sta _gamestatus
         lda #1
         sta .finishflag
-        jsr ShowFinishedText
-        ;jsr ShowDetailsText
-        jsr StopCarSounds
-        jsr PlayFinishedSound
         rts
 
 .Explode:

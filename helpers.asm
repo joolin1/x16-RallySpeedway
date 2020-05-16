@@ -13,7 +13,9 @@ GetStringLength:                ;IN: .X .Y = address of string terminated with 0
         ply
         rts
 
-PrintString:                    ;IN: .X .Y = address of string terminated with 0.
+;*** Print using kernal **************************************************************************** 
+
+KPrintString:                    ;IN: .X .Y = address of string terminated with 0.
         stx ZP0
         sty ZP1
         ldy #0
@@ -25,7 +27,7 @@ PrintString:                    ;IN: .X .Y = address of string terminated with 0
         bra -
         rts
 
-PrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = string index
+KPrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = string index
         stx ZP0
         sty ZP1
         tax
@@ -38,7 +40,7 @@ PrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = strin
         bne -
         ldx ZP0
         ldy ZP1
-        jsr PrintString
+        jsr KPrintString
         rts
 
 .incAddr:
@@ -47,13 +49,67 @@ PrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = strin
         inc ZP1
 +       rts
 
-PrintDigit:                     ;IN: .A = digit to print
+KPrintDigit:                     ;IN: .A = digit to print
         tay
         lda .number,y
         jsr BSOUT
         rts
 
 .number     !scr "0123456789"
+
+;*** Print to VERA directly ************************************************************************
+
+VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0.
+-       lda (ZP0)
+        inc ZP0
+        bne +
+        inc ZP1
++       cmp #0
+        beq +
+        jsr VPrintChar
+        bra -
++       inc _row
+        rts
+
+VPrintChar:                      ;IN: .A = screen code of character
+        tax
+        lda _col
+        asl
+        sta VERA_ADDR_L
+        lda _row
+        sta VERA_ADDR_M
+        lda #$10
+        sta VERA_ADDR_H      
+        stx VERA_DATA0
+        lda _color
+        sta VERA_DATA0
+        inc _col
+        rts
+
+VPrintDecimalNumber             ;IN: .A = number to print in decimal mode
+        pha
+        lsr
+        lsr
+        lsr
+        lsr
+        beq +
+        jsr VPrintDecimalDigit
++       pla
+        and #15
+        jsr VPrintDecimalDigit
+        rts
+
+VPrintDecimalDigit              ;IN: .A = digit to print
+        clc
+        adc #48
+        jsr VPrintChar
+        rts
+
+_row    !byte 0                 ;current row
+_col    !byte 0                 ;current column
+_color  !byte 0                 ;text color (bg color = upper nybble, fg color = lower nybble)
+
+;***************************************************************************************************
 
 VPoke:  ;routine for poking VRAM that takes inline parameters
         ; example: jsr VPoke           

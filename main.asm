@@ -89,22 +89,25 @@
         lda _gamestatus
         cmp #ST_MENU                    ;show start screen and menu
         bne +
-        bra .ShowMenu
+        jmp .ShowMenu
 +       cmp #ST_SETUPRACE               ;set up race, prepare everything
         bne +
-        bra .SetUpRace
+        jmp .SetUpRace
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
         jmp .WaitForStart
 +       cmp #ST_COLLISION               ;one car has collided, animate explosion
         bne +
-        bra .HandleCollision
+        jmp .HandleCollision
 +       cmp #ST_OUTRUN                  ;one car has outrun the other (only when two players) 
         bne +
         jmp .HandleOutrun
-+       cmp #ST_RACEOVER                ;race over, announce winner
++       cmp #ST_FINISH                  ;race finished, announce winner
         bne + 
-        jmp .AnnounceWinner
+        jmp .FinishRace
++       cmp #ST_RACEOVER                ;wait for players selection of how to continue game
+        bne +
+        jmp .WaitForEnd
 
         ;race is on
 +       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
@@ -146,6 +149,25 @@
         inc _gamestatus
         rts
 
+.WaitForStart:
+        lda _joy0
+        and #8                  ;player 1 - up pressed?
+        bne +
+        ;lda #ST_RACING
+        lda #ST_FINISH
+        sta _gamestatus
+        rts
++       lda _noofplayers
+        cmp #2
+        beq +
+        rts
++       lda _joy1               ;give both players the chance to start race
+        and #8
+        bne +
+        lda #ST_RACING
+        sta _gamestatus
++       rts
+
 .HandleCollision:
         jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
         jsr BCar_Explode
@@ -161,30 +183,14 @@
         sta _gamestatus
         rts
 
-.AnnounceWinner:
-        jsr TextDelay
-        beq +
-        rts
-+       jsr .WaitForEnd
-        rts
-
-.WaitForStart:
-        lda _joy0
-        and #8                  ;player 1 - up pressed?
-        bne +
-        lda #ST_RACING
+.FinishRace:
+        jsr ShowRaceOverText
+        jsr PrintBoard
+        jsr StopCarSounds
+        jsr PlayFinishedSound
+        lda #ST_RACEOVER
         sta _gamestatus
         rts
-+       lda _noofplayers
-        cmp #2
-        beq +
-        rts
-+       lda _joy1               ;give both players the chance to start race
-        and #8
-        bne +
-        lda #ST_RACING
-        sta _gamestatus
-+       rts
 
 .WaitForEnd:
         lda _joy0
@@ -212,8 +218,9 @@ ST_READYTORACE  = 2     ;wait for player/s to start race
 ST_RACING       = 3     ;race on
 ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
 ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
-ST_RACEOVER     = 7     ;race is over, winner is announced
-ST_QUITGAME     = 8     ;end game
+ST_FINISH       = 7     ;race is over, announce winner
+ST_RACEOVER     = 8     ;wait for player/s to continue game
+ST_QUITGAME     = 9     ;end game
 
 _gamestatus     !byte   0       
 _noofplayers	!byte   1       ;number of players
@@ -229,6 +236,8 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !src "x16-rallyspeedway/math.asm"
 !zone
 !src "x16-rallyspeedway/menu.asm"
+!zone
+!src "x16-rallyspeedway/board.asm"
 !zone
 !src "x16-rallyspeedway/map.asm"
 !src "x16-rallyspeedway/view.asm"

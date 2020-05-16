@@ -21,15 +21,6 @@ TRACK_4		=  9
 TRACK_5		= 10
 QUIT_GAME	= 19
 
-;Special characters
-SPACE	 		= 32	;
-MIDDLE_LINE_DIV	= 33 	;!
-END_LINE_DIV	= 34 	;"
-BLOCK			= 35	;#
-FIRST_LINE_DIV 	= 38	;&
-HAND     		= 40 	;hand is char 40-42 = ()*
-COLON           = 58    ;:
-
 ;Constants for car behaviour
 SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
 MAX_SPEED = 24          ;maximum speed that car accelerates to by itself when on road

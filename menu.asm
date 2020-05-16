@@ -113,10 +113,10 @@ HandleUserInput:
 
 +	cmp #QUIT_GAME
 	bne +
-	lda #$33
-	+VPoke PALETTE+22			;restore black to dark grey
-	lda #$03
-	+VPoke PALETTE+23
+	; lda #$33
+	; +VPoke PALETTE+22			;restore black to dark grey
+	; lda #$03
+	; +VPoke PALETTE+23
 	lda #M_SHOW_START_SCREEN
 	sta .menumode				;set menu mode to start screen in case user starts game again
 	lda #ST_QUITGAME
@@ -238,9 +238,9 @@ ShowStartScreen:
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
 	jsr ClearTextLayer
-	lda #0
-	+VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black because orginal black is transparent
-	+VPoke PALETTE+23
+	;lda #0
+	; +VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black because orginal black is transparent
+	; +VPoke PALETTE+23
 
 	lda #<.startscreenbgblocks	;set block table pointer as in parameter
 	sta .blocktable_lo
@@ -349,10 +349,10 @@ ShowMainMenu:
 	rts
 
 CloseMainMenu:
-	lda #$33
-	+VPoke PALETTE+22		;Restore black to dark grey
-	lda #$03
-	+VPoke PALETTE+23
+	; lda #$33
+	; +VPoke PALETTE+22		;Restore black to dark grey
+	; lda #$03
+	; +VPoke PALETTE+23
 	jsr SetLayer0ToTileMode
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
