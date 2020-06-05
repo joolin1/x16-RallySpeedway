@@ -13,13 +13,8 @@ BCar_DetectCollision            = .DetectCollision
 BCar_Explode                    = .Explode
 BCar_TimeReset                  = .TimeReset
 BCar_TimeAddSeconds             = .TimeAddSeconds
-
-BCar_DisplayTime:
-        lda #1          ;white text color
-        ldx #31         ;column
-        ldy #28         ;row
-        jsr .DisplayTime
-        rts
+BCar_TimeSubSeconds             = .TimeSubSeconds
+BCar_DisplayTime                = .DisplayTime
 
 BCar_PrintDebugInformation:         ;DEBUG
         lda #5

@@ -3,7 +3,21 @@
 !to "rallyspeedway.prg", cbm
 !src "x16-rallyspeedway/x16.asm"
 !src "x16-rallyspeedway/macros.asm"
-!src "x16-rallyspeedway/constants.asm"
+
+;Constants for car behaviour
+SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
+MAX_SPEED = 16          ;maximum speed that car accelerates to by itself when on road
+MIN_SPEED = 8           ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
+MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
+SPEED_DELAY = 4         ;how fast the car is accelerating
+BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
+ANIMATION_DELAY = 6     ;how fast an exploding car is animated
+
+CAR_START_DISTANCE = 24 ;space between cars when two players
+PENALTY_TIME = 1        ;how much time that is added to a car that has been outrun
+COLLISION_TIME = 1      ;how much time that is added for a car that has collided with the background 
+
+;*** Basic program ("10 SYS 2064") *****************************************************************
 
 *=$0801
 	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
@@ -104,7 +118,7 @@
         jmp .HandleOutrun
 +       cmp #ST_FINISH                  ;race finished, announce winner
         bne + 
-        jmp .FinishRace
+        jmp .HandleFinishedRace
 +       cmp #ST_RACEOVER                ;wait for players selection of how to continue game
         bne +
         jmp .WaitForEnd
@@ -119,8 +133,9 @@
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
         jsr BCar_DetectCollision
-        jsr DetectClash                 ;check if one car has outrun the other or if cars have collided
-+       jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
+        jsr CheckInteraction            ;check if one car has outrun the other or if cars have collided
++       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
+        jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
         rts
 
 .ShowMenu:
@@ -153,8 +168,8 @@
         lda _joy0
         and #8                  ;player 1 - up pressed?
         bne +
-        ;lda #ST_RACING
-        lda #ST_FINISH
+        lda #ST_RACING
+        ;lda #ST_FINISH
         sta _gamestatus
         rts
 +       lda _noofplayers
@@ -179,11 +194,11 @@
         beq +
         rts
 +       jsr UpdateStartPosition
-        lda #ST_READYTORACE
+        lda #ST_SETUPRACE
         sta _gamestatus
         rts
 
-.FinishRace:
+.HandleFinishedRace:
         jsr ShowRaceOverText
         jsr PrintBoard
         jsr StopCarSounds
@@ -194,14 +209,14 @@
 
 .WaitForEnd:
         lda _joy0
-        and #JOY_BUTTON_A       ;player 1 - button A pressed?
+        and #JOY_START          ;player 1 - start button pressed?
         beq ++
         lda _noofplayers
         cmp #2
         beq +
         rts
 +       lda _joy1               ;give both players the chance to end race
-        and #JOY_BUTTON_A
+        and #JOY_START
         beq ++
         rts      
 ++      jsr HideText
@@ -218,12 +233,12 @@ ST_READYTORACE  = 2     ;wait for player/s to start race
 ST_RACING       = 3     ;race on
 ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
 ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
-ST_FINISH       = 7     ;race is over, announce winner
+ST_FINISH       = 7     ;race is finished, announce winner
 ST_RACEOVER     = 8     ;wait for player/s to continue game
 ST_QUITGAME     = 9     ;end game
 
 _gamestatus     !byte   0       
-_noofplayers	!byte   1       ;number of players
+_noofplayers	!byte   2       ;number of players
 _track		!byte   1	;selected track
 _xstartblock    !byte   2       ;race start position
 _ystartblock    !byte   2
@@ -257,7 +272,7 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !zone
 !src "x16-rallyspeedway/screen.asm"
 !zone
-!src "x16-rallyspeedway/init.asm"
+!src "x16-rallyspeedway/spritetext.asm"
 !zone
 !src "x16-rallyspeedway/vload.asm"
 !zone

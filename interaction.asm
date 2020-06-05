@@ -11,44 +11,32 @@
 .collisionangle = ZP8   ;angle of collision with yellow car as reference point (= center in coordinate system)
 .tableadr       = ZP9   ;(and ZPA) where to read from in atan table
 
-; DetectOutrun: (NO COLLISION CHECK)
-;         ;1 - check horizontal distance      
-;         lda _bcarxpos_lo                ;bcar pos - ycar pos
-;         sec
-;         sbc _ycarxpos_lo
-;         tax                             ;low byte in .X
-;         lda _bcarxpos_hi
-;         sbc _ycarxpos_hi
-;         tay                             ;high byte in .Y
-;         bcs +
-;         txa                             ;if negative result, convert to positive number
-;         eor #$ff                        
-;         inc
-;         tax
-;         tya
-;         eor #$ff
-;         tay
-; +       cpx #44                         ;low byte must be 44 or higher
-;         bcc +
-;         cpy #1                          ;high byte must be 1 (1 * 256 + 44 = 300)
-;         beq SetOutrun                   
+CheckRaceOver:                          ;check if race is over  
+        lda _debug
+        beq +
++       lda _ycarfinishflag
+        bne +
+        rts       
++       lda _ycarspeed
+        beq +
+        rts
++       lda _noofplayers
+        cmp #1
+        bne +
+        lda #ST_FINISH                  ;one player, finish flag is set, speed is 0 -> race over
+        sta _gamestatus
+        rts
++       lda _bcarfinishflag
+        bne +
+        rts
++       lda _bcarspeed
+        beq +
+        rts
++       lda #ST_FINISH                  ;two players, both finish flags set, speed is 0 for both cars - > race over
+        sta _gamestatus
+        rts
 
-;         ;2 - check vertical distance
-; +       lda _bcarypos_lo                ;bcar pos - ycar pos
-;         sec
-;         sbc _ycarypos_lo
-;         tax                             ;low byte in .X
-;         lda _bcarypos_hi
-;         sbc _ycarypos_hi
-;         txa
-;         bcs +
-;         eor #$ff                        ;if negative result, convert to positive number
-;         inc
-; +       cmp #220                        ;low byte must be 220 or higher (high byte is irrelevant)
-;         bcs SetOutrun
-;         rts
-
-UpdateStartPosition:                       ;set new start position after collision or outrun
+UpdateStartPosition:                    ;set new start position after collision or outrun
         lda _noofplayers
         cmp #1
         bne +
@@ -62,7 +50,7 @@ UpdateStartPosition:                       ;set new start position after collisi
 +       jsr BCar_UpdateStartPosition
         rts
 
-DetectClash:
+CheckInteraction:
         ;calculate horizontal distance      
         lda _bcarxpos_lo                ;bcar pos - ycar pos
         sec
@@ -138,7 +126,13 @@ DetectClash:
         rts
 
 SetOutrun:                              ;if one car is outrun - decide which and set new game status
-        jsr StopCarSounds
+        lda _ycarfinishflag             ;if any of the cars have finished the race just abort
+        beq +
+        rts
++       lda _bcarfinishflag
+        beq +
+        rts
++       jsr StopCarSounds
         jsr PlayOutrunSound
         lda #ST_OUTRUN
         sta _gamestatus

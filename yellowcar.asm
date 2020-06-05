@@ -13,13 +13,8 @@ YCar_DetectCollision            = .DetectCollision
 YCar_Explode                    = .Explode
 YCar_TimeReset                  = .TimeReset
 YCar_TimeAddSeconds             = .TimeAddSeconds
-
-YCar_DisplayTime:
-        lda #1          ;white text color
-        ldx #1          ;column
-        ldy #28         ;row
-        jsr .DisplayTime
-        rts
+YCar_TimeSubSeconds             = .TimeSubSeconds
+YCar_DisplayTime                = .DisplayTime
 
 YCar_PrintDebugInformation:  ;DEBUG
         lda #0

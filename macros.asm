@@ -59,6 +59,13 @@
         bne -
 }
 
+!macro Inc16bit .addr {
+        inc .addr
+        bne +
+        inc .addr+1
++       rts
+}
+
 !macro DivideBy16 .address_lo {
         lsr .address_lo+1
         ror .address_lo

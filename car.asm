@@ -17,7 +17,6 @@
 
 .ReactOnPlayerInput:
         lda .joy
-        pha
         and #3
         cmp #1                  ;left?
         bne +
@@ -32,13 +31,18 @@
 +       stz .turncount          ;car is not turning anymore
 
 ++
-        pla                     ;DEBUG
-        pha                    
+        lda .joy                ;DEBUG
         and #JOY_BUTTON_B                 
         bne +
         lda #1
         sta _debug              ;END DEBUG
-+       pla
+
++       lda .finishflag         
+        beq +
+        jsr .StopCar            ;car has finished race, stop by slowing down to speed 0
+        rts
+
++       lda .joy
         and #JOY_BUTTON_A       ;button A?
         bne +
         jsr .DecreaseSpeed      ;car is braking - slow down
@@ -190,12 +194,12 @@
         rts
 
 .UpdateCarProperties:
-
+        lda .finishflag
+        bne +
         jsr .TimeTick               ;add a jiffy to the timer
-        lda .speed
 
         ;update integer value of cars position
-        lda .xpos_lo
++       lda .xpos_lo
         clc
         adc #8                          ;add 8 = 0.5 to round the number instead of truncating it                          
         sta .xpos_lo_int
@@ -419,6 +423,8 @@
         sta _gamestatus
         lda #1
         sta .collisionflag
+        lda .finishflag
+        bne ++
         sed
         inc .collisioncount             ;count number of collisions in decimal mode
         cld
@@ -428,11 +434,11 @@
         jsr PlayExplosionSound
         rts
 
-+       lda #ST_FINISH                  ;car has finished race!
-        sta _gamestatus
-        lda #1
-        sta .finishflag
++       lda #1
+        sta .finishflag                 ;car has finished race!
         rts
+++      stz .speed
+        rts                             ;if car has finished race and is now slowing down, just stop the car abruptly if a collision occurs
 
 .Explode:
         lda .collisionflag
@@ -576,6 +582,22 @@
         bmi +
         dec
         sta .speed
++       rts
+
+.StopCar:
+        inc .brakedelay
+        lda .brakedelay
+        cmp #BRAKE_DELAY
+        bne +
+        stz .brakedelay
+
+        lda .speed
+        beq +
+        dec
+        sta .speed
+        beq +
+        dec
+        sta .speed       
 +       rts
 
 .brakedelay     !byte 0

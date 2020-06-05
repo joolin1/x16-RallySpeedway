@@ -9,7 +9,10 @@ color = ZP0
         rts
 
 .TimeAddSeconds:
-        tax                     ;.A = number of seconds to add
+        cmp #0
+        bne +
+        rts
++       tax                     ;.A = number of seconds to add
 -       jsr .TimeAddSecond
         dex
         bne -
@@ -30,23 +33,44 @@ color = ZP0
         cmp #60
         beq +
         rts
-
 +       stz .seconds
         inc .minutes
         lda .minutes
         cmp #60
         beq +
         rts
-
 +       stz .minutes            ;59:59:59 is max time
+        rts
+
+.TimeSubSeconds:                ;.A = number of seconds to subtract
+        cmp #0
+        bne +
+        rts
++       tax
+-       jsr .TimeSubSecond
+        dex
+        bne -
+        rts
+
+.TimeSubSecond:
+        dec .seconds
+        bmi +
+        rts
++       lda #59
+        sta .seconds
+        dec .minutes
+        bmi +
+        rts
++       lda #59
+        sta .minutes
         rts
 
 .DisplayTime:                   ;.A = text color, .X = column, .Y = row
         sta color
         txa
         asl
-        sta VERA_ADDR_L        ;set start column      
-        sty VERA_ADDR_M       ;set row
+        sta VERA_ADDR_L         ;set start column      
+        sty VERA_ADDR_M         ;set row
         lda #$10
         sta VERA_ADDR_H
         ldx color

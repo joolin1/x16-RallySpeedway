@@ -1,5 +1,31 @@
 ;*** Menu.asm - Start screen, menu, annoncements ******************************* 
 
+;Menu status
+M_SHOW_START_SCREEN 	= 0
+M_UPDATE_START_SCREEN	= 1
+M_SHOW_MAIN_MENU 		= 2
+M_HANDLE_INPUT 			= 3
+
+;Menu item mapping
+START_RACE	=  1
+ONE_PLAYER 	=  3
+TWO_PLAYERS =  4
+TRACK_1		=  6
+TRACK_2		=  7
+TRACK_3		=  8
+TRACK_4		=  9
+TRACK_5		= 10
+QUIT_GAME	= 19
+
+;Special characters used in menu
+SPACE	 		= 32	;
+END_LINE_DIV	= 34 	;"
+BLOCK			= 35	;#
+MIDDLE_LINE_DIV	= 37 	;%
+FIRST_LINE_DIV 	= 38	;&
+HAND    		= 40 	;hand is char 40-42 = ()*
+COLON           = 58    ;:
+
 MenuHandler:
 	lda .menumode
 

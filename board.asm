@@ -1,8 +1,17 @@
 ;*** board.asm - board displayed when race is finished *********************************************
 
-BOARD_COLOR = 12        ;grey 
-BOARD_TEXT_COLOR = 1    ;white
+BOARD_COLORS = $c1      ;bg color = grey, fg color = white 
+BOARD_YELLOW = $c7      ;bg color = grey, fg color = yellow
+BOARD_BLUE   = $c6      ;bg color = grey, fg color = blue  
 
+;Special characters used for board shadow effect
+BOTTOM_RIGHT_BORDER = 27
+BOTTOM_LEFT_BORDER  = 28
+TOP_RIGHT_BORDER    = 29
+RIGHT_BORDER        = 31
+BOTTOM_BORDER       = 36
+
+;*** marcros for printing board ********************************************************************
 !macro PrintBoardShadow .width, .height, .startrow, .startcol {
         ;print bottom shadow
         lda #$0b                ;bg = transparent, fg = black
@@ -45,7 +54,8 @@ BOARD_TEXT_COLOR = 1    ;white
 }
 
 !macro PrintBoard .width, .height, .startrow, .startcol, .text {
-        lda #(BOARD_COLOR<<4) + BOARD_TEXT_COLOR
+        +PrintBoardShadow .width, .height, .startrow, .startcol 
+        lda #BOARD_COLORS
         sta _color
         lda #<.text
         sta ZP0
@@ -60,24 +70,22 @@ BOARD_TEXT_COLOR = 1    ;white
         jsr VPrintString
         ply
         dey
-        bne -
-        +PrintBoardShadow .width, .height, .startrow, .startcol               
+        bne -              
 }
 
 !macro PrintBoardString .row, .col, .text {
-        lda #(BOARD_COLOR<<4) + BOARD_TEXT_COLOR
-        sta _color
         lda #.row
         sta _row
         lda #.col
         sta _col
-        lda .text
+        lda #<.text
+        sta ZP0
+        lda #>.text
+        sta ZP1
         jsr VPrintString
 }
 
 !macro PrintBoardValue .row, .col, .value {
-        lda #(BOARD_COLOR<<4) + BOARD_TEXT_COLOR
-        sta _color
         lda #.row
         sta _row
         lda #.col
@@ -86,55 +94,111 @@ BOARD_TEXT_COLOR = 1    ;white
         jsr VPrintDecimalNumber
 }
 
+!macro PrintYCarTime .row, .col {
+        lda _color
+        ldy #.row
+        ldx #.col
+        jsr YCar_DisplayTime    
+}
+
+!macro PrintBCarTime .row, .col {
+        lda _color
+        ldy #.row
+        ldx #.col
+        jsr BCar_DisplayTime    
+}
+
+;*** public subroutines ****************************************************************************
+
 PrintBoard:
         lda _noofplayers
         cmp #1
+        bne ++
+        jsr .IsRecord
         bne +
         jsr .PrintOnePlayerBoard
         rts
-+       jsr .PrintTwoPlayerBoard
++       jsr .PrintOnePlayerRecordBoard
+        rts
+++      jsr .IsRecord
+        bne +
+        jsr .PrintTwoPlayerBoard
+        rts
++       jsr .PrintTwoPlayerRecordBoard
         rts
 
+;*** private subroutines ***************************************************************************
+
 .PrintOnePlayerBoard:
-        jsr .IsRecord
-        bne +
-        jmp ++ 
-+       +PrintBoard 25, 11,  9,  7, .extsboard
-        +PrintBoardValue    15, 21, _ycarcollisioncount
-        +PrintBoardString   12,  8, .sboardrecord
-        rts
-++      +PrintBoard 25,  9,  9,  7, .sboard
-        +PrintBoardValue    13, 21, _ycarcollisioncount 
+        +PrintBoard 25,  9,  9,  7, .sboard             ;print board
+        +PrintBoardString 16, 7, .sboardcontinue        ;print "press start to continue"
+        jmp +
+
+.PrintOnePlayerRecordBoard:
+        +PrintBoard 25, 11,  9,  7, .sboard             ;print extended board
+        lda #BOARD_YELLOW
+        sta _color
+        +PrintBoardString 16, 7, .sboardrecord          ;print record message
+        lda #BOARD_COLORS
+        sta _color
++       +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
+        +PrintYCarTime 14, 21                           ;print finish time
+        lda _ycarcollisioncount
+        jsr YCar_TimeSubSeconds
+        +PrintYCarTime 12, 21                           ;print race time
         rts
 
 .PrintTwoPlayerBoard:
-        jsr .IsRecord
-        bne +
-        jmp ++ 
-+       +PrintBoard 36, 14,  9,  2, .extdboard
-        +PrintBoardValue    16, 17, _ycarcollisioncount
-        +PrintBoardValue    17, 17, _ycarpenaltycount
-        +PrintBoardValue    16, 28, _bcarcollisioncount
-        +PrintBoardValue    17, 28, _bcarpenaltycount
+        +PrintBoard 36, 11, 9, 2, .dboard
+        +PrintBoardString 18, 2, .dboardcontinue
+        jmp ++
+
+.PrintTwoPlayerRecordBoard:
+        +PrintBoard 36, 13, 9, 2, .dboard
         lda _ycarfinishflag
         beq +
-        +PrintBoardString   12,  7, .dboardrecordycar
-        rts
-+       +PrintBoardString   12,  7, .dboardrecordbcar
-        rts
-++      +PrintBoard 36, 12,  9,  2, .dboard
-        +PrintBoardValue    16, 17, _ycarcollisioncount
-        +PrintBoardValue    17, 17, _ycarpenaltycount
-        +PrintBoardValue    16, 28, _bcarcollisioncount
-        +PrintBoardValue    17, 28, _bcarpenaltycount
+        lda #BOARD_YELLOW
+        sta _color
+        +PrintBoardString 18, 2, .dboardrecordycar
+        bra ++
++       lda #BOARD_BLUE
+        sta _color
+        +PrintBoardString 18, 2, .dboardrecordbcar
+
+++      lda #BOARD_YELLOW
+        sta _color
+        +PrintBoardString 12, 17, .dboardycar
+        lda #BOARD_BLUE
+        sta _color
+        +PrintBoardString 12, 28, .dboardbcar
+        lda #BOARD_COLORS
+        sta _color
+        +PrintBoardValue 14, 17, _ycarcollisioncount
+        +PrintBoardValue 15, 17, _ycarpenaltycount
+        +PrintBoardValue 14, 28, _bcarcollisioncount
+        +PrintBoardValue 15, 28, _bcarpenaltycount
+
+        +PrintYCarTime 16, 17           ;print yellow car finish time
+        lda _ycarcollisioncount
+        jsr YCar_TimeSubSeconds
+        +PrintYCarTime 13, 17           ;print actual race time (without added penalty time)
+        lda _ycarcollisioncount
+        jsr YCar_TimeAddSeconds
+
+        +PrintBCarTime 16, 28           ;print blue car finish time
+        lda _bcarcollisioncount
+        jsr BCar_TimeSubSeconds
+        +PrintBCarTime 13, 28           ;print actual race time (without added penalty time)
+        lda _bcarcollisioncount
+        jsr BCar_TimeAddSeconds
         rts
 
 .IsRecord
         lda #1  ;TODO!
         rts
 
-.extsboard          !scr "                         ",0
-                    !scr "                         ",0
+;*** board data ************************************************************************************
+
 .sboard             !scr "                         ",0
                     !scr "                         ",0
                     !scr "                         ",0
@@ -142,13 +206,13 @@ PrintBoard:
                     !scr "      crashes            ",0
                     !scr "  finish time            ",0
                     !scr "                         ",0
-                    !scr " press start to continue ",0
                     !scr "                         ",0
+                    !scr "                         ",0          ;one player, no record: print to this line and then add "press start to continue" above
+.sboardcontinue     !scr " press start to continue ",0
+                    !scr "                         ",0          ;one player, new record: prints to this line and then add "new record - well done!" above
 
-.sboardrecord       !scr "new record - well done!",0
+.sboardrecord       !scr " new record - well done! ",0
 
-.extdboard          !scr "                                    ",0
-                    !scr "                                    ",0
 .dboard             !scr "                                    ",0
                     !scr "                                    ",0
                     !scr "                                    ",0
@@ -156,11 +220,14 @@ PrintBoard:
                     !scr "     race time                      ",0
                     !scr "       crashes                      ",0
                     !scr "  outdistanced                      ",0
-                    !scr "    time added                      ",0
                     !scr "   finish time                      ",0
                     !scr "                                    ",0
-                    !scr "       press start to continue      ",0
-                    !scr "                                    ",0 
+                    !scr "                                    ",0
+                    !scr "                                    ",0       ;two players, no record: print to this line and then add "press start to continue" above
+.dboardcontinue     !scr "      press start to continue       ",0
+                    !scr "                                    ",0       ;two players, new record: print to this line and then add "new record by NN car" above
 
-.dboardrecordycar   !scr "new record by yellow car!",0
-.dboardrecordbcar   !scr " new record by blue car! ",0
+.dboardrecordycar   !scr "     new record by yellow car!      ",0
+.dboardrecordbcar   !scr "      new record by blue car!       ",0
+.dboardycar         !scr "yellow car",0
+.dboardbcar         !scr "blue car",0

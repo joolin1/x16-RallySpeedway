@@ -110,6 +110,9 @@ UpdateView:
         +VPoke SPR1_YPOS_H, ZP3
 
         jsr YCar_UpdateSprite
+        lda #$01                        ;bg color = transparent, fg = white
+        ldx #1                          ;column
+        ldy #28                         ;row
         jsr YCar_DisplayTime
 
         ;Set position and select sprite for blue car
@@ -154,7 +157,9 @@ UpdateView:
         +VPoke SPR2_YPOS_H, ZP3
         
         jsr BCar_UpdateSprite
-        jsr BCar_DisplayTime
-     
+        lda #$01        ;bg color = transparent, fg color = white
+        ldx #31         ;column
+        ldy #28         ;row
+        jsr BCar_DisplayTime     
         rts
 
