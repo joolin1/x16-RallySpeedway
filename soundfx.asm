@@ -13,7 +13,7 @@ PLAYING_EXPLOSION   = 9
 PLAYING_WINNER1     = 10
 PLAYING_WINNER2     = 11
 
-_playingtable   !fill 12,0      ;boolean table for sound effects (MAKE SURE TO RESERVE THE SAME NUMBER OF BYTES AS NUMBER OF SOUND EFFECTS)
+_playingtable   !fill 12,0      ;boolean table for sound effects (NOTE: Make sure to reserv the same number of bytes as number of sound effects)
 
 !macro SfxPlay .playing_fx, .voice, .length, .repeat, .data, .index, .delay { ;IN: 4 immediate values and 3 vectors
         ldy #.playing_fx

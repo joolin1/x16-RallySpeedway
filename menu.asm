@@ -103,24 +103,12 @@ HandleUserInput:
 	lda _joy0
 	bit #8						;up?
 	bne +
--	dec .handrow
-	lda .handrow
-	and #31
-	sta .handrow
-	tay
-	lda .mainmenu,y
-	beq -
+	jsr DecreaseHandRow
 
 +	lda _joy0
 	bit #4						;down?
 	bne +
--	inc .handrow
-	lda .handrow
-	and #31
-	sta .handrow
-	tay
-	lda .mainmenu,y
-	beq -
+	jsr IncreaseHandrow
 
 	;handle button
 +	lda _joy0	
@@ -225,6 +213,29 @@ HandleUserInput:
 	rts
 
 .inputwait	!byte 0			;boolean, when true wait for user to release controller
+
+IncreaseHandrow:
+-	inc .handrow
+	lda .handrow
+	cmp #MENU_ROW_COUNT
+	bne +
+	lda #0
+	sta .handrow
++	tay
+	lda .mainmenu,y
+	beq -
+ 	rts
+
+DecreaseHandRow:
+-	dec .handrow
+	lda .handrow
+	bpl +
+	lda #MENU_ROW_COUNT-1
+	sta .handrow
++	tay
+	lda .mainmenu,y
+	beq -
+	rts
 
 ClearHand:
 	lda #8					;print hand from col 4 to 6
@@ -352,22 +363,25 @@ ShowMainMenu:
 	lda #MIDDLE_LINE_DIV
 	jsr PrintLineLayer1	
 
-	jsr PrintTextLineLayer1			;"show best l\t"
-	jsr PrintTextLineLayer1			;"reset best l\t"
+	jsr PrintTextLineLayer1			;"Reset leaderboard"
 	lda #MIDDLE_LINE_DIV
 	jsr PrintLineLayer1	
 
 	jsr PrintTextLineLayer1			;"quit game"
 	lda #END_LINE_DIV
 	jsr PrintLineLayer1
+	jsr PrintTextLineLayer1			;(empty row)
+	jsr PrintTextLineLayer1			;"Leaderboard"
+	jsr PrintTextLineLayer1			;"Time Name"
+	jsr PrintTextLineLayer1			;"Track 1"
+	jsr PrintTextLineLayer1			;"Track 2"
+	jsr PrintTextLineLayer1			;"Track 3"
+	jsr PrintTextLineLayer1			;"Track 4"
+	jsr PrintTextLineLayer1			;"Track 5"
+	jsr PrintTextLineLayer1			;(empty row)
 
-	ldx #9
--	lda #BLOCK
-	phx
+	lda #BLOCK
 	jsr PrintLineLayer1
-	plx
-	dex
-	bne -
 
 	lda #1
 	sta .handrow
@@ -623,7 +637,7 @@ PrintTextLineLayer1:
 		!byte	15 ;light grey 12 ;grey
 		!byte    8 ;orange
 		!byte	 4 ;violet/purple
-		!byte	13 ;light green
+		!byte	12 ;grey
 		!byte	10 ;light red 
 
 .startscreentext:
@@ -660,19 +674,29 @@ PrintTextLineLayer1:
 !scr "          load trax                     "
 !scr "          make trax                     "
 !scr "          save trax                     "
-!scr "          show best l/t                 "
-!scr "          reset best l/t                "
+!scr "          reset leaderboard             "
 !scr "          quit game                     "
+!scr "                                        "
+!scr "       leaderboard                      "
+!scr "               time     name            "
+!scr "       track 1 00:00:00 johan k         "
+!scr "       track 2                          "
+!scr "       track 3                          "
+!scr "       track 4                          "
+!scr "       track 5                          "
+!scr "                                        "
 
 .mainmenubgblocks
-!byte 2,3,6,4,3,2,0				;table for how many rows each block is, zero terminated
+!byte 2,3,6,4,2,2,10,0				;table for how many rows each block is, zero terminated
 
-.mainmenu	 					;menu rows with colors, , 1 = white color, $b = non transparent 
-				!byte 0			;0 = divider row, not a menu item
-.startrace		!byte 1  		;1 = white color
+MENU_ROW_COUNT = 20
+
+.mainmenu	 						;menu rows with colors, , 1 = white color, $b = non transparent 
+				!byte 0				;0 = divider row, not a menu item
+.startrace		!byte 1  			;1 = white color
 				!byte 0
 .oneplayer		!byte 1
-.twoplayers		!byte $b		;$b = nontransparent black color representing that item not selected
+.twoplayers		!byte $b			;$b = nontransparent black color representing that item not selected
 				!byte 0
 .track1			!byte 1
 .track2			!byte $b
@@ -684,8 +708,9 @@ PrintTextLineLayer1:
 .maketrax		!byte 1
 .savetrax		!byte 1
 				!byte 0
-.showbest		!byte 1
 .resetbest		!byte 1
 				!byte 0
 .quitgame		!byte 1
-				!byte 0,0,0,0,0,0,0,0,0,0,0,0 ;total count = 32 (easier to wrap around)
+				!byte 0
+				!byte 1,1,1,1,1,1,1,1,1	;leaderboard rows (not part of the actual menu)
+

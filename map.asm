@@ -30,11 +30,11 @@ InitMap:
         adc #0
         sta ZP1
         
-        lda #<_blockmap
+        lda _blockmap_lo
         clc
         adc ZP0                 ;add base address of blockmap
         sta ZP0
-        lda #>_blockmap
+        lda _blockmap_hi
         adc ZP1                 ;now ZP0 and ZP1 = address of current block
         sta ZP1
 
@@ -129,10 +129,10 @@ UpdateMapColumn:                        ;IN: column offset in .A (0 = update for
         
         lda ZP0                         ;add base address of block map
         clc
-        adc #<_blockmap
+        adc _blockmap_lo
         sta ZP0
         lda ZP1
-        adc #>_blockmap
+        adc _blockmap_hi
         sta ZP1                         ;finally address of current block to copy is in ZP0 and ZP1
 
         ;Calculate destination address
@@ -227,10 +227,10 @@ UpdateMapRow:                           ;IN: row offset in .A (0 = update for sc
 
         lda ZP0                         ;add base address of block map
         clc
-        adc #<_blockmap
+        adc _blockmap_lo
         sta ZP0
         lda ZP1
-        adc #>_blockmap
+        adc _blockmap_hi
         sta ZP1                         ;finally address of current block to copy is in ZP0 and ZP1
 
         ;Calculate destination address in tile map

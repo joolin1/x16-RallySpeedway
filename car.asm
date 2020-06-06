@@ -255,10 +255,10 @@
         
         lda ZP0                 ;add base address
         clc
-        adc #<_blockmap
+        adc _blockmap_lo
         sta ZP0
         lda ZP1
-        adc #>_blockmap                  
+        adc _blockmap_hi                  
         sta ZP1                 ;now ZP0 and ZP1 = address in block map where to read current block
         lda (ZP0)               ;load current block
         sta .block

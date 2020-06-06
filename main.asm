@@ -139,17 +139,18 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         rts
 
 .ShowMenu:
-        inc _gamestatus                ;TEMP - skip menu, start race
-	jsr SetLayer0ToTileMode        ;TEMP
-	jsr ClearTextLayer             ;TEMP
-        ; jsr YCar_Hide                   ;comment out to skip status menu
-        ; jsr BCar_Hide                   ;comment out to skip status menu
-        ; jsr MenuHandler                 ;comment out to skip status menu
+        ;inc _gamestatus                ;TEMP - skip menu, start race
+	;jsr SetLayer0ToTileMode        ;TEMP
+	;jsr ClearTextLayer             ;TEMP
+        jsr YCar_Hide                   ;comment out to skip status menu
+        jsr BCar_Hide                   ;comment out to skip status menu
+        jsr MenuHandler                 ;comment out to skip status menu
         jsr YCar_TimeReset
         jsr BCar_TimeReset
         rts
 
 .SetUpRace:
+        jsr SetTrack
         jsr InitMap
 	jsr YCar_Init
         jsr YCar_Show
@@ -238,12 +239,7 @@ ST_RACEOVER     = 8     ;wait for player/s to continue game
 ST_QUITGAME     = 9     ;end game
 
 _gamestatus     !byte   0       
-_noofplayers	!byte   2       ;number of players
-_track		!byte   1	;selected track
-_xstartblock    !byte   2       ;race start position
-_ystartblock    !byte   2
-_startdirection !byte   0       ;race start direction
-
+_noofplayers	!byte   1       ;number of players
 _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 
 ;*** Other source files ****************************************************************************

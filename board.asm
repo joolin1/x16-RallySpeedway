@@ -130,12 +130,12 @@ PrintBoard:
 ;*** private subroutines ***************************************************************************
 
 .PrintOnePlayerBoard:
-        +PrintBoard 25,  9,  9,  7, .sboard             ;print board
+        +PrintBoard 25, 9, 9, 7, .sboard                ;print board
         +PrintBoardString 16, 7, .sboardcontinue        ;print "press start to continue"
         jmp +
 
 .PrintOnePlayerRecordBoard:
-        +PrintBoard 25, 11,  9,  7, .sboard             ;print extended board
+        +PrintBoard 25, 11, 9, 7, .sboard               ;print extended board
         lda #BOARD_YELLOW
         sta _color
         +PrintBoardString 16, 7, .sboardrecord          ;print record message
@@ -199,35 +199,35 @@ PrintBoard:
 
 ;*** board data ************************************************************************************
 
-.sboard             !scr "                         ",0
-                    !scr "                         ",0
-                    !scr "                         ",0
-                    !scr "    race time            ",0
-                    !scr "      crashes            ",0
-                    !scr "  finish time            ",0
-                    !scr "                         ",0
-                    !scr "                         ",0
-                    !scr "                         ",0          ;one player, no record: print to this line and then add "press start to continue" above
-.sboardcontinue     !scr " press start to continue ",0
-                    !scr "                         ",0          ;one player, new record: prints to this line and then add "new record - well done!" above
+.sboard                 !scr "                         ",0
+                        !scr "                         ",0
+                        !scr "                         ",0
+                        !scr "    race time            ",0
+                        !scr "      crashes            ",0
+                        !scr "  finish time            ",0
+                        !scr "                         ",0
+                        !scr "                         ",0
+                        !scr "                         ",0          ;one player, no record: print to this line and then add "press start to continue" above
+.sboardcontinue         !scr " press start to continue ",0
+                        !scr "                         ",0          ;one player, new record: prints to this line and then add "new record - well done!" above
 
-.sboardrecord       !scr " new record - well done! ",0
+.sboardrecord           !scr " new record - well done! ",0
 
-.dboard             !scr "                                    ",0
-                    !scr "                                    ",0
-                    !scr "                                    ",0
-                    !scr "               yellow car blue car  ",0
-                    !scr "     race time                      ",0
-                    !scr "       crashes                      ",0
-                    !scr "  outdistanced                      ",0
-                    !scr "   finish time                      ",0
-                    !scr "                                    ",0
-                    !scr "                                    ",0
-                    !scr "                                    ",0       ;two players, no record: print to this line and then add "press start to continue" above
-.dboardcontinue     !scr "      press start to continue       ",0
-                    !scr "                                    ",0       ;two players, new record: print to this line and then add "new record by NN car" above
+.dboard                 !scr "                                    ",0
+                        !scr "                                    ",0
+                        !scr "                                    ",0
+                        !scr "               yellow car blue car  ",0
+                        !scr "     race time                      ",0
+                        !scr "       crashes                      ",0
+                        !scr "  outdistanced                      ",0
+                        !scr "   finish time                      ",0
+                        !scr "                                    ",0
+                        !scr "                                    ",0
+                        !scr "                                    ",0       ;two players, no record: print to this line and then add "press start to continue" above
+.dboardcontinue         !scr "      press start to continue       ",0
+                        !scr "                                    ",0       ;two players, new record: print to this line and then add "new record by NN car" above
 
-.dboardrecordycar   !scr "     new record by yellow car!      ",0
-.dboardrecordbcar   !scr "      new record by blue car!       ",0
-.dboardycar         !scr "yellow car",0
-.dboardbcar         !scr "blue car",0
+.dboardrecordycar       !scr "     new record by yellow car!      ",0
+.dboardrecordbcar       !scr "      new record by blue car!       ",0
+.dboardycar             !scr "yellow car",0
+.dboardbcar             !scr "blue car",0
