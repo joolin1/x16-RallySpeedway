@@ -15,6 +15,7 @@ TRACK_2		=  7
 TRACK_3		=  8
 TRACK_4		=  9
 TRACK_5		= 10
+RESET_BEST  = 16
 QUIT_GAME	= 19
 
 ;Special characters used in menu
@@ -101,18 +102,18 @@ HandleUserInput:
 	;handle up/down
 	jsr ClearHand
 	lda _joy0
-	bit #8						;up?
+	bit #JOY_UP					;up?
 	bne +
 	jsr DecreaseHandRow
 
 +	lda _joy0
-	bit #4						;down?
+	bit #JOY_DOWN				;down?
 	bne +
 	jsr IncreaseHandrow
 
 	;handle button
 +	lda _joy0	
-	bit #128					;button a?
+	bit #JOY_BUTTON_A			;button a?
 	beq +
 	jsr PrintHand
 	lda #1
@@ -123,6 +124,13 @@ HandleUserInput:
 	cmp #START_RACE			
 	bne +						
 	jsr CloseMainMenu
+	rts
+
++	cmp #RESET_BEST
+	bne +
+	jsr ResetLeaderboard
+	jsr .PrintLeaderboardData
+	jsr PrintHand
 	rts
 
 +	cmp #QUIT_GAME
@@ -427,13 +435,12 @@ ShowMainMenu:
 	ldx #>_track_recordnames
 	stx ZP1
 	pha
+	!byte $ff ;DEBUG
 	jsr VPrintStringArrayElement
 	pla
 	inc
 	cmp #5
 	bne -
-
-	jsr SaveLeaderboard
 	rts
 
 CloseMainMenu:

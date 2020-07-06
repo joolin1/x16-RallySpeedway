@@ -21,26 +21,6 @@
 .carsname               !raw "X16-RALLYSPEEDWAY/CARS.BIN",0
 .explosionname          !raw "X16-RALLYSPEEDWAY/EXPLOSION.BIN",0
 .textname               !raw "X16-RALLYSPEEDWAY/TEXT.BIN",0
-.leaderboardname        !raw "X16-RALLYSPEEDWAY/LEADERBOARD.BIN",0
-
-; .filename_lo            !byte   0
-; .filename_hi            !byte   0
-; .loadaddr_lo            !byte   0
-; .loadaddr_hi            !byte   0
-
-;Error messages
-.message1       !scr 13,"FAILED TO LOAD ",0
-.message2       !scr 13,"I/O ERROR #",0
-.errorarray     !scr 0
-                !scr ": TOO MANY FILES",0
-                !scr ": FILE OPEN",0
-                !scr ": FILE NOT OPEN",0
-                !scr ": FILE NOT FOUND",0
-                !scr ": DEVICE NOT PRESENT",0
-                !scr ": NOT INPUT FILE",0
-                !scr ": NOT OUTPUT FILE",0
-                !scr ": MISSING FILENAME",0
-                !scr ": ILLEGAL DEVICE NUMBER",0
 
 .errorflag      !byte   0   ;at least one i/o error has occurred if set
 
@@ -50,7 +30,6 @@ LoadGraphics:
         jsr .LoadCars
         jsr .LoadExplosion
         jsr .LoadText
-        jsr .LoadLeaderboard
         lda .errorflag
         beq +
         sec                             ;set carry to flag error
@@ -69,7 +48,7 @@ LoadGraphics:
         sta ZP2
         lda #>TILE_ADDR
         sta ZP3
-        jsr .Vload
+        jsr .VLoad
         rts
 
 .LoadCars:
@@ -81,7 +60,7 @@ LoadGraphics:
         sta ZP2
         lda #>CARS_ADDR
         sta ZP3
-        jsr .Vload
+        jsr .VLoad
         rts
 
 .LoadExplosion:
@@ -93,7 +72,7 @@ LoadGraphics:
         sta ZP2
         lda #>EXPLOSION_ADDR
         sta ZP3
-        jsr .Vload
+        jsr .VLoad
         rts
 
 .LoadText:
@@ -105,104 +84,16 @@ LoadGraphics:
         sta ZP2
         lda #>TEXT_ADDR
         sta ZP3
-        jsr .Vload
+        jsr .VLoad
         rts
 
-.LoadLeaderboard
-        lda #<.leaderboardname
-        sta ZP0
-        lda #>.leaderboardname
-        sta ZP1
-        lda #<_leaderboard
-        sta ZP2
-        lda #>_leaderboard
-        sta ZP3
-        lda #0
-        sta ZP4
-        jsr .Load
-        rts
-
-SaveLeaderboard
-        lda #<.leaderboardname
-        sta ZP0
-        lda #>.leaderboardname
-        sta ZP1
-        lda #<_leaderboard
-        sta ZP2
-        lda #>_leaderboard
-        sta ZP3
-        lda #<_leaderboard_end
-        sta ZP4
-        lda #>_leaderboard_end
-        sta ZP5
-        jsr .Save
-        rts  
-
-.Vload:                         
-        lda #2                  ;2 = VRAM bank 0
-        sta ZP4
-        jsr .Load
-        rts
-
-.Load:                          ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = ;0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
-        ldx ZP0                 ;filename
-        ldy ZP1
-        jsr GetStringLength     ;will return length of filename in .A
-        jsr SETNAM
-        lda #$02
-        ldx #$08                ;device
-        ldy #$00  
-        jsr SETLFS
-        ldx ZP2                 ;load address  
-        ldy ZP3  
-        lda ZP4                 ;load details
-        jsr LOAD
+.VLoad:
+        jsr VLoadFile                   ;call filehandler
         bcc +
-        jsr .PrintErrorMessage
+        jsr PrintIOErrorMessage
         lda #1
         sta .errorflag
 +       rts
-
-.Save:                                  ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = save address, ZP4, ZP5 = end address+1
-        ldx ZP0                         ;filename
-        ldy ZP1
-        jsr GetStringLength             ;will return length of filename in .A
-        jsr SETNAM
-        lda #$02
-        ldx #$08                        ;device
-        ldy #$00  
-        jsr SETLFS
-        lda #2                          ;address of zero page register holding start address
-        ldx ZP4                         ;end address+1  
-        ldy ZP5                   
-        jsr SAVE
-        bcc +
-        ;no error handling...
-+       rts
-
-.PrintErrorMessage:                     ;IN: .A = error number, ZP0, ZP1 = filename
-        pha
-        ldx ZP0
-        ldy ZP1
-        phx
-        phy
-        ldx #<.message1
-        ldy #>.message1
-        jsr KPrintString                ;print "failed to load"          
-        ply
-        plx
-        jsr KPrintString                ;print filename
-        ldx #<.message2
-        ldy #>.message2
-        jsr KPrintString                ;print "i/o error"
-        pla
-        pha
-        jsr KPrintDigit                 ;print error number
-        pla
-        ldx #<.errorarray
-        ldy #>.errorarray
-        jsr KPrintStringArrayElement    ;print error message
-        rts   
 
 .CopySpritePalettesToVRAM:
         lda #<CAR_PALETTES

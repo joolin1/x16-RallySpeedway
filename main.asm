@@ -26,7 +26,8 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 ;*** Main program **********************************************************************************
 
 .StartGame:
-        jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
+        jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
++       jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
 +       jsr InitScreenAndSprites
@@ -270,8 +271,12 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !zone
 !src "x16-rallyspeedway/spritetext.asm"
 !zone
-!src "x16-rallyspeedway/vload.asm"
+!src "x16-rallyspeedway/graphics.asm"
+!zone
+!src "x16-rallyspeedway/filehandler.asm"
 !zone
 !src "x16-rallyspeedway/helpers.asm"
 !zone
 !src "x16-rallyspeedway/tracks.asm"
+!zone
+!src "x16-rallyspeedway/leaderboard.asm"

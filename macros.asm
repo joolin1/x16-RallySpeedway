@@ -66,6 +66,13 @@
 +       nop
 }
 
+!macro Dec16bit .addr {
+        dec .addr
+        bpl +
+        dec .addr+1
++       nop
+}
+
 !macro DivideBy16 .address_lo {
         lsr .address_lo+1
         ror .address_lo
