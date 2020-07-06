@@ -104,18 +104,20 @@ _startdirection         !byte   0               ;start direction
 _blockmap_lo            !byte   0               ;address of track map
 _blockmap_hi            !byte   0
 
-;Leaderboard
-_track_recordnames      !scr "----------",0
-                        !scr "----------",0
-                        !scr "----------",0
-                        !scr "----------",0
-                        !scr "----------",0
+;Leaderboard                                    ;Data for records are read from file
+_leaderboard
+_track_recordnames      !scr "-----     ",0
+                        !scr "-----     ",0
+                        !scr "-----     ",0
+                        !scr "-----     ",0
+                        !scr "-----     ",0
 
 _track_records          !byte 0,0,0             ;track 1 -minutes, second, jiffies
                         !byte 0,0,0             ;track 2
                         !byte 0,0,0             ;track 3
                         !byte 0,0,0             ;track 4
                         !byte 0,0,0             ;track 5
+_leaderboard_end
 
 ;Track names
 _track1_name            !scr "Track 1",0

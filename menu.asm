@@ -370,6 +370,7 @@ ShowMainMenu:
 	jsr PrintTextLineLayer1			;"quit game"
 	lda #END_LINE_DIV
 	jsr PrintLineLayer1
+
 	jsr PrintTextLineLayer1			;(empty row)
 	jsr PrintTextLineLayer1			;"Leaderboard"
 	jsr PrintTextLineLayer1			;"Time Name"
@@ -382,10 +383,57 @@ ShowMainMenu:
 
 	lda #BLOCK
 	jsr PrintLineLayer1
+	jsr .PrintLeaderboardData
 
 	lda #1
 	sta .handrow
 	jsr PrintHand
+	rts
+
+.PrintLeaderboardData:
+	;print record times
+	lda #$c1
+	sta _color
+	lda #23
+	sta _row
+	ldy #0
+-	lda #18
+	sta _col
+	lda _track_records,y
+	sta ZP0
+	lda _track_records+1,y
+	sta ZP1
+	lda _track_records+2,y
+	sta ZP2
+	phy
+	jsr VPrintNullableTime
+	ply
+	iny
+	iny
+	iny
+	cpy #5*3	;5 tracks, 3 values for each track
+	bne -
+
+	;print names of record holders
+	ldx #$c1				;bg = grey, fg = white
+	stx _color
+	ldx #23
+	stx _row
+	lda #0
+-	ldx #27
+	stx _col
+	ldx #<_track_recordnames
+	stx ZP0
+	ldx #>_track_recordnames
+	stx ZP1
+	pha
+	jsr VPrintStringArrayElement
+	pla
+	inc
+	cmp #5
+	bne -
+
+	jsr SaveLeaderboard
 	rts
 
 CloseMainMenu:
@@ -677,13 +725,13 @@ PrintTextLineLayer1:
 !scr "          reset leaderboard             "
 !scr "          quit game                     "
 !scr "                                        "
-!scr "       leaderboard                      "
-!scr "               time     name            "
-!scr "       track 1 00:00:00 johan k         "
-!scr "       track 2                          "
-!scr "       track 3                          "
-!scr "       track 4                          "
-!scr "       track 5                          "
+!scr "          leaderboard                   "
+!scr "                  time     name         "
+!scr "          track 1                       "
+!scr "          track 2                       "
+!scr "          track 3                       "
+!scr "          track 4                       "
+!scr "          track 5                       "
 !scr "                                        "
 
 .mainmenubgblocks

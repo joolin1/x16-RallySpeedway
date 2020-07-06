@@ -76,6 +76,7 @@
 !addr SETNAM    = $FFBD
 !addr BSOUT     = $FFD2
 !addr LOAD      = $FFD5
+!addr SAVE      = $FFD8
 !addr RDTIM     = $FFDE
 !addr GETIN     = $FFE4
 !addr PLOT      = $FFF0

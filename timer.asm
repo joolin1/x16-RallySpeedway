@@ -1,7 +1,5 @@
 ;*** timer.asm **************************************************************************************
  
-color = ZP0 
-
 .TimeReset:
         stz .minutes
         stz .seconds
@@ -66,14 +64,14 @@ color = ZP0
         rts
 
 .DisplayTime:                   ;.A = text color, .X = column, .Y = row
-        sta color
+        sta .color
         txa
         asl
         sta VERA_ADDR_L         ;set start column      
         sty VERA_ADDR_M         ;set row
         lda #$10
         sta VERA_ADDR_H
-        ldx color
+        ldx .color
 
         lda .minutes
         jsr .PrintMinutes
@@ -123,3 +121,5 @@ color = ZP0
 ;tables for showing seconds and minutes, jiffies is converted to tenths of a second
 .secondstable   !scr "000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859"
 .jiffiestable   !scr "000000000000101010101010202020202020303030303030404040404040505050505050606060606060707070707070808080808080909090909090"
+
+.color      !byte 0

@@ -1,5 +1,11 @@
 ;*** helpers.asm - global helper routines **********************************************************
 
+;*** I/O *******************************************************************************************
+
+
+
+;*** String handling *******************************************************************************
+
 GetStringLength:                ;IN: .X .Y = address of string terminated with 0. OUT: .A = string length
         stx ZP0
         sty ZP1
@@ -31,6 +37,7 @@ KPrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = stri
         stx ZP0
         sty ZP1
         tax
+        beq ++
 -       lda (ZP0)
         beq +
         jsr .incAddr
@@ -40,7 +47,7 @@ KPrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = stri
         bne -
         ldx ZP0
         ldy ZP1
-        jsr KPrintString
+++      jsr KPrintString
         rts
 
 .incAddr:
@@ -59,6 +66,10 @@ KPrintDigit:                     ;IN: .A = digit to print
 
 ;*** Print to VERA directly ************************************************************************
 
+_row    !byte 0                 ;current row
+_col    !byte 0                 ;current column
+_color  !byte 0                 ;text color (bg color = upper nybble, fg color = lower nybble)
+
 VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0.
 -       lda (ZP0)
         inc ZP0
@@ -71,7 +82,20 @@ VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated wi
 +       inc _row
         rts
 
-VPrintChar:                      ;IN: .A = screen code of character
+VPrintStringArrayElement:       ;IN: ZP0, ZP1 = address of string array. .A = string index
+        tax
+        beq ++                  ;if index = 0 then print directly
+-       lda (ZP0)               ;loop until we find 0 (= termination of string)
+        beq +
+        +Inc16bit ZP0
+        bra -
++       +Inc16bit ZP0           ;set address to first character of next string
+        dex                     
+        bne -                   ;if not this string, find then next
+++      jsr VPrintString
+        rts
+
+VPrintChar:                     ;IN: .A = screen code of character
         tax
         lda _col
         asl
@@ -86,7 +110,7 @@ VPrintChar:                      ;IN: .A = screen code of character
         inc _col
         rts
 
-VPrintDecimalNumber             ;IN: .A = number to print in decimal mode
+VPrintDecimalNumber:            ;IN: .A = number to print in decimal mode
         pha
         lsr
         lsr
@@ -99,15 +123,83 @@ VPrintDecimalNumber             ;IN: .A = number to print in decimal mode
         jsr VPrintDecimalDigit
         rts
 
-VPrintDecimalDigit              ;IN: .A = digit to print
+VPrintDecimalDigit:             ;IN: .A = digit to print
         clc
         adc #48
         jsr VPrintChar
         rts
 
-_row    !byte 0                 ;current row
-_col    !byte 0                 ;current column
-_color  !byte 0                 ;text color (bg color = upper nybble, fg color = lower nybble)
+VPrintNullableTime:
+        lda ZP0
+        bne VPrintTime
+        lda ZP1
+        bne VPrintTime
+        lda ZP2
+        bne VPrintTime
+        lda #<.nulltime
+        sta ZP0
+        lda #>.nulltime
+        sta ZP1
+        jsr VPrintString
+        rts
+
+.nulltime       !scr "--:--:--",0
+
+VPrintTime:                     ;ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+        lda _col
+        asl
+        sta VERA_ADDR_L         ;set start column      
+        lda _row
+        sta VERA_ADDR_M         ;set row
+        lda #$10
+        sta VERA_ADDR_H
+        ldx _color
+
+        lda ZP0
+        jsr .VPrintMinutes
+
+        lda #COLON
+        sta VERA_DATA0
+        stx VERA_DATA0
+
+        lda ZP1
+        jsr .VPrintSeconds
+
+        lda #COLON
+        sta VERA_DATA0
+        stx VERA_DATA0
+
+        lda ZP2
+        jsr .VPrintJiffies
+        inc _row
+        rts
+
+.VPrintMinutes:
+.VPrintSeconds:
+        asl
+        tay
+        lda .secondstable,y
+        sta VERA_DATA0
+        stx VERA_DATA0
+        lda .secondstable+1,y
+        sta VERA_DATA0
+        stx VERA_DATA0
+        rts
+
+.VPrintJiffies:
+        asl
+        tay
+        lda .jiffiestable,y
+        sta VERA_DATA0
+        stx VERA_DATA0
+        lda .jiffiestable+1,y
+        sta VERA_DATA0
+        stx VERA_DATA0
+        rts
+
+;tables for showing seconds and minutes, jiffies is converted to tenths of a second
+.secondstable   !scr "000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859"
+.jiffiestable   !scr "000000000000101010101010202020202020303030303030404040404040505050505050606060606060707070707070808080808080909090909090"
 
 ;***************************************************************************************************
 

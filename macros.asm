@@ -63,7 +63,7 @@
         inc .addr
         bne +
         inc .addr+1
-+       rts
++       nop
 }
 
 !macro DivideBy16 .address_lo {
