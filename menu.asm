@@ -5,6 +5,8 @@ M_SHOW_START_SCREEN 	= 0
 M_UPDATE_START_SCREEN	= 1
 M_SHOW_MAIN_MENU 		= 2
 M_HANDLE_INPUT 			= 3
+M_CONFIRM_RESET 		= 4
+M_INPUT_NAME			= 5
 
 ;Menu item mapping
 START_RACE	=  1
@@ -24,7 +26,7 @@ END_LINE_DIV	= 34 	;"
 BLOCK			= 35	;#
 MIDDLE_LINE_DIV	= 37 	;%
 FIRST_LINE_DIV 	= 38	;&
-HAND    		= 40 	;hand is char 40-42 = ()*
+HAND    		= 42 	;hand is char 42-44 = *+,
 COLON           = 58    ;:
 
 MenuHandler:
@@ -50,17 +52,54 @@ MenuHandler:
 
 	;show menu
 ++  cmp #M_SHOW_MAIN_MENU
-	bne +
-	jsr ShowMainMenu
-	inc .menumode
+	bne ++
+	jsr ShowMainMenu				
+	jsr GetLeaderboardUpdateFlag	;check if leaderboard should be updated by player
+	cmp #-1
+	beq +
+	jsr LeaderboardInputInit
+	lda #M_INPUT_NAME				;next go to input leaderboard mode
+	sta .menumode
+	rts
++	lda #M_HANDLE_INPUT				;next go to input menu mode
+	sta .menumode
 	lda #1
 	sta .inputwait					;wait for controller to be released before accepting input again
 	stz .inactivitytimer_lo			;reset timer that takes user back to start screen after 30 secs inactivity
 	stz .inactivitytimer_hi	
 	rts
 
+	;update record name
+++	cmp #M_INPUT_NAME
+	bne ++
+	jsr InputString
+	bcs +
+	rts
++	jsr UpdateLeaderboardName
+	jsr SaveLeaderboard
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode
+	rts
+
+	;wait for keyboard input
+++	cmp #M_CONFIRM_RESET
+	bne ++
+	jsr GETIN
+	cmp #KEY_Y
+	bne +
+	jsr ResetLeaderboard
+	jsr SaveLeaderboard
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode
++	cmp #KEY_N
+	bne +
+	jsr PrintHand
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode
++	rts
+
 	;handle user input
-+	cmp #M_HANDLE_INPUT
+++	cmp #M_HANDLE_INPUT
 	beq +
 	rts
 
@@ -128,10 +167,22 @@ HandleUserInput:
 
 +	cmp #RESET_BEST
 	bne +
-	jsr ResetLeaderboard
-	jsr .PrintLeaderboardData
-	jsr PrintHand
+	lda .handrow
+	sta _row
+	lda #10
+	sta _col
+	lda #$81
+	sta _color
+	lda #<.confirmation_question
+	sta ZP0
+	lda #>.confirmation_question
+	sta ZP1
+	jsr VPrintString
+	lda #M_CONFIRM_RESET
+	sta .menumode
 	rts
+
+.confirmation_question	!scr "are you sure (y/n)?",0
 
 +	cmp #QUIT_GAME
 	bne +
@@ -391,56 +442,11 @@ ShowMainMenu:
 
 	lda #BLOCK
 	jsr PrintLineLayer1
-	jsr .PrintLeaderboardData
+	jsr PrintLeaderboard
 
 	lda #1
 	sta .handrow
 	jsr PrintHand
-	rts
-
-.PrintLeaderboardData:
-	;print record times
-	lda #$c1
-	sta _color
-	lda #23
-	sta _row
-	ldy #0
--	lda #18
-	sta _col
-	lda _track_records,y
-	sta ZP0
-	lda _track_records+1,y
-	sta ZP1
-	lda _track_records+2,y
-	sta ZP2
-	phy
-	jsr VPrintNullableTime
-	ply
-	iny
-	iny
-	iny
-	cpy #5*3	;5 tracks, 3 values for each track
-	bne -
-
-	;print names of record holders
-	ldx #$c1				;bg = grey, fg = white
-	stx _color
-	ldx #23
-	stx _row
-	lda #0
--	ldx #27
-	stx _col
-	ldx #<_track_recordnames
-	stx ZP0
-	ldx #>_track_recordnames
-	stx ZP1
-	pha
-	!byte $ff ;DEBUG
-	jsr VPrintStringArrayElement
-	pla
-	inc
-	cmp #5
-	bne -
 	rts
 
 CloseMainMenu:

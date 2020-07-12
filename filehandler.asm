@@ -12,9 +12,9 @@ LoadFile:
         jsr .Load
 
 .Load:                          ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = ;0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
-        ldx ZP0                 ;filename
-        ldy ZP1
         jsr GetStringLength     ;will return length of filename in .A
+        ldx ZP0
+        ldy ZP1
         jsr SETNAM
         lda #$02
         ldx #$08                ;device
@@ -27,9 +27,9 @@ LoadFile:
         rts
 
 SaveFile:                       ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = save address, ZP4, ZP5 = end address+1
-        ldx ZP0                 ;filename
-        ldy ZP1
         jsr GetStringLength     ;will return length of filename in .A
+        ldx ZP0
+        ldy ZP1
         jsr SETNAM
         lda #$02
         ldx #$08                ;device

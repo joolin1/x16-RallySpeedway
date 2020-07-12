@@ -265,8 +265,6 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !zone
 !src "x16-rallyspeedway/joystick.asm"
 !zone
-!src "x16-rallyspeedway/debug.asm"
-!zone
 !src "x16-rallyspeedway/screen.asm"
 !zone
 !src "x16-rallyspeedway/spritetext.asm"
@@ -274,8 +272,9 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !src "x16-rallyspeedway/graphics.asm"
 !zone
 !src "x16-rallyspeedway/filehandler.asm"
-!zone
+!src "x16-rallyspeedway/texthandler.asm"
 !src "x16-rallyspeedway/helpers.asm"
+!src "x16-rallyspeedway/debug.asm"
 !zone
 !src "x16-rallyspeedway/tracks.asm"
 !zone

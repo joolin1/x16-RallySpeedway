@@ -83,6 +83,12 @@
 !addr MOUSE     = $FF09
 !addr CINT      = $FF81
 
+KEY_RETURN      = $0D
+KEY_BACKSPACE   = $14
+KEY_SPACE       = $20
+KEY_N           = $4E
+KEY_Y           = $59
+
 !addr joystick_scan         = $FF53
 !addr joystick_get          = $FF56
 !addr screen_set_charset    = $ff62
