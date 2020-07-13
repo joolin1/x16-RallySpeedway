@@ -8,7 +8,9 @@ _color  !byte 0                 ;text color (bg color = upper nybble, fg color =
 
 KEY_CURSOR = 59
 TEXTBOX_COLORS = $b1            ;bg and fg (= text) color
+CURSOR_REVERSE_COLOR = $bb      ;color for invincible cursor
 MAX_STRING_INPUT = 10
+CURSOR_DELAY = 30
 
 ;*** String arithmetics ****************************************************************************
 
@@ -40,7 +42,7 @@ GetStringLength:                ;IN: ZP0, ZP1 = address of string terminated wit
 
 ;*** Text input ************************************************************************************
 
-InputStringInit:
+InitInputString:
         cmp #MAX_STRING_INPUT
         bmi +
         lda #MAX_STRING_INPUT
@@ -48,6 +50,11 @@ InputStringInit:
         lda _col
         sta .inputstart
         stz .inputpos
+        jsr .InitTextBox
+        jsr .InitString
+        rts
+
+.InitTextBox:
         lda #TEXTBOX_COLORS         ;initialize a "text box" by printing spaces with black bg and a cursor
         sta _color
         lda #KEY_CURSOR
@@ -67,11 +74,21 @@ InputStringInit:
         clc
         rts
 
-InputString:                        ;IN: .A = string length. OUT: ZP0, ZP1 = address of string, carry flag set = input finished
+.InitString:
+        lda #KEY_SPACE
+        ldy .inputlength
+-       sta .inputstring-1,y
+        dey
+        bne -
+        rts
+
+InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address of string, carry flag set = input finished
         lda .inputpos
         jsr GETIN
         cmp #0
         bne +
+        jsr .UpdateCursorColor  ;let cursor blink when textbox idle
+        jsr .UpdateCursor
         clc
         rts
 +       cmp #KEY_BACKSPACE
@@ -106,15 +123,15 @@ InputString:                        ;IN: .A = string length. OUT: ZP0, ZP1 = add
 .InputBackspace:
         lda _col
         cmp .inputstart
-        bne +
-        clc
+        bne +                  
+        clc                     ;nothing to do if already at leftmost position
         rts
 +       dec _col
         lda #KEY_CURSOR         ;delete previous letter by replacing it with the cursor char
         jsr VPrintChar
         lda .inputpos
         cmp .inputlength
-        beq +
+        beq +                   ;do not print a space if at rightmost position
         lda #KEY_SPACE
         jsr VPrintChar          ;delete previous cursor by replacing it with a space            
         dec _col
@@ -138,6 +155,40 @@ InputString:                        ;IN: .A = string length. OUT: ZP0, ZP1 = add
         stz .inputlength
         sec                     ;flag input finished
         rts
+
+.UpdateCursorColor:
+        dec .cursordelay
+        lda .cursordelay
+        beq +
+        rts
++       lda #CURSOR_DELAY
+        sta .cursordelay
+        lda .cursorcolor
+        cmp #TEXTBOX_COLORS
+        bne +
+        lda #CURSOR_REVERSE_COLOR
+        sta .cursorcolor
+        rts
++       lda #TEXTBOX_COLORS
+        sta .cursorcolor
+        rts
+
+.UpdateCursor:
+        lda .inputpos
+        cmp .inputlength
+        bne +
+        rts
++       lda .cursorcolor
+        sta _color
+        lda #KEY_CURSOR
+        jsr VPrintChar
+        dec _col
+        lda #TEXTBOX_COLORS
+        sta _color
+        rts
+
+.cursorcolor    !byte TEXTBOX_COLORS
+.cursordelay    !byte CURSOR_DELAY
 
 .inputstart     !byte 0
 .inputpos       !byte 0
@@ -220,7 +271,7 @@ GetStringInArray:               ;IN: ZP0, ZP1 = address of string array. .A = st
         bne -                   ;if not this string, find then next
 ++      rts     
 
-VPrintStringInArray:            ;IN: ZP0, ZP1 = address of string array. .A = string index
+VPrintStringInArray:            ;IN: ZP0, ZP1 = address of string array. .A = string index. OUT: ZP0, ZP1 = address of string
         jsr GetStringInArray
         jsr VPrintString
         rts

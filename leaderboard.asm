@@ -52,23 +52,55 @@ PrintLeaderboard:
 LeaderboardInputInit:
 	lda #LEADERBOARD_ROW
         clc
-        adc .leaderboard_new_record_flag
+        adc .leaderboard_update_flag
 	sta _row
 	lda #LEADERBOARD_COL + LEADERBOARD_NAME_OFFSET
 	sta _col
         lda #LEADERBOARD_NAME_LENGTH
-	jsr InputStringInit
+	jsr InitInputString
         rts
 
 GetLeaderboardUpdateFlag:                       ;OUT: .A = track number (zero indexed). -1 if not set
-        lda .leaderboard_new_record_flag
+        lda .leaderboard_update_flag
         rts
 
 SetLeaderboardUpdateFlag:                       ;IN: .A = track number (zero-indexed)
-        sta .leaderboard_new_record_flag
+        sta .leaderboard_update_flag
         rts
 
-UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new name.
+GetLeaderboardTime:                             ;IN: .A = track number (zero-indexed). OUT: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+        jsr .GetTimeIndex
+        tay
+        lda .leaderboard_records,y
+        sta ZP0
+        lda .leaderboard_records+1,y
+        sta ZP1
+        lda .leaderboard_records+2,y
+        sta ZP2
+        rts
+
+SetLeaderboardTime:                             ;IN: .A = track number (zero-indexed). ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+        tay
+        lda ZP0
+        sta .leaderboard_records,y
+        lda ZP1
+        sta .leaderboard_records+1,y
+        lda ZP2
+        sta .leaderboard_records+2,y        
+        rts
+
+.GetTimeIndex:                                  ;IN: .A = track number (zero-indexed). OUT: .A = index for record in record array
+        tax
+        lda #0
+-       cpx #0
+        beq +
+        clc
+        adc #3
+        dex
+        bra -
++       rts
+
+UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new name. (leaderboard_update_flag controls which name to update)
         lda ZP0
         sta .newname
         lda ZP1
@@ -77,7 +109,7 @@ UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new n
         sta ZP0
         lda #>.leaderboard_names
         sta ZP1
-        lda .leaderboard_new_record_flag
+        lda .leaderboard_update_flag
         cmp #-1                                 ;return if update flag is not set
         bne +
         rts
@@ -95,7 +127,7 @@ UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new n
         stz ZP5                                 ;ZP4, ZP5 = string length
         jsr CopyMem                             ;update name
         lda #-1
-        sta .leaderboard_new_record_flag
+        sta .leaderboard_update_flag
         rts
 
 .newname        !byte 0,0
@@ -148,7 +180,7 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         jsr CopyMem
         rts
 
-.leaderboard_new_record_flag    !byte -1 ;TEMP!  ;flag that name of record holder should be updated. Values 0-4 = track 1-4
+.leaderboard_update_flag    !byte 0 ;flag that name of record holder should be updated. Values 0-4 = track 1-4
 
 .leaderboardname        !raw "X16-RALLYSPEEDWAY/LEADERBOARD.BIN",0
 
