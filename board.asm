@@ -54,7 +54,7 @@ BOTTOM_BORDER       = 36
 }
 
 !macro PrintBoard .width, .height, .startrow, .startcol, .text {
-        +PrintBoardShadow .width, .height, .startrow, .startcol 
+        +PrintBoardShadow .width, .height, .startrow, .startcol
         lda #BOARD_COLORS
         sta _color
         lda #<.text
@@ -108,6 +108,17 @@ BOTTOM_BORDER       = 36
         jsr BCar_DisplayTime    
 }
 
+!macro InitBoardInput .row, .col {
+        lda #.row
+        sta _row
+        lda #.col
+        sta _col
+        lda #LEADERBOARD_NAME_LENGTH
+        jsr InitInputString
+        lda #1
+        sta _boardinputflag
+}
+
 ;*** public subroutines ****************************************************************************
 
 PrintBoard:
@@ -115,13 +126,13 @@ PrintBoard:
         cmp #1
         bne ++
         jsr .IsRecord
-        bne +
+        bcc +
         jsr .PrintOnePlayerBoard
         rts
 +       jsr .PrintOnePlayerRecordBoard
         rts
 ++      jsr .IsRecord
-        bne +
+        bcc +
         jsr .PrintTwoPlayerBoard
         rts
 +       jsr .PrintTwoPlayerRecordBoard
@@ -131,13 +142,10 @@ PrintBoard:
 
 .PrintOnePlayerBoard:
         +PrintBoard 25, 9, 9, 7, .sboard                ;print board
-        +PrintBoardString 16, 7, .sboardcontinue        ;print "press start to continue"
         jmp +
 
 .PrintOnePlayerRecordBoard:
         +PrintBoard 25, 11, 9, 7, .sboard               ;print extended board
-        lda #BOARD_YELLOW
-        sta _color
         +PrintBoardString 16, 7, .sboardrecord          ;print record message
         lda #BOARD_COLORS
         sta _color
@@ -146,6 +154,7 @@ PrintBoard:
         lda _ycarcollisioncount
         jsr YCar_TimeSubSeconds
         +PrintYCarTime 12, 21                           ;print race time
+        +InitBoardInput 18, 20
         rts
 
 .PrintTwoPlayerBoard:
@@ -194,10 +203,35 @@ PrintBoard:
         rts
 
 .IsRecord
-        lda #1  ;TODO!
+        clc
+        rts
+        lda _ycarfinishflag
+        beq +
+        lda _ycartime
+        sta ZP0
+        lda _ycartime+1
+        sta ZP1
+        lda _ycartime+2
+        sta ZP2
+        bra ++
++       lda _bcartime
+        sta ZP0
+        lda _bcartime+1
+        sta ZP1
+        lda _bcartime+2
+        sta ZP2
+++      lda _track
+        jsr IsNewLeaderboardRecord
+        bcc +
+        rts
++       lda _track
+        jsr SetLeaderboardRecord
+        clc
         rts
 
 ;*** board data ************************************************************************************
+
+_boardinputflag         !byte 0 ;flag set when waiting for player to enter new name for record
 
 .sboard                 !scr "                         ",0
                         !scr "                         ",0
@@ -206,10 +240,10 @@ PrintBoard:
                         !scr "      crashes            ",0
                         !scr "  finish time            ",0
                         !scr "                         ",0
-                        !scr "                         ",0
-                        !scr "                         ",0          ;one player, no record: print to this line and then add "press start to continue" above
-.sboardcontinue         !scr " press start to continue ",0
-                        !scr "                         ",0          ;one player, new record: prints to this line and then add "new record - well done!" above
+                        !scr " press start to continue ",0
+                        !scr "                         ",0          ;one player, no record: print to this line
+.sboardcontinue         !scr " enter name:             ",0
+                        !scr "                         ",0          ;one player, new record: print to this line and replace "start to continue"-text with "new record"-text
 
 .sboardrecord           !scr " new record - well done! ",0
 

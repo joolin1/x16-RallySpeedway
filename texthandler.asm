@@ -9,10 +9,10 @@ _color  !byte 0                 ;text color (bg color = upper nybble, fg color =
 KEY_CURSOR = 59
 TEXTBOX_COLORS = $b1            ;bg and fg (= text) color
 CURSOR_REVERSE_COLOR = $bb      ;color for invincible cursor
-MAX_STRING_INPUT = 10
+MAX_STRING_INPUT = 20
 CURSOR_DELAY = 30
 
-;*** String arithmetics ****************************************************************************
+;*** String handling *******************************************************************************
 
 GetStringLength:                ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: .A = string length
         phy
@@ -24,6 +24,25 @@ GetStringLength:                ;IN: ZP0, ZP1 = address of string terminated wit
 +       tya       
         ply
         rts
+
+SetString:                      ;IN: ZP0, ZP1 = address of source string. ZP2, ZP3 = address of destination string
+        jsr GetStringLength
+        sta ZP4
+        stz ZP5
+        jsr CopyMem
+        rts
+
+GetStringInArray:               ;IN: ZP0, ZP1 = address of string array. .A = string index. OUT: ZP0, ZP1 = address of string
+        tax
+        beq ++                  ;if index = 0 then just return address of first string
+-       lda (ZP0)               ;loop until we find 0 (= termination of string)
+        beq +
+        +Inc16bit ZP0
+        bra -
++       +Inc16bit ZP0           ;set address to first character of next string
+        dex                     
+        bne -                   ;if not this string, find then next
+++      rts  
 
 ;TruncateString:                 ;NOT FINISHED - IN: ZP0, ZP1 = address of string. .A = new string length
 ;         sta ZP2
@@ -91,15 +110,22 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         jsr .UpdateCursor
         clc
         rts
-+       cmp #KEY_BACKSPACE
+
+        ;check for allowed characters
++       cmp #KEY_BACKSPACE      ;backspace?
         beq .InputBackspace
-        cmp #KEY_RETURN
+        cmp #KEY_RETURN         ;return?
         beq .InputReturn
-        cmp #KEY_SPACE
+        cmp #KEY_SPACE          ;space?
         beq .InputChar
+        cmp #KEY_HYPHEN         ;-.0123456789?
+        bcs +
+        rts
++       cmp #KEY_NINE+1
+        bcc .InputChar
         sec
         sbc #$40
-        cmp #25
+        cmp #25                 ;a-z?
         bcc .InputChar
         clc
         rts
@@ -243,33 +269,15 @@ KPrintDigit:                     ;IN: .A = digit to print
 
 ;*** Print to VERA directly ************************************************************************
 
-VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0.
+VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: ZP0, ZP1 = address of string termination + 1 (to make printing of a string array easier)
 -       lda (ZP0)
         beq +
         jsr VPrintChar
         +Inc16bit ZP0
         bra -
 +       inc _row
-        rts
-
-SetString:                      ;IN: ZP0, ZP1 = address of source string. ZP2, ZP3 = address of destination string
-        jsr GetStringLength
-        sta ZP4
-        stz ZP5
-        jsr CopyMem
-        rts
-
-GetStringInArray:               ;IN: ZP0, ZP1 = address of string array. .A = string index. OUT: ZP0, ZP1 = address of string
-        tax
-        beq ++                  ;if index = 0 then just return address of first string
--       lda (ZP0)               ;loop until we find 0 (= termination of string)
-        beq +
         +Inc16bit ZP0
-        bra -
-+       +Inc16bit ZP0           ;set address to first character of next string
-        dex                     
-        bne -                   ;if not this string, find then next
-++      rts     
+        rts 
 
 VPrintStringInArray:            ;IN: ZP0, ZP1 = address of string array. .A = string index. OUT: ZP0, ZP1 = address of string
         jsr GetStringInArray

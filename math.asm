@@ -1,4 +1,29 @@
-;*** math.asm - precalculated tables ***************************************************************
+;*** math.asm - math functions and precalculated tables ***************************************************************
+
+;*** Time comparison. Time is represented by three bytes (minutes, seconds, jiffies)
+
+IsTimeLessThanNullableTime:     ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2. OUT: .C clear if time 2 < time 1 or time 1 = NULL
+        lda ZP0
+        bne IsTimeLess
+        lda ZP1
+        bne IsTimeLess
+        lda ZP2
+        bne IsTimeLess
+        clc                     ;if time is = 0 then time is NULL and the other time is considered less.        
+        rts
+
+IsTimeLess:             ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2. OUT: .C clear if time 2 < time 1
+        lda ZP3
+        cmp ZP0         ;time 1 < time 2 (minutes)?
+        beq +           ;continue with seconds if equal
+        rts             ;(carry will be clear if less)
++       lda ZP4
+        cmp ZP1         ;time 1 < time 2 (seconds)?
+        beq +           ;continue with jiffies if equal
+        rts             ;(carry will be clear if less)
++       lda ZP5
+        cmp ZP2
+        rts             ;(carry will be clear if less, otherwise set)
 
 ;Table for sine and cosine values. Fractions in fixed point numbers used are represented by 4 bits. For example sin(45) = 0.707 * 16 = 11.3.
 ;NOTE! words are used because of the negative values!

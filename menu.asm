@@ -6,7 +6,6 @@ M_UPDATE_START_SCREEN	= 1
 M_SHOW_MAIN_MENU 		= 2
 M_HANDLE_INPUT 			= 3
 M_CONFIRM_RESET 		= 4
-M_INPUT_NAME			= 5
 
 ;Menu item mapping
 START_RACE	=  1
@@ -52,16 +51,9 @@ MenuHandler:
 
 	;show menu
 ++  cmp #M_SHOW_MAIN_MENU
-	bne ++
+	bne +
 	jsr ShowMainMenu				
-	jsr GetLeaderboardUpdateFlag	;check if leaderboard should be updated by player
-	cmp #-1
-	beq +
-	jsr LeaderboardInputInit
-	lda #M_INPUT_NAME				;next go to input leaderboard mode
-	sta .menumode
-	rts
-+	lda #M_HANDLE_INPUT				;next go to input menu mode
+	lda #M_HANDLE_INPUT				;next go to input menu mode
 	sta .menumode
 	lda #1
 	sta .inputwait					;wait for controller to be released before accepting input again
@@ -69,20 +61,8 @@ MenuHandler:
 	stz .inactivitytimer_hi	
 	rts
 
-	;update record name
-++	cmp #M_INPUT_NAME
-	bne ++
-	jsr InputString
-	bcs +
-	rts
-+	jsr UpdateLeaderboardName
-	jsr SaveLeaderboard
-	lda #M_SHOW_MAIN_MENU
-	sta .menumode
-	rts
-
 	;wait for keyboard input
-++	cmp #M_CONFIRM_RESET
++	cmp #M_CONFIRM_RESET
 	bne ++
 	jsr GETIN
 	cmp #KEY_Y
@@ -327,13 +307,7 @@ PrintHand:
 .handrow	!byte 0
 
 ShowStartScreen:
-    jsr SetLayer0ToTextMode
-	ldx #<L0_MAP_ADDR
-	ldy #>L0_MAP_ADDR
-	jsr ClearTextLayer
-	ldx #<L1_MAP_ADDR
-	ldy #>L1_MAP_ADDR
-	jsr ClearTextLayer
+	jsr .InitScreen
 	;lda #0
 	; +VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black because orginal black is transparent
 	; +VPoke PALETTE+23
@@ -375,10 +349,7 @@ ShowStartScreen:
     rts
 
 ShowMainMenu:
-	ldx #<L1_MAP_ADDR
-	ldy #>L1_MAP_ADDR
-	jsr ClearTextLayer
-
+	jsr .InitScreen
 	lda #<.mainmenubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
 	lda #>.mainmenubgblocks
@@ -449,6 +420,16 @@ ShowMainMenu:
 	jsr PrintHand
 	rts
 
+.InitScreen:
+    jsr SetLayer0ToTextMode
+	ldx #<L0_MAP_ADDR
+	ldy #>L0_MAP_ADDR
+	jsr ClearTextLayer
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
+	rts
+
 CloseMainMenu:
 	; lda #$33
 	; +VPoke PALETTE+22		;Restore black to dark grey
@@ -458,8 +439,8 @@ CloseMainMenu:
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
 	jsr ClearTextLayer
-	lda M_SHOW_MAIN_MENU
-	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and goes directly to the main menu
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
 	lda #START_RACE
 	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
 	rts
@@ -738,13 +719,13 @@ PrintTextLineLayer1:
 !scr "          reset leaderboard             "
 !scr "          quit game                     "
 !scr "                                        "
-!scr "          leaderboard                   "
-!scr "                  time     name         "
-!scr "          track 1                       "
-!scr "          track 2                       "
-!scr "          track 3                       "
-!scr "          track 4                       "
-!scr "          track 5                       "
+!scr "      leaderboard                       "
+!scr "              time     name             "
+!scr "      track 1                           "
+!scr "      track 2                           "
+!scr "      track 3                           "
+!scr "      track 4                           "
+!scr "      track 5                           "
 !scr "                                        "
 
 .mainmenubgblocks

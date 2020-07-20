@@ -1,9 +1,12 @@
 ;*** leaderboard.asm *******************************************************************************
 
 LEADERBOARD_ROW = 23
-LEADERBOARD_COL = 18
+LEADERBOARD_COL = 14
 LEADERBOARD_NAME_OFFSET = 9
-LEADERBOARD_NAME_LENGTH = 10
+LEADERBOARD_NAME_LENGTH = 11
+LEADERBOARD_NUMBER_OF_TRACKS = 5
+
+;*** Public ****************************************************************************************
 
 PrintLeaderboard:
 	;print record times
@@ -26,7 +29,7 @@ PrintLeaderboard:
 	iny
 	iny
 	iny
-	cpy #5*3	;5 tracks, 3 values for each track
+	cpy #LEADERBOARD_NUMBER_OF_TRACKS*3	;3 values for each track
 	bne -
 
 	;print names of record holders
@@ -45,75 +48,21 @@ PrintLeaderboard:
 	jsr VPrintStringInArray
 	pla
 	inc
-	cmp #5
+	cmp #LEADERBOARD_NUMBER_OF_TRACKS
 	bne -
-	rts
-
-LeaderboardInputInit:
-	lda #LEADERBOARD_ROW
-        clc
-        adc .leaderboard_update_flag
-	sta _row
-	lda #LEADERBOARD_COL + LEADERBOARD_NAME_OFFSET
-	sta _col
-        lda #LEADERBOARD_NAME_LENGTH
-	jsr InitInputString
         rts
 
-GetLeaderboardUpdateFlag:                       ;OUT: .A = track number (zero indexed). -1 if not set
-        lda .leaderboard_update_flag
-        rts
-
-SetLeaderboardUpdateFlag:                       ;IN: .A = track number (zero-indexed)
-        sta .leaderboard_update_flag
-        rts
-
-GetLeaderboardTime:                             ;IN: .A = track number (zero-indexed). OUT: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
-        jsr .GetTimeIndex
-        tay
-        lda .leaderboard_records,y
-        sta ZP0
-        lda .leaderboard_records+1,y
-        sta ZP1
-        lda .leaderboard_records+2,y
-        sta ZP2
-        rts
-
-SetLeaderboardTime:                             ;IN: .A = track number (zero-indexed). ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
-        tay
-        lda ZP0
-        sta .leaderboard_records,y
-        lda ZP1
-        sta .leaderboard_records+1,y
-        lda ZP2
-        sta .leaderboard_records+2,y        
-        rts
-
-.GetTimeIndex:                                  ;IN: .A = track number (zero-indexed). OUT: .A = index for record in record array
-        tax
-        lda #0
--       cpx #0
-        beq +
-        clc
-        adc #3
-        dex
-        bra -
-+       rts
-
-UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new name. (leaderboard_update_flag controls which name to update)
-        lda ZP0
-        sta .newname
-        lda ZP1
-        sta .newname + 1                        ;store new name temporarily
-        lda #<.leaderboard_names
-        sta ZP0
-        lda #>.leaderboard_names
-        sta ZP1
-        lda .leaderboard_update_flag
-        cmp #-1                                 ;return if update flag is not set
-        bne +
-        rts
-+       jsr GetStringInArray                    ;get current name
+SetLeaderboardName:                             ;IN: .A = track number. ZP0, ZP1 = address of new name.
+        ldx ZP0
+        stx .newname
+        ldx ZP1
+        stx .newname + 1                        ;store new name temporarily
+        ldx #<.leaderboard_names
+        stx ZP0
+        ldx #>.leaderboard_names
+        stx ZP1
+        dec                                     ;decrease .A because array is zero-indexed
+        jsr GetStringInArray                    ;get current name
         lda ZP0
         sta ZP2
         lda ZP1
@@ -126,11 +75,42 @@ UpdateLeaderboardName:                          ;IN: ZP0, ZP1 = address of new n
         sta ZP4
         stz ZP5                                 ;ZP4, ZP5 = string length
         jsr CopyMem                             ;update name
-        lda #-1
-        sta .leaderboard_update_flag
         rts
 
 .newname        !byte 0,0
+
+GetLeaderboardRecord:                           ;IN: .A = track number. OUT: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+        jsr .GetTimeIndex
+        tay
+        lda .leaderboard_records,y
+        sta ZP0
+        lda .leaderboard_records+1,y
+        sta ZP1
+        lda .leaderboard_records+2,y
+        sta ZP2
+        rts
+
+SetLeaderboardRecord:                           ;IN: .A = track number. ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+        jsr .GetTimeIndex
+        tay
+        lda ZP0
+        sta .leaderboard_records,y
+        lda ZP1
+        sta .leaderboard_records+1,y
+        lda ZP2
+        sta .leaderboard_records+2,y        
+        rts
+
+IsNewLeaderboardRecord:                         ;IN: .A = track number. ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies. OUT: .C = clear if time < current record
+        ldx ZP0
+        stx ZP3
+        ldx ZP1
+        stx ZP4
+        ldx ZP2
+        stx ZP5                                 ;time to compare in ZP3-ZP5
+        jsr GetLeaderboardRecord                ;leaderboard time in ZP0-ZP2
+        jsr IsTimeLess                          ;carry flag will be clear if less 
+        rts
 
 LoadLeaderboard:
         lda #<.leaderboardname
@@ -180,28 +160,26 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         jsr CopyMem
         rts
 
-.leaderboard_update_flag    !byte 0 ;flag that name of record holder should be updated. Values 0-4 = track 1-4
+;*** Private ***************************************************************************************
 
-.leaderboardname        !raw "X16-RALLYSPEEDWAY/LEADERBOARD.BIN",0
+.GetTimeIndex:                                  ;IN: .A = track number. OUT: .A = index for record in record array
+        dec
+        tax
+        lda #0
+-       cpx #0
+        beq +
+        clc
+        adc #3
+        dex
+        bra -
++       rts
 
-.leaderboard                                    ;data are read from file
-.leaderboard_names      !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
+.leaderboardname                !raw "X16-RALLYSPEEDWAY/LEADERBOARD.BIN",0
 
-.leaderboard_records    !byte 0,0,0             ;track 1 - minutes, second, jiffies
-                        !byte 0,0,0             ;track 2
-                        !byte 0,0,0             ;track 3
-                        !byte 0,0,0             ;track 4
-                        !byte 0,0,0             ;track 5
+.leaderboard                    ;data are read from file
+.leaderboard_names              !fill LEADERBOARD_NUMBER_OF_TRACKS*12,0 ;each name is max 11 chars long
+.leaderboard_records            !fill LEADERBOARD_NUMBER_OF_TRACKS*3 ,0 ;each time takes 3 bytes (minutes, seconds and jiffies)
 .leaderboard_end
 
-.default_leaderboard
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !scr "-----     ",0
-                        !fill 15,0
+.default_leaderboard            !for i,1,LEADERBOARD_NUMBER_OF_TRACKS { !scr "-----      ",0 }
+                                !fill LEADERBOARD_NUMBER_OF_TRACKS*3,0

@@ -140,9 +140,9 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         rts
 
 .ShowMenu:
-        ;inc _gamestatus                ;TEMP - skip menu, start race
-	;jsr SetLayer0ToTileMode        ;TEMP
-	;jsr ClearTextLayer             ;TEMP
+        ; inc _gamestatus                ;TEMP - skip menu, start race
+	; jsr SetLayer0ToTileMode        ;TEMP
+	; jsr ClearTextLayer             ;TEMP
         jsr YCar_Hide                   ;comment out to skip status menu
         jsr BCar_Hide                   ;comment out to skip status menu
         jsr MenuHandler                 ;comment out to skip status menu
@@ -210,7 +210,11 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         rts
 
 .WaitForEnd:
-        lda _joy0
+        lda _boardinputflag     ;check if we should wait for player to enter name because of new record
+        beq +
+        jsr .WaitForPlayerName
+        rts
++       lda _joy0
         and #JOY_START          ;player 1 - start button pressed?
         beq ++
         lda _noofplayers
@@ -222,6 +226,19 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         beq ++
         rts      
 ++      jsr HideText
+        lda #ST_MENU
+        sta _gamestatus
+        rts
+
+.WaitForPlayerName:
+        jsr InputString         ;receive input and blink cursor
+        bcs +                   
+        rts
++       stz _boardinputflag
+        lda _track
+        jsr SetLeaderboardName
+        jsr SaveLeaderboard
+        jsr HideText
         lda #ST_MENU
         sta _gamestatus
         rts

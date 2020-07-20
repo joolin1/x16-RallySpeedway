@@ -48,6 +48,7 @@ _ycarclashangle = .clashangle
 _ycarfinishflag = .finishflag
 _ycarpenaltycount = .penaltycount       ;decimal mode
 _ycarcollisioncount = .collisioncount   ;decimal mode
+_ycartime = .minutes
 
 ;*** Private variables and constants ***************************************************************
 

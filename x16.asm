@@ -3,22 +3,22 @@
 ;*** RAM **********************
 
 ;*** Zeropage ***
-!addr ZP0   = $00
-!addr ZP1   = $01
-!addr ZP2   = $02
-!addr ZP3   = $03
-!addr ZP4   = $04
-!addr ZP5   = $05
-!addr ZP6   = $06
-!addr ZP7   = $07
-!addr ZP8   = $08
-!addr ZP9   = $09
-!addr ZPA   = $0A
-!addr ZPB   = $0B
-!addr ZPC   = $0C
-!addr ZPD   = $0D
-!addr ZPE   = $0E
-!addr ZPF   = $0F
+!addr ZP0   = $02
+!addr ZP1   = $03
+!addr ZP2   = $04
+!addr ZP3   = $05
+!addr ZP4   = $06
+!addr ZP5   = $07
+!addr ZP6   = $08
+!addr ZP7   = $09
+!addr ZP8   = $0A
+!addr ZP9   = $0B
+!addr ZPA   = $0C
+!addr ZPB   = $0D
+!addr ZPC   = $0E
+!addr ZPD   = $0F
+!addr ZPE   = $10
+!addr ZPF   = $11
 
 !addr IRQ_HANDLER_L 	= $0314		; Address of default IRQ handler
 !addr IRQ_HANDLER_H 	= $0315
@@ -86,6 +86,8 @@
 KEY_RETURN      = $0D
 KEY_BACKSPACE   = $14
 KEY_SPACE       = $20
+KEY_HYPHEN      = $2D
+KEY_NINE        = $39
 KEY_N           = $4E
 KEY_Y           = $59
 

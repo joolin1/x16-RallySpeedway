@@ -35,7 +35,7 @@ SaveFile:                       ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = save addres
         ldx #$08                ;device
         ldy #$00  
         jsr SETLFS
-        lda #2                  ;address of zero page register holding start address
+        lda #ZP2                ;zero page register holding start address
         ldx ZP4                 ;end address+1  
         ldy ZP5                   
         jsr SAVE
