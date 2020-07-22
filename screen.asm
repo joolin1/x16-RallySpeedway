@@ -121,6 +121,8 @@ SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode backgroun
         sta L0_VSCROLL_L
         lda #$0f
         sta L0_VSCROLL_H
+        stz L0_HSCROLL_L
+        stz L0_HSCROLL_H
         rts
 
 RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game

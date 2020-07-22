@@ -125,7 +125,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         bcc .InputChar
         sec
         sbc #$40
-        cmp #25                 ;a-z?
+        cmp #27                 ;a-z?
         bcc .InputChar
         clc
         rts

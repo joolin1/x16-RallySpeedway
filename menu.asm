@@ -67,14 +67,16 @@ MenuHandler:
 	jsr GETIN
 	cmp #KEY_Y
 	bne +
+	jsr UpdateMainMenu
+	lda #M_HANDLE_INPUT
+	sta .menumode
 	jsr ResetLeaderboard
 	jsr SaveLeaderboard
-	lda #M_SHOW_MAIN_MENU
-	sta .menumode
+	rts
 +	cmp #KEY_N
 	bne +
-	jsr PrintHand
-	lda #M_SHOW_MAIN_MENU
+	jsr UpdateMainMenu
+	lda #M_HANDLE_INPUT
 	sta .menumode
 +	rts
 
@@ -145,9 +147,20 @@ HandleUserInput:
 	jsr CloseMainMenu
 	rts
 
++	cmp #QUIT_GAME
+	bne +
+	; lda #$33
+	; +VPoke PALETTE+22			;restore black to dark grey
+	; lda #$03
+	; +VPoke PALETTE+23
+	lda #M_SHOW_START_SCREEN
+	sta .menumode				;set menu mode to start screen in case user starts game again
+	lda #ST_QUITGAME
+	sta _gamestatus				;call subroutine in main that cleans up the rest
+	rts
+
 +	cmp #RESET_BEST
 	bne +
-	lda .handrow
 	sta _row
 	lda #10
 	sta _col
@@ -162,20 +175,6 @@ HandleUserInput:
 	sta .menumode
 	rts
 
-.confirmation_question	!scr "are you sure (y/n)?",0
-
-+	cmp #QUIT_GAME
-	bne +
-	; lda #$33
-	; +VPoke PALETTE+22			;restore black to dark grey
-	; lda #$03
-	; +VPoke PALETTE+23
-	lda #M_SHOW_START_SCREEN
-	sta .menumode				;set menu mode to start screen in case user starts game again
-	lda #ST_QUITGAME
-	sta _gamestatus				;call subroutine in main that cleans up the rest
-	rts
-
 +	cmp #ONE_PLAYER
 	bne +
 	lda #1
@@ -184,6 +183,9 @@ HandleUserInput:
 	sta .twoplayers
 	lda #1
 	sta _noofplayers
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TWO_PLAYERS
 	bne +
 	lda #1
@@ -192,6 +194,9 @@ HandleUserInput:
 	sta .oneplayer
 	lda #2
 	sta _noofplayers
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TRACK_1
 	bne +
 	lda #1
@@ -203,6 +208,9 @@ HandleUserInput:
 	sta .track5
 	lda #1
 	sta _track
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TRACK_2
 	bne +
 	lda #1
@@ -214,6 +222,9 @@ HandleUserInput:
 	sta .track5
 	lda #2
 	sta _track
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TRACK_3
 	bne +
 	lda #1
@@ -225,6 +236,9 @@ HandleUserInput:
 	sta .track5
 	lda #3
 	sta _track
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TRACK_4
 	bne +
 	lda #1
@@ -236,6 +250,9 @@ HandleUserInput:
 	sta .track5
 	lda #4
 	sta _track
+	jsr UpdateMainMenu
+	rts
+
 +	cmp #TRACK_5
 	bne +
 	lda #1
@@ -247,9 +264,8 @@ HandleUserInput:
 	sta .track4
 	lda #5
 	sta _track
-+	jsr UpdateMainMenu			;update menu to reflect new selection in text colors
-	jsr PrintHand
-	rts
+	jsr UpdateMainMenu			;update menu to reflect new selection in text colors
++   rts
 
 .inputwait	!byte 0			;boolean, when true wait for user to release controller
 
@@ -348,14 +364,17 @@ ShowStartScreen:
 	jsr PrintLineLayer1
     rts
 
-ShowMainMenu:
-	jsr .InitScreen
+ShowMainMenu:						;print complete menu including setting layers, clear layers and print all text
+	jsr .InitScreen	
 	lda #<.mainmenubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
 	lda #>.mainmenubgblocks
 	sta .blocktable_hi
-	jsr FillLayer0WithColorBlocks
+	jsr FillLayer0WithColorBlocks	;print color blocks on background layer
+	lda #1							;put selection hand on first row
+	sta .handrow
 
+UpdateMainMenu:						;just print everything with current colors
 	stz .currentrow
 	stz .textrow
 	lda #<.mainmenutext
@@ -415,8 +434,6 @@ ShowMainMenu:
 	jsr PrintLineLayer1
 	jsr PrintLeaderboard
 
-	lda #1
-	sta .handrow
 	jsr PrintHand
 	rts
 
@@ -496,7 +513,7 @@ FillLayer0WithColorBlocks:
 	sta ZP2
 --	phx
 
-	jsr FillLayer0Row
+	jsr .FillLayer0Row
 
 	lda #<L0_MAP_ADDR
 	sta	VERA_ADDR_L		;set col 0
@@ -508,7 +525,7 @@ FillLayer0WithColorBlocks:
 	bra ---
 +	rts
 
-FillLayer0Row:
+.FillLayer0Row:
 	ldx #40					;40 columns in row
 -	lda #SPACE
 	sta VERA_DATA0			;write space character, only bg color is relevant							
@@ -569,28 +586,6 @@ GetRandomNumber:
 .randomnumber	!byte 0
 
 ;*** methods on layer 1 ********************************************************
-
-UpdateMainMenu:
-	lda #1
-	sta	VERA_ADDR_L
-	stz VERA_ADDR_M
-	lda	#$20				;increment 2
-	sta	VERA_ADDR_H
-	ldy #0
-
---	lda .mainmenu,y			;read color for row (updated by handler for user input)
-	beq +					;skip if 0 (= divider or filler row)
-	ldx #40
--	sta VERA_DATA0			;update color
-	dex
-	bne -
-	lda #1
-	sta VERA_ADDR_L
-+	inc VERA_ADDR_M
-	iny 
-	cpy #32					;menu always holds 32 rows including dividers and fillers in the end
-	bne --
-	rts
 
 PrintLineLayer1:			;IN: .A = screen code of char
 	stz	VERA_ADDR_L
@@ -727,6 +722,9 @@ PrintTextLineLayer1:
 !scr "      track 4                           "
 !scr "      track 5                           "
 !scr "                                        "
+
+.reset_leaderboard		!scr "reset leaderboard  ",0
+.confirmation_question	!scr "are you sure (y/n)?",0
 
 .mainmenubgblocks
 !byte 2,3,6,4,2,2,10,0				;table for how many rows each block is, zero terminated

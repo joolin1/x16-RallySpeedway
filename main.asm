@@ -27,7 +27,7 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 
 .StartGame:
         jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
-+       jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
+        jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
 +       jsr InitScreenAndSprites
@@ -90,6 +90,7 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 	lda .defaulthandler_hi
 	sta IRQ_HANDLER_H
 	cli
+        !byte $ff
         jsr RestoreScreenAndSprites
         rts
 

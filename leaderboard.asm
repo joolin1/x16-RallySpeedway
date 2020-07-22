@@ -10,7 +10,7 @@ LEADERBOARD_NUMBER_OF_TRACKS = 5
 
 PrintLeaderboard:
 	;print record times
-	lda #BOARD_COLORS       ;fg = grey, fg = white
+	lda #BOARD_COLORS       ;bg = grey, fg = white
 	sta _color
 	lda #LEADERBOARD_ROW
 	sta _row
