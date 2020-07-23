@@ -147,6 +147,7 @@ PrintBoard:
 .PrintOnePlayerRecordBoard:
         +PrintBoard 25, 11, 9, 7, .sboard               ;print extended board
         +PrintBoardString 16, 7, .sboardrecord          ;print record message
+        +InitBoardInput 18, 20
         lda #BOARD_COLORS
         sta _color
 +       +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
@@ -154,7 +155,6 @@ PrintBoard:
         lda _ycarcollisioncount
         jsr YCar_TimeSubSeconds
         +PrintYCarTime 12, 21                           ;print race time
-        +InitBoardInput 18, 20
         rts
 
 .PrintTwoPlayerBoard:
@@ -203,8 +203,19 @@ PrintBoard:
         rts
 
 .IsRecord
+        !byte $ff
+        jsr .GetWinnerTime
+       lda _track
+        jsr IsNewLeaderboardRecord
+        bcc +
+        rts
++       jsr .GetWinnerTime
+        lda _track
+        jsr SetLeaderboardRecord
         clc
         rts
+
+.GetWinnerTime
         lda _ycarfinishflag
         beq +
         lda _ycartime
@@ -213,20 +224,13 @@ PrintBoard:
         sta ZP1
         lda _ycartime+2
         sta ZP2
-        bra ++
+        rts
 +       lda _bcartime
         sta ZP0
         lda _bcartime+1
         sta ZP1
         lda _bcartime+2
         sta ZP2
-++      lda _track
-        jsr IsNewLeaderboardRecord
-        bcc +
-        rts
-+       lda _track
-        jsr SetLeaderboardRecord
-        clc
         rts
 
 ;*** board data ************************************************************************************

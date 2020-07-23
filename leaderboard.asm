@@ -109,7 +109,15 @@ IsNewLeaderboardRecord:                         ;IN: .A = track number. ZP0 = mi
         ldx ZP2
         stx ZP5                                 ;time to compare in ZP3-ZP5
         jsr GetLeaderboardRecord                ;leaderboard time in ZP0-ZP2
-        jsr IsTimeLess                          ;carry flag will be clear if less 
+        lda ZP0
+        bne +
+        lda ZP1
+        bne +
+        lda ZP2
+        bne +
+        clc                                     ;answer is yes if leaderboard record is 00:00:00 which means that no record exists
+        rts
++       jsr IsTimeLess                          ;carry flag will be clear if less 
         rts
 
 LoadLeaderboard:

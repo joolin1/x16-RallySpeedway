@@ -269,6 +269,14 @@ KPrintDigit:                     ;IN: .A = digit to print
 
 ;*** Print to VERA directly ************************************************************************
 
+!macro VPrintString .addr_lo, .addr_hi {
+        lda .addr_lo
+        sta ZP0
+        lda .addr_hi
+        sta ZP1
+        jsr VPrintString
+}
+
 VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: ZP0, ZP1 = address of string termination + 1 (to make printing of a string array easier)
 -       lda (ZP0)
         beq +
@@ -333,6 +341,16 @@ VPrintNullableTime:
         rts
 
 .nulltime       !scr "--:--:--",0
+
+!macro VPrintTime .m, .s, .j {
+        lda .m
+        sta ZP0
+        lda .s
+        sta ZP1
+        lda .j
+        sta ZP2
+        jsr VPrintTime
+}
 
 VPrintTime:                     ;ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
         lda _col

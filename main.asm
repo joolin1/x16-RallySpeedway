@@ -90,7 +90,6 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
 	lda .defaulthandler_hi
 	sta IRQ_HANDLER_H
 	cli
-        !byte $ff
         jsr RestoreScreenAndSprites
         rts
 

@@ -6,6 +6,7 @@ M_UPDATE_START_SCREEN	= 1
 M_SHOW_MAIN_MENU 		= 2
 M_HANDLE_INPUT 			= 3
 M_CONFIRM_RESET 		= 4
+M_CONFIRM_QUIT			= 5
 
 ;Menu item mapping
 START_RACE	=  1
@@ -17,7 +18,7 @@ TRACK_3		=  8
 TRACK_4		=  9
 TRACK_5		= 10
 RESET_BEST  = 16
-QUIT_GAME	= 19
+QUIT_GAME	= 18
 
 ;Special characters used in menu
 SPACE	 		= 32	;
@@ -61,7 +62,7 @@ MenuHandler:
 	stz .inactivitytimer_hi	
 	rts
 
-	;wait for keyboard input
+	;wait for confirmation
 +	cmp #M_CONFIRM_RESET
 	bne ++
 	jsr GETIN
@@ -72,6 +73,24 @@ MenuHandler:
 	sta .menumode
 	jsr ResetLeaderboard
 	jsr SaveLeaderboard
+	rts
++	cmp #KEY_N
+	bne +
+	jsr UpdateMainMenu
+	lda #M_HANDLE_INPUT
+	sta .menumode
++	rts
+
+++	cmp #M_CONFIRM_QUIT
+	bne ++
+	jsr GETIN
+	cmp #KEY_Y
+	bne +
+	jsr UpdateMainMenu
+	lda #M_SHOW_START_SCREEN
+	sta .menumode				;set menu mode to start screen in case user starts game again
+	lda #ST_QUITGAME
+	sta _gamestatus				;set game status to break main loop, clean up and exit
 	rts
 +	cmp #KEY_N
 	bne +
@@ -145,34 +164,6 @@ HandleUserInput:
 	cmp #START_RACE			
 	bne +						
 	jsr CloseMainMenu
-	rts
-
-+	cmp #QUIT_GAME
-	bne +
-	; lda #$33
-	; +VPoke PALETTE+22			;restore black to dark grey
-	; lda #$03
-	; +VPoke PALETTE+23
-	lda #M_SHOW_START_SCREEN
-	sta .menumode				;set menu mode to start screen in case user starts game again
-	lda #ST_QUITGAME
-	sta _gamestatus				;call subroutine in main that cleans up the rest
-	rts
-
-+	cmp #RESET_BEST
-	bne +
-	sta _row
-	lda #10
-	sta _col
-	lda #$81
-	sta _color
-	lda #<.confirmation_question
-	sta ZP0
-	lda #>.confirmation_question
-	sta ZP1
-	jsr VPrintString
-	lda #M_CONFIRM_RESET
-	sta .menumode
 	rts
 
 +	cmp #ONE_PLAYER
@@ -265,9 +256,38 @@ HandleUserInput:
 	lda #5
 	sta _track
 	jsr UpdateMainMenu			;update menu to reflect new selection in text colors
-+   rts
+    rts
+
++	cmp #RESET_BEST
+	bne +
+	ldx #$81
+	stx _color
+	jsr .PrintConfirmationQuestion
+	lda #M_CONFIRM_RESET
+	sta .menumode
+	rts
+
++	cmp #QUIT_GAME
+	bne +
+	ldx #$41
+	stx _color
+	jsr .PrintConfirmationQuestion
+	lda #M_CONFIRM_QUIT
+	sta .menumode
++	rts
 
 .inputwait	!byte 0			;boolean, when true wait for user to release controller
+
+.PrintConfirmationQuestion:		;IN: .A = row to print question
+	sta _row
+	lda #10
+	sta _col
+	lda #<.confirmation_question
+	sta ZP0
+	lda #>.confirmation_question
+	sta ZP1
+	jsr VPrintString
+	rts
 
 IncreaseHandrow:
 -	inc .handrow
