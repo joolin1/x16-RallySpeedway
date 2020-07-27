@@ -241,5 +241,6 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
 
 .dboardrecordycar       !scr "     new record by yellow car!      ",0
 .dboardrecordbcar       !scr "      new record by blue car!       ",0
+.dboardrecordcars       !scr "      new record by both cars!      ",0
 .dboardycar             !scr "yellow car",0
 .dboardbcar             !scr "blue car",0

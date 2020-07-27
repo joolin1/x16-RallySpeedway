@@ -39,43 +39,52 @@ CheckRaceOver:                          ;check if race is over
         rts
 
 SetWinner:
-        +SetParams _ycartime, _ycartime+1, _ycartime+2, _bcartime, _bcartime+1, _bcartime+2
+        lda _noofplayers
+        cmp #1
+        bne +
+        lda #1
+        sta _winner
+        jsr .SetYCarWinnerTime
+        bra ++
++       +SetParams _ycartime, _ycartime+1, _ycartime+2, _bcartime, _bcartime+1, _bcartime+2
         jsr AreTimesEqual
         bne +
         lda #0
         sta _winner
-        lda _ycartime
-        sta _winningtime
-        lda _ycartime+1
-        sta _winningtime+1
-        lda _ycartime+2
-        sta _winningtime+2
-        jsr .SetRecord
-        rts
+        jsr .SetYCarWinnerTime
+        bra ++
 +       jsr IsTimeLess          ;Is time of blue car less than time of yellow car?
         bcc +
         lda #1
         sta _winner
+        jsr .SetYCarWinnerTime
+        bra ++
++       lda #2
+        sta _winner
+        jsr .SetBCarWinnerTime
+++      jsr .SetRecord
+        rts
+
+.SetYCarWinnerTime:
         lda _ycartime
         sta _winningtime
         lda _ycartime+1
         sta _winningtime+1
         lda _ycartime+2
         sta _winningtime+2
-        jsr .SetRecord
         rts
-+       lda #2
-        sta _winner
+
+.SetBCarWinnerTime:
         lda _bcartime
         sta _winningtime
         lda _bcartime+1
         sta _winningtime+1
         lda _bcartime+2
         sta _winningtime+2
-        jsr .SetRecord
         rts
 
 .SetRecord:
+        !byte $ff
         +SetParams _winningtime, _winningtime+1, _winningtime+2
         lda _track
         jsr IsNewLeaderboardRecord
@@ -83,6 +92,7 @@ SetWinner:
         stz _isrecord
         rts
 +       +SetParams _winningtime, _winningtime+1, _winningtime+2
+        lda _track
         jsr SetLeaderboardRecord
         lda #1
         sta _isrecord

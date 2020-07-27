@@ -1,7 +1,8 @@
-;*** main.asm - Entry point for game,setup and main game loop **************************************
 !cpu 65c02
 !to "rallyspeedway.prg", cbm
-!src "x16.asm"
+!src "includes/x16.asm"
+
+;*** main.asm - Entry point for game,setup and main game loop **************************************
 
 ;Constants for car behaviour
 SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
@@ -262,12 +263,12 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 
 ;*** Other source files ****************************************************************************
 
-!src "mathlib.asm"
-!src "veralib.asm"
-!src "filelib.asm"
-!src "textlib.asm"
-!src "helperslib.asm"
-!src "debuglib.asm"
+!src "libs/mathlib.asm"
+!src "libs/veralib.asm"
+!src "libs/filelib.asm"
+!src "libs/textlib.asm"
+!src "libs/helperslib.asm"
+!src "libs/debuglib.asm"
 !zone
 !src "menu.asm"
 !zone
