@@ -68,10 +68,10 @@ MenuHandler:
 	jsr GETIN
 	cmp #KEY_Y
 	bne +
+	jsr ResetLeaderboard
 	jsr UpdateMainMenu
 	lda #M_HANDLE_INPUT
 	sta .menumode
-	jsr ResetLeaderboard
 	jsr SaveLeaderboard
 	rts
 +	cmp #KEY_N
@@ -287,6 +287,7 @@ HandleUserInput:
 	lda #>.confirmation_question
 	sta ZP1
 	jsr VPrintString
+	jsr PrintHand
 	rts
 
 IncreaseHandrow:
@@ -702,7 +703,7 @@ PrintTextLineLayer1:
 !scr "   john karlin's rally speedway v 0.1   "
 !scr "                                        "
 !scr "       a tribute to the original        "
-!scr "           commodore 64 game            "
+!scr "           atari and c64 game           "
 !scr "            by john anderson            "
 !scr "                                        "
 !scr "                                        "

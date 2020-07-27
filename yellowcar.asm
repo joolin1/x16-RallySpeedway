@@ -65,6 +65,5 @@ _ycartime = .minutes
 .SPR_ATTR_0       = SPR1_ATTR_0
 .SPR_ATTR_1       = SPR1_ATTR_1
 
-
-!src "x16-rallyspeedway/car.asm"        ;add an instance of car class
-!src "x16-rallyspeedway/timer.asm"      ;add an instance of timer class
+!src "car.asm"        ;add an instance of car class
+!src "timer.asm"      ;add an instance of timer class 

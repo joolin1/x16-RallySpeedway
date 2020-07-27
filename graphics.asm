@@ -17,10 +17,10 @@
 !addr BCAR_PALETTE      = PALETTE + $40
 
 ;Graphic resources to load
-.tilesname              !raw "X16-RALLYSPEEDWAY/TILES.BIN",0
-.carsname               !raw "X16-RALLYSPEEDWAY/CARS.BIN",0
-.explosionname          !raw "X16-RALLYSPEEDWAY/EXPLOSION.BIN",0
-.textname               !raw "X16-RALLYSPEEDWAY/TEXT.BIN",0
+.tilesname              !raw "RESOURCES/TILES.BIN",0
+.carsname               !raw "RESOURCES/CARS.BIN",0
+.explosionname          !raw "RESOURCES/EXPLOSION.BIN",0
+.textname               !raw "RESOURCES/TEXT.BIN",0
 
 .errorflag      !byte   0   ;at least one i/o error has occurred if set
 

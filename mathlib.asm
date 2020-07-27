@@ -1,6 +1,98 @@
-;*** math.asm - math functions and precalculated tables ***************************************************************
+;*** mathhandler.asm - functions, macros and precalculated tables ***************************************************************
+
+!macro Inc16bit .addr {
+        inc .addr
+        bne +
+        inc .addr+1
++       nop
+}
+
+!macro Dec16bit .addr {
+        dec .addr
+        bpl +
+        dec .addr+1
++       nop
+}
+
+!macro DivideBy16 .address_lo {
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+}
+
+!macro DivideBy32 .address_lo {
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+        lsr .address_lo+1
+        ror .address_lo
+}
+
+!macro MultiplyBy16 .address_lo {
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1    
+}
+
+!macro MultiplyBy32 .address_lo {
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1    
+        asl .address_lo
+        rol .address_lo+1    
+}
+
+!macro MultiplyBy128 .address_lo {
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1
+        asl .address_lo
+        rol .address_lo+1  
+}
 
 ;*** Time comparison. Time is represented by three bytes (minutes, seconds, jiffies)
+
+AreTimesEqual:                  ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2.
+        lda ZP0
+        cmp ZP3
+        beq +
+        rts
++       lda ZP1
+        cmp ZP4
+        beq +
+        rts
++       lda ZP2
+        cmp ZP5
+        rts
 
 IsTimeLessThanNullableTime:     ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2. OUT: .C clear if time 2 < time 1 or time 1 = NULL
         lda ZP0

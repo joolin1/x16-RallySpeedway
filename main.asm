@@ -1,8 +1,7 @@
 ;*** main.asm - Entry point for game,setup and main game loop **************************************
 !cpu 65c02
 !to "rallyspeedway.prg", cbm
-!src "x16-rallyspeedway/x16.asm"
-!src "x16-rallyspeedway/macros.asm"
+!src "x16.asm"
 
 ;Constants for car behaviour
 SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
@@ -201,6 +200,7 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         rts
 
 .HandleFinishedRace:
+        jsr SetWinner
         jsr ShowRaceOverText
         jsr PrintBoard
         jsr StopCarSounds
@@ -262,37 +262,37 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 
 ;*** Other source files ****************************************************************************
 
-!src "x16-rallyspeedway/math.asm"
+!src "mathlib.asm"
+!src "veralib.asm"
+!src "filelib.asm"
+!src "textlib.asm"
+!src "helperslib.asm"
+!src "debuglib.asm"
 !zone
-!src "x16-rallyspeedway/menu.asm"
+!src "menu.asm"
 !zone
-!src "x16-rallyspeedway/board.asm"
+!src "board.asm"
 !zone
-!src "x16-rallyspeedway/map.asm"
-!src "x16-rallyspeedway/view.asm"
-!src "x16-rallyspeedway/camera.asm"
+!src "map.asm"
+!src "view.asm"
+!src "camera.asm"
 !zone;
-!src "x16-rallyspeedway/yellowcar.asm"
+!src "yellowcar.asm"
 !zone
-!src "x16-rallyspeedway/bluecar.asm"
+!src "bluecar.asm"
 !zone
-!src "x16-rallyspeedway/interaction.asm"
+!src "carinteraction.asm"
 !zone
-!src "x16-rallyspeedway/soundfx.asm"
+!src "soundfx.asm"
 !zone
-!src "x16-rallyspeedway/joystick.asm"
+!src "joystick.asm"
 !zone
-!src "x16-rallyspeedway/screen.asm"
+!src "screen.asm"
 !zone
-!src "x16-rallyspeedway/spritetext.asm"
+!src "spritetext.asm"
 !zone
-!src "x16-rallyspeedway/graphics.asm"
+!src "graphics.asm"
 !zone
-!src "x16-rallyspeedway/filehandler.asm"
-!src "x16-rallyspeedway/texthandler.asm"
-!src "x16-rallyspeedway/helpers.asm"
-!src "x16-rallyspeedway/debug.asm"
+!src "tracks.asm"
 !zone
-!src "x16-rallyspeedway/tracks.asm"
-!zone
-!src "x16-rallyspeedway/leaderboard.asm"
+!src "leaderboard.asm"

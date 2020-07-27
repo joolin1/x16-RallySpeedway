@@ -1,10 +1,5 @@
 ;*** tracks.asm - definitions of tracks ************************************************************
 
-;Length of names on leaderboard
-RECORD_NAMES_LENGTH = 10
-RECORD_TOP_POS = 22             ;row to start printing leaderboard
-RECORD_LEFT_POS = 20            ;col to start printing leaderboard
-
 ;Tile status used for collision detection
 TILE_ROAD = 0                   ;car is on road
 TILE_TERRAIN = 1                ;car is off road, slow down speed
@@ -118,7 +113,7 @@ _track1_startdirection  !byte 0 ;0 deg
 _track1:
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,2,8,1,5,5,5,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 0,2,8,5,5,5,8,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,6,0,6,0,0,0,0,0,6,0,0,0,5,5,5,1,0,0,0,5,5,5,5,5,5,5,5,5,1,0,0
         !byte 0,3,5,4,5,5,5,5,5,4,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0

@@ -1,0 +1,27 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile",
+            "type": "shell",
+            "command": "acme main.asm",
+            "problemMatcher": [
+                ""
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Run",
+            "type": "shell",
+            "command": "x16emu -keymap nordic -joy1 SNES -joy2 SNES -prg rallyspeedway.prg -debug -run",
+            "problemMatcher": [
+                ""
+            ]
+        }
+    ]
+}

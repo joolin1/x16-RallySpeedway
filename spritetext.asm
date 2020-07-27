@@ -47,9 +47,13 @@ TextDelay:
 
 .textdelay      !byte 0
 
-ShowRaceOverText:                               ;.A = text color. 0 = yellow, 1 = blue (ignored if one player)
+ShowRaceOverText:
         ldx _noofplayers
         cpx #1
+        bne +
+        jsr .ShowFinishedText
+        rts
++       lda _winner
         bne +
         jsr .ShowFinishedText
         rts
@@ -86,9 +90,11 @@ ShowRaceOverText:                               ;.A = text color. 0 = yellow, 1 
         rts
 
 .ShowWinnerText:                                ;show "WINNER" text in yellow or blue color depending on winner
+        lda _winner         
+        dec
         clc
-        adc #224 + 1                            ;add width and height specification
-        +VPokeSprites SPR3_ATTR_1, 16           ;set color for all text sprites depending on winner
+        adc #224 + 1
++       +VPokeSprites SPR3_ATTR_1, 16           ;set color for all text sprites depending on winner
         
         ;enable all letters in the word "winner" and place them in front of both layers
         +VPokeI SPR15_ATTR_0, 12                ;enable "W"

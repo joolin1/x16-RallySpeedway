@@ -101,7 +101,7 @@ SetLeaderboardRecord:                           ;IN: .A = track number. ZP0 = mi
         sta .leaderboard_records+2,y        
         rts
 
-IsNewLeaderboardRecord:                         ;IN: .A = track number. ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies. OUT: .C = clear if time < current record
+IsNewLeaderboardRecord:                         ;IN: .A = track number. ZP0-ZP2 = time. OUT: .C = clear if time < current record
         ldx ZP0
         stx ZP3
         ldx ZP1
@@ -182,7 +182,7 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         bra -
 +       rts
 
-.leaderboardname                !raw "X16-RALLYSPEEDWAY/LEADERBOARD.BIN",0
+.leaderboardname                !raw "RESOURCES/LEADERBOARD.BIN",0
 
 .leaderboard                    ;data are read from file
 .leaderboard_names              !fill LEADERBOARD_NUMBER_OF_TRACKS*12,0 ;each name is max 11 chars long

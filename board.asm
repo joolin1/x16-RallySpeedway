@@ -125,14 +125,14 @@ PrintBoard:
         lda _noofplayers
         cmp #1
         bne ++
-        jsr .IsRecord
-        bcc +
+        lda _isrecord
+        bne +
         jsr .PrintOnePlayerBoard
         rts
 +       jsr .PrintOnePlayerRecordBoard
         rts
-++      jsr .IsRecord
-        bcc +
+++      lda _isrecord
+        bne +
         jsr .PrintTwoPlayerBoard
         rts
 +       jsr .PrintTwoPlayerRecordBoard
@@ -142,15 +142,20 @@ PrintBoard:
 
 .PrintOnePlayerBoard:
         +PrintBoard 25, 9, 9, 7, .sboard                ;print board
-        jmp +
+        jsr .PrintOnePlayerData
+        rts
 
 .PrintOnePlayerRecordBoard:
         +PrintBoard 25, 11, 9, 7, .sboard               ;print extended board
         +PrintBoardString 16, 7, .sboardrecord          ;print record message
+        jsr.PrintOnePlayerData
         +InitBoardInput 18, 20
         lda #BOARD_COLORS
         sta _color
-+       +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
+        rts
+
+.PrintOnePlayerData:
+        +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
         +PrintYCarTime 14, 21                           ;print finish time
         lda _ycarcollisioncount
         jsr YCar_TimeSubSeconds
@@ -202,37 +207,6 @@ PrintBoard:
         jsr BCar_TimeAddSeconds
         rts
 
-.IsRecord
-        !byte $ff
-        jsr .GetWinnerTime
-       lda _track
-        jsr IsNewLeaderboardRecord
-        bcc +
-        rts
-+       jsr .GetWinnerTime
-        lda _track
-        jsr SetLeaderboardRecord
-        clc
-        rts
-
-.GetWinnerTime
-        lda _ycarfinishflag
-        beq +
-        lda _ycartime
-        sta ZP0
-        lda _ycartime+1
-        sta ZP1
-        lda _ycartime+2
-        sta ZP2
-        rts
-+       lda _bcartime
-        sta ZP0
-        lda _bcartime+1
-        sta ZP1
-        lda _bcartime+2
-        sta ZP2
-        rts
-
 ;*** board data ************************************************************************************
 
 _boardinputflag         !byte 0 ;flag set when waiting for player to enter new name for record
@@ -242,7 +216,7 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "                         ",0
                         !scr "    race time            ",0
                         !scr "      crashes            ",0
-                        !scr "  finish time            ",0
+                        !scr "   total time            ",0
                         !scr "                         ",0
                         !scr " press start to continue ",0
                         !scr "                         ",0          ;one player, no record: print to this line
@@ -258,7 +232,7 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "     race time                      ",0
                         !scr "       crashes                      ",0
                         !scr "  outdistanced                      ",0
-                        !scr "   finish time                      ",0
+                        !scr "    total time                      ",0
                         !scr "                                    ",0
                         !scr "                                    ",0
                         !scr "                                    ",0       ;two players, no record: print to this line and then add "press start to continue" above
