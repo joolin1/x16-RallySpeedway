@@ -1,16 +1,25 @@
 ;*** texthandler.asm *******************************************************************************
 
+KEY_CURSOR = 59
+TEXTBOX_COLORS = $b1            ;bg and fg (= text) color
+CURSOR_REVERSE_COLOR = $bb      ;color for invisible cursor
+MAX_STRING_INPUT = 20
+CURSOR_DELAY = 30
+
 ;*** Global variables for cursor position (not used by KERNAL) *************************************
 
 _row    !byte 0                 ;current row
 _col    !byte 0                 ;current column
 _color  !byte 0                 ;text color (bg color = upper nybble, fg color = lower nybble)
 
-KEY_CURSOR = 59
-TEXTBOX_COLORS = $b1            ;bg and fg (= text) color
-CURSOR_REVERSE_COLOR = $bb      ;color for invincible cursor
-MAX_STRING_INPUT = 20
-CURSOR_DELAY = 30
+!macro SetPrintParams .row, .col, .color {
+        lda #.row
+        sta _row
+        lda #.col
+        sta _col
+        lda #.color
+        sta _color
+} 
 
 ;*** String handling *******************************************************************************
 
@@ -269,14 +278,6 @@ KPrintDigit:                     ;IN: .A = digit to print
 
 ;*** Print to VERA directly ************************************************************************
 
-!macro VPrintString .addr_lo, .addr_hi {
-        lda .addr_lo
-        sta ZP0
-        lda .addr_hi
-        sta ZP1
-        jsr VPrintString
-}
-
 VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: ZP0, ZP1 = address of string termination + 1 (to make printing of a string array easier)
 -       lda (ZP0)
         beq +
@@ -341,16 +342,6 @@ VPrintNullableTime:
         rts
 
 .nulltime       !scr "--:--:--",0
-
-!macro VPrintTime .m, .s, .j {
-        lda .m
-        sta ZP0
-        lda .s
-        sta ZP1
-        lda .j
-        sta ZP2
-        jsr VPrintTime
-}
 
 VPrintTime:                     ;ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
         lda _col

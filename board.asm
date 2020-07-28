@@ -94,18 +94,10 @@ BOTTOM_BORDER       = 36
         jsr VPrintDecimalNumber
 }
 
-!macro PrintYCarTime .row, .col {
-        lda _color
-        ldy #.row
-        ldx #.col
-        jsr YCar_DisplayTime    
-}
-
-!macro PrintBCarTime .row, .col {
-        lda _color
-        ldy #.row
-        ldx #.col
-        jsr BCar_DisplayTime    
+!macro PrintCarTime .row, .col, .time {
+        +SetPrintParams .row, .col, BOARD_COLORS
+        +SetParams .time, .time+1, .time+2
+        jsr VPrintTime    
 }
 
 !macro InitBoardInput .row, .col {
@@ -147,6 +139,8 @@ PrintBoard:
 
 .PrintOnePlayerRecordBoard:
         +PrintBoard 25, 11, 9, 7, .sboard               ;print extended board
+        lda #BOARD_YELLOW
+        sta _color
         +PrintBoardString 16, 7, .sboardrecord          ;print record message
         jsr.PrintOnePlayerData
         +InitBoardInput 18, 20
@@ -155,22 +149,30 @@ PrintBoard:
         rts
 
 .PrintOnePlayerData:
+        lda #BOARD_COLORS
+        sta _color
         +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
-        +PrintYCarTime 14, 21                           ;print finish time
+        +PrintCarTime 14, 21, _ycartime                 ;print finish time
         lda _ycarcollisioncount
         jsr YCar_TimeSubSeconds
-        +PrintYCarTime 12, 21                           ;print race time
+        +PrintCarTime 12, 21, _ycartime                 ;print race time
         rts
 
 .PrintTwoPlayerBoard:
         +PrintBoard 36, 11, 9, 2, .dboard
-        +PrintBoardString 18, 2, .dboardcontinue
-        jmp ++
+        jsr .PrintTwoPlayerData
+        rts
 
 .PrintTwoPlayerRecordBoard:
         +PrintBoard 36, 13, 9, 2, .dboard
-        lda _ycarfinishflag
-        beq +
+        lda _winner                                     ;announce which car holds the new record (can also be both!)
+        bne +
+        lda #BOARD_YELLOW
+        sta _color
+        +PrintBoardString 18, 2, .dboardrecordbothcars
+        bra ++
++       cmp #1
+        bne +
         lda #BOARD_YELLOW
         sta _color
         +PrintBoardString 18, 2, .dboardrecordycar
@@ -178,8 +180,14 @@ PrintBoard:
 +       lda #BOARD_BLUE
         sta _color
         +PrintBoardString 18, 2, .dboardrecordbcar
+++      jsr .PrintTwoPlayerData
+        +InitBoardInput 20,20
+        lda #BOARD_COLORS
+        sta _color
+        rts
 
-++      lda #BOARD_YELLOW
+.PrintTwoPlayerData:
+        lda #BOARD_YELLOW
         sta _color
         +PrintBoardString 12, 17, .dboardycar
         lda #BOARD_BLUE
@@ -192,17 +200,17 @@ PrintBoard:
         +PrintBoardValue 14, 28, _bcarcollisioncount
         +PrintBoardValue 15, 28, _bcarpenaltycount
 
-        +PrintYCarTime 16, 17           ;print yellow car finish time
+        +PrintCarTime 16, 17, _ycartime ;print yellow car finish time
         lda _ycarcollisioncount
         jsr YCar_TimeSubSeconds
-        +PrintYCarTime 13, 17           ;print actual race time (without added penalty time)
+        +PrintCarTime 13, 17, _ycartime ;print actual race time (without added penalty time)
         lda _ycarcollisioncount
         jsr YCar_TimeAddSeconds
 
-        +PrintBCarTime 16, 28           ;print blue car finish time
+        +PrintCarTime 16, 28, _bcartime ;print blue car finish time
         lda _bcarcollisioncount
         jsr BCar_TimeSubSeconds
-        +PrintBCarTime 13, 28           ;print actual race time (without added penalty time)
+        +PrintCarTime 13, 28, _bcartime ;print actual race time (without added penalty time)
         lda _bcarcollisioncount
         jsr BCar_TimeAddSeconds
         rts
@@ -219,9 +227,10 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "   total time            ",0
                         !scr "                         ",0
                         !scr " press start to continue ",0
-                        !scr "                         ",0          ;one player, no record: print to this line
-.sboardcontinue         !scr " enter name:             ",0
-                        !scr "                         ",0          ;one player, new record: print to this line and replace "start to continue"-text with "new record"-text
+                        !scr "                         ",0          ;one player, no record: print no further than this
+
+                        !scr " enter name:             ",0
+                        !scr "                         ",0          ;one player, new record: print to the end and replace "start to continue"-text with "new record"-text
 
 .sboardrecord           !scr " new record - well done! ",0
 
@@ -234,13 +243,14 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "  outdistanced                      ",0
                         !scr "    total time                      ",0
                         !scr "                                    ",0
-                        !scr "                                    ",0
-                        !scr "                                    ",0       ;two players, no record: print to this line and then add "press start to continue" above
-.dboardcontinue         !scr "      press start to continue       ",0
-                        !scr "                                    ",0       ;two players, new record: print to this line and then add "new record by NN car" above
+                        !scr "      press start to continue       ",0
+                        !scr "                                    ",0       ;two players, no record: print no further than this and then add "press start to continue" above
+                        
+                        !scr "      enter name:                   ",0
+                        !scr "                                    ",0       ;two players, new record: print to the end and replace "start to continue"-text with "new record"-text
 
 .dboardrecordycar       !scr "     new record by yellow car!      ",0
 .dboardrecordbcar       !scr "      new record by blue car!       ",0
-.dboardrecordcars       !scr "      new record by both cars!      ",0
+.dboardrecordbothcars   !scr "      new record by both cars!      ",0
 .dboardycar             !scr "yellow car",0
 .dboardbcar             !scr "blue car",0

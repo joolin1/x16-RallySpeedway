@@ -201,7 +201,7 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         rts
 
 .HandleFinishedRace:
-        jsr SetWinner
+        jsr SetWinnerAndRecord
         jsr ShowRaceOverText
         jsr PrintBoard
         jsr StopCarSounds

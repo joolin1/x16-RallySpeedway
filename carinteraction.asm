@@ -12,7 +12,6 @@
 .tableadr       = ZP9   ;(and ZPA) where to read from in atan table
 
 _winner         !byte   0       ;0 = race ended in a draw, 1 = yellow car, 2 = blue car
-_winningtime    !byte   0,0,0
 _isrecord       !byte   0       ;whether winning time is a new record
 
 CheckRaceOver:                          ;check if race is over  
@@ -38,64 +37,47 @@ CheckRaceOver:                          ;check if race is over
         sta _gamestatus
         rts
 
-SetWinner:
+SetWinnerAndRecord:             ;OUT: global variable _winner = 0, 1 or 2. 0 = race ended in a draw, 1 = yellow car has won, 2 = blue car has won
         lda _noofplayers
         cmp #1
         bne +
-        lda #1
+        lda #1                  ;yellow car is "winner" when only one player
         sta _winner
-        jsr .SetYCarWinnerTime
         bra ++
 +       +SetParams _ycartime, _ycartime+1, _ycartime+2, _bcartime, _bcartime+1, _bcartime+2
         jsr AreTimesEqual
         bne +
         lda #0
         sta _winner
-        jsr .SetYCarWinnerTime
         bra ++
-+       jsr IsTimeLess          ;Is time of blue car less than time of yellow car?
++       jsr IsTimeLess          ;is time of blue car less than time of yellow car?
         bcc +
         lda #1
         sta _winner
-        jsr .SetYCarWinnerTime
         bra ++
 +       lda #2
         sta _winner
-        jsr .SetBCarWinnerTime
-++      jsr .SetRecord
-        rts
 
-.SetYCarWinnerTime:
-        lda _ycartime
-        sta _winningtime
-        lda _ycartime+1
-        sta _winningtime+1
-        lda _ycartime+2
-        sta _winningtime+2
-        rts
-
-.SetBCarWinnerTime:
-        lda _bcartime
-        sta _winningtime
-        lda _bcartime+1
-        sta _winningtime+1
-        lda _bcartime+2
-        sta _winningtime+2
-        rts
-
-.SetRecord:
-        !byte $ff
-        +SetParams _winningtime, _winningtime+1, _winningtime+2
+++      jsr .SetWinnerParams
         lda _track
         jsr IsNewLeaderboardRecord
         bcc +
         stz _isrecord
         rts
-+       +SetParams _winningtime, _winningtime+1, _winningtime+2
++       jsr .SetWinnerParams
         lda _track
         jsr SetLeaderboardRecord
         lda #1
         sta _isrecord
+        rts
+
+.SetWinnerParams
+        lda _winner
+        cmp #2
+        beq +
+        +SetParams _ycartime, _ycartime+1, _ycartime+2
+        rts
++       +SetParams _bcartime, _bcartime+1, _bcartime+2
         rts
 
 UpdateStartPosition:                    ;set new start position after collision or outrun

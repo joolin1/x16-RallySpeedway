@@ -14,7 +14,6 @@ BCar_Explode                    = .Explode
 BCar_TimeReset                  = .TimeReset
 BCar_TimeAddSeconds             = .TimeAddSeconds
 BCar_TimeSubSeconds             = .TimeSubSeconds
-BCar_DisplayTime                = .DisplayTime
 
 BCar_PrintDebugInformation:         ;DEBUG
         lda #5

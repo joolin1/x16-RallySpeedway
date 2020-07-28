@@ -14,7 +14,6 @@ YCar_Explode                    = .Explode
 YCar_TimeReset                  = .TimeReset
 YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
-YCar_DisplayTime                = .DisplayTime
 
 YCar_PrintDebugInformation:  ;DEBUG
         lda #0
