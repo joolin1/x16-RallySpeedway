@@ -14,8 +14,10 @@ BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
 
 CAR_START_DISTANCE = 24 ;space between cars when two players
-PENALTY_TIME = 1        ;how much time that is added to a car that has been outrun
-COLLISION_TIME = 1      ;how much time that is added for a car that has collided with the background 
+
+
+PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outrun
+COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for a car that has collided with the background 
 
 ;*** Basic program ("10 SYS 2064") *****************************************************************
 
@@ -146,8 +148,8 @@ COLLISION_TIME = 1      ;how much time that is added for a car that has collided
         jsr YCar_Hide                   ;comment out to skip status menu
         jsr BCar_Hide                   ;comment out to skip status menu
         jsr MenuHandler                 ;comment out to skip status menu
-        jsr YCar_TimeReset
-        jsr BCar_TimeReset
+        jsr YCar_TimeDataReset
+        jsr BCar_TimeDataReset
         rts
 
 .SetUpRace:

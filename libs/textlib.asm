@@ -308,7 +308,7 @@ VPrintChar:                     ;IN: .A = screen code of character
         inc _col
         rts
 
-VPrintDecimalNumber:            ;IN: .A = number to print in decimal mode
+VPrintDecimalNumber:            ;IN: .A = number in decimal mode to print
         pha
         lsr
         lsr
@@ -343,7 +343,23 @@ VPrintNullableTime:
 
 .nulltime       !scr "--:--:--",0
 
-VPrintTime:                     ;ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
+VPrintSeconds:                  ;IN: .A = seconds
+        asl
+        tay
+        lda .secondstable,y
+        jsr VPrintChar
+        lda .secondstable+1,y
+        jsr VPrintChar
+        lda #<.secondtime
+        sta ZP0
+        lda #>.secondtime
+        sta ZP1
+        jsr VPrintString
+        rts
+        
+.secondtime     !scr ":00",0
+
+VPrintTime:                     ;IN: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
         lda _col
         asl
         sta VERA_ADDR_L         ;set start column      

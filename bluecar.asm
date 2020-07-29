@@ -11,11 +11,11 @@ BCar_UpdateSprite               = .UpdateSprite
 BCar_UpdateStartPosition        = .UpdateStartPosition
 BCar_DetectCollision            = .DetectCollision
 BCar_Explode                    = .Explode
-BCar_TimeReset                  = .TimeReset
+BCar_TimeDataReset              = .TimeDataReset
 BCar_TimeAddSeconds             = .TimeAddSeconds
 BCar_TimeSubSeconds             = .TimeSubSeconds
 
-BCar_PrintDebugInformation:         ;DEBUG
+BCar_PrintDebugInformation:             ;DEBUG
         lda #5
         jsr DebugSetLine
         lda .distance
@@ -45,8 +45,8 @@ _bcarangle = .angle
 _bcarclashpush = .clashpush
 _bcarclashangle = .clashangle
 _bcarfinishflag = .finishflag
-_bcarpenaltycount = .penaltycount       ;decimal mode
-_bcarcollisioncount = .collisioncount   ;decimal mode
+_bcarpenaltycount = .penaltycount
+_bcarcollisioncount = .collisioncount
 _bcartime = .minutes
 
 ;*** Private variables and constants ***************************************************************

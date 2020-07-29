@@ -12,6 +12,7 @@ RIGHT_BORDER        = 31
 BOTTOM_BORDER       = 36
 
 ;*** marcros for printing board ********************************************************************
+
 !macro PrintBoardShadow .width, .height, .startrow, .startcol {
         ;print bottom shadow
         lda #$0b                ;bg = transparent, fg = black
@@ -85,19 +86,16 @@ BOTTOM_BORDER       = 36
         jsr VPrintString
 }
 
-!macro PrintBoardValue .row, .col, .value {
-        lda #.row
-        sta _row
-        lda #.col
-        sta _col
-        lda .value
-        jsr VPrintDecimalNumber
-}
-
 !macro PrintCarTime .row, .col, .time {
         +SetPrintParams .row, .col, BOARD_COLORS
         +SetParams .time, .time+1, .time+2
         jsr VPrintTime    
+}
+
+!macro PrintAddedTime .row, .col, .seconds {
+        +SetPrintParams .row, .col, BOARD_COLORS
+        lda .seconds
+        jsr VPrintSeconds
 }
 
 !macro InitBoardInput .row, .col {
@@ -151,9 +149,11 @@ PrintBoard:
 .PrintOnePlayerData:
         lda #BOARD_COLORS
         sta _color
-        +PrintBoardValue 13, 21, _ycarcollisioncount    ;print number of crashes
+        +PrintAddedTime 13,24,_ycarcollisioncount       ;print added time due to crashes
         +PrintCarTime 14, 21, _ycartime                 ;print finish time
         lda _ycarcollisioncount
+        clc
+        adc _ycarpenaltycount
         jsr YCar_TimeSubSeconds
         +PrintCarTime 12, 21, _ycartime                 ;print race time
         rts
@@ -195,24 +195,24 @@ PrintBoard:
         +PrintBoardString 12, 28, .dboardbcar
         lda #BOARD_COLORS
         sta _color
-        +PrintBoardValue 14, 17, _ycarcollisioncount
-        +PrintBoardValue 15, 17, _ycarpenaltycount
-        +PrintBoardValue 14, 28, _bcarcollisioncount
-        +PrintBoardValue 15, 28, _bcarpenaltycount
+        +PrintAddedTime 14, 20, _ycarcollisioncount
+        +PrintAddedTime 15, 20, _ycarpenaltycount
+        +PrintAddedTime 14, 31, _bcarcollisioncount
+        +PrintAddedTime 15, 31, _bcarpenaltycount
 
         +PrintCarTime 16, 17, _ycartime ;print yellow car finish time
         lda _ycarcollisioncount
+        clc
+        adc _ycarpenaltycount
         jsr YCar_TimeSubSeconds
         +PrintCarTime 13, 17, _ycartime ;print actual race time (without added penalty time)
-        lda _ycarcollisioncount
-        jsr YCar_TimeAddSeconds
 
         +PrintCarTime 16, 28, _bcartime ;print blue car finish time
         lda _bcarcollisioncount
+        clc
+        adc _bcarpenaltycount
         jsr BCar_TimeSubSeconds
         +PrintCarTime 13, 28, _bcartime ;print actual race time (without added penalty time)
-        lda _bcarcollisioncount
-        jsr BCar_TimeAddSeconds
         rts
 
 ;*** board data ************************************************************************************
@@ -222,9 +222,9 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
 .sboard                 !scr "                         ",0
                         !scr "                         ",0
                         !scr "                         ",0
-                        !scr "    race time            ",0
-                        !scr "      crashes            ",0
-                        !scr "   total time            ",0
+                        !scr "   race time             ",0
+                        !scr "     crashes    +        ",0
+                        !scr "  total time             ",0
                         !scr "                         ",0
                         !scr " press start to continue ",0
                         !scr "                         ",0          ;one player, no record: print no further than this
@@ -238,10 +238,10 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "                                    ",0
                         !scr "                                    ",0
                         !scr "               yellow car blue car  ",0
-                        !scr "     race time                      ",0
-                        !scr "       crashes                      ",0
-                        !scr "  outdistanced                      ",0
-                        !scr "    total time                      ",0
+                        !scr "    race time                       ",0
+                        !scr "      crashes    +          +       ",0
+                        !scr " outdistanced    +          +       ",0
+                        !scr "   total time                       ",0
                         !scr "                                    ",0
                         !scr "      press start to continue       ",0
                         !scr "                                    ",0       ;two players, no record: print no further than this and then add "press start to continue" above

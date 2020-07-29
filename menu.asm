@@ -26,7 +26,7 @@ END_LINE_DIV	= 34 	;"
 BLOCK			= 35	;#
 MIDDLE_LINE_DIV	= 37 	;%
 FIRST_LINE_DIV 	= 38	;&
-HAND    		= 42 	;hand is char 42-44 = *+,
+HAND    		= 60    ;hand is char 60-62 = <=>
 COLON           = 58    ;:
 
 MenuHandler:

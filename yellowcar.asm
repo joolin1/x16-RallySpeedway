@@ -11,11 +11,11 @@ YCar_UpdateSprite               = .UpdateSprite
 YCar_UpdateStartPosition        = .UpdateStartPosition
 YCar_DetectCollision            = .DetectCollision
 YCar_Explode                    = .Explode
-YCar_TimeReset                  = .TimeReset
+YCar_TimeDataReset              = .TimeDataReset
 YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
 
-YCar_PrintDebugInformation:  ;DEBUG
+YCar_PrintDebugInformation:             ;DEBUG
         lda #0
         jsr DebugSetLine
         lda .distance
@@ -45,8 +45,8 @@ _ycarangle = .angle
 _ycarclashpush = .clashpush
 _ycarclashangle = .clashangle
 _ycarfinishflag = .finishflag
-_ycarpenaltycount = .penaltycount       ;decimal mode
-_ycarcollisioncount = .collisioncount   ;decimal mode
+_ycarpenaltycount = .penaltycount
+_ycarcollisioncount = .collisioncount
 _ycartime = .minutes
 
 ;*** Private variables and constants ***************************************************************

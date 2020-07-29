@@ -61,6 +61,12 @@
 +       jsr .IncreaseSpeed      ;not braking, not offroad, not skidding -> increase speed
         rts
 
+.TimeDataReset:
+        jsr .TimeReset
+        stz .penaltycount
+        stz .collisioncount
+        rts
+
 .Init:
         stz .distance
         stz .speed
@@ -73,8 +79,6 @@
         stz .clashpush
         stz .clashangle
         stz .finishflag
-        stz .penaltycount
-        stz .collisioncount
 
         lda _noofplayers
         cmp #1
@@ -425,9 +429,7 @@
         sta .collisionflag
         lda .finishflag
         bne ++
-        sed
         inc .collisioncount             ;count number of collisions in decimal mode
-        cld
         lda #%10100000
         +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
         jsr StopCarSounds
@@ -671,5 +673,5 @@
 .checkpointdirection    !byte 0         ;direction last checkpoint was passed. 
 .block                  !byte 0         ;which type of block car is on
 .distance               !byte 0         ;how many blocks the car has passed
-.penaltycount           !byte 0         ;how many times the car has got a time penalty (decimal mode!)
-.collisioncount         !byte 0         ;how many times the cas has collided/crashed (decimal mode!)
+.penaltycount           !byte 0         ;how many times the car has got a time penalty
+.collisioncount         !byte 0         ;how many times the cas has collided/crashed
