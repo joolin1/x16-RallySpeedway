@@ -1,8 +1,8 @@
 ;*** Commander X16 constants ***********************************************************************
 
-;*** RAM **********************
+;*** RAM **************************************************
 
-;*** Zeropage ***
+;*** Zeropage *************************
 !addr ZP0   = $02
 !addr ZP1   = $03
 !addr ZP2   = $04
@@ -20,9 +20,11 @@
 !addr ZPE   = $10
 !addr ZPF   = $11
 
+;*** IRQ ******************************
 !addr IRQ_HANDLER_L 	= $0314		; Address of default IRQ handler
 !addr IRQ_HANDLER_H 	= $0315
 
+;*** VERA interface *******************
 !addr VERA_ADDR_L   	= $9F20 	; LLLLLLLL - 17 Bit address L
 !addr VERA_ADDR_M   	= $9F21		; MMMMMMMM - 17 Bit address M
 !addr VERA_ADDR_H	    = $9F22		; IIIID--H - 17 Bit address H (I=Increment, D=Decrement)
@@ -70,7 +72,7 @@
 !addr SPI_DATA          = $9F3E
 !addr SPI_CTRL          = $9F3F
 
-;*** Kernal routines ***
+;*** Kernal routines ******************
 !addr SCNKEY    = $FF9F
 !addr SETLFS    = $FFBA
 !addr SETNAM    = $FFBD
@@ -83,19 +85,24 @@
 !addr MOUSE     = $FF09
 !addr CINT      = $FF81
 
-KEY_RETURN      = $0D
-KEY_BACKSPACE   = $14
-KEY_SPACE       = $20
-KEY_HYPHEN      = $2D
-KEY_NINE        = $39
-KEY_N           = $4E
-KEY_Y           = $59
-
 !addr joystick_scan         = $FF53
 !addr joystick_get          = $FF56
-!addr screen_set_charset    = $ff62
+!addr screen_set_charset    = $FF62
 
-;*** VRAM *********************
+;*** ASCII codes **********************
+A_RETURN    = $0D
+A_BACKSPACE = $14
+A_SPACE     = $20
+A_HYPHEN    = $2D
+A_NINE      = $39
+A_N         = $4E
+A_Y         = $59
+
+;*** Screen codes *********************
+S_SPACE     = 32
+S_COLON     = 58    
+
+;*** VRAM *************************************************
 
 ;Characters, base $0F800
 !addr CHAR_ADDR         = $F800

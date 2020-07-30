@@ -265,37 +265,44 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 
 ;*** Other source files ****************************************************************************
 
+;*** General files ********************
+!zone
 !src "libs/mathlib.asm"
 !src "libs/veralib.asm"
 !src "libs/filelib.asm"
 !src "libs/textlib.asm"
 !src "libs/helperslib.asm"
 !src "libs/debuglib.asm"
+!src "libs/joysticklib.asm"
+
+;*** Set up screen and sprites ********
 !zone
-!src "menu.asm"
+!src "init/screen.asm"
 !zone
-!src "board.asm"
+!src "init/graphics.asm"
+
+;*** User interface *******************
 !zone
-!src "map.asm"
-!src "view.asm"
-!src "camera.asm"
+!src "interface/menu.asm"
+!zone
+!src "interface/leaderboard.asm"
+!zone
+!src "interface/board.asm"
+!zone
+!src "interface/spritetext.asm"
+
+;*** Actual car race ******************
+!zone
+!src "gameplay/map.asm"
+!src "gameplay/view.asm"
+!src "gameplay/camera.asm"
 !zone;
-!src "yellowcar.asm"
+!src "gameplay/yellowcar.asm"
 !zone
-!src "bluecar.asm"
+!src "gameplay/bluecar.asm"
 !zone
-!src "carinteraction.asm"
+!src "gameplay/carinteraction.asm"
 !zone
-!src "soundfx.asm"
+!src "gameplay/soundfx.asm"
 !zone
-!src "joystick.asm"
-!zone
-!src "screen.asm"
-!zone
-!src "spritetext.asm"
-!zone
-!src "graphics.asm"
-!zone
-!src "tracks.asm"
-!zone
-!src "leaderboard.asm"
+!src "gameplay/tracks.asm"

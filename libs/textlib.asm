@@ -1,10 +1,10 @@
 ;*** texthandler.asm *******************************************************************************
 
-KEY_CURSOR = 59
-TEXTBOX_COLORS = $b1            ;bg and fg (= text) color
-CURSOR_REVERSE_COLOR = $bb      ;color for invisible cursor
-MAX_STRING_INPUT = 20
-CURSOR_DELAY = 30
+A_CURSOR                = 59    ;char for cursor
+TEXTBOX_COLORS          = $b1   ;bg and fg (= text) color
+CURSOR_REVERSE_COLOR    = $bb   ;color for invisible cursor
+MAX_STRING_INPUT        = 20
+CURSOR_DELAY            = 30
 
 ;*** Global variables for cursor position (not used by KERNAL) *************************************
 
@@ -85,12 +85,12 @@ InitInputString:
 .InitTextBox:
         lda #TEXTBOX_COLORS         ;initialize a "text box" by printing spaces with black bg and a cursor
         sta _color
-        lda #KEY_CURSOR
+        lda #A_CURSOR
         jsr VPrintChar
         ldx .inputlength
         dex
 -       phx
-        lda #KEY_SPACE
+        lda #A_SPACE
         jsr VPrintChar
         plx
         dex
@@ -103,7 +103,7 @@ InitInputString:
         rts
 
 .InitString:
-        lda #KEY_SPACE
+        lda #A_SPACE
         ldy .inputlength
 -       sta .inputstring-1,y
         dey
@@ -121,16 +121,16 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         rts
 
         ;check for allowed characters
-+       cmp #KEY_BACKSPACE      ;backspace?
++       cmp #A_BACKSPACE
         beq .InputBackspace
-        cmp #KEY_RETURN         ;return?
+        cmp #A_RETURN
         beq .InputReturn
-        cmp #KEY_SPACE          ;space?
+        cmp #A_SPACE
         beq .InputChar
-        cmp #KEY_HYPHEN         ;-.0123456789?
+        cmp #A_HYPHEN           ;-.0123456789?
         bcs +
         rts
-+       cmp #KEY_NINE+1
++       cmp #A_NINE+1
         bcc .InputChar
         sec
         sbc #$40
@@ -149,7 +149,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         ldy .inputpos
         cpy .inputlength
         beq +
-        lda #KEY_CURSOR
+        lda #A_CURSOR
         jsr VPrintChar
         dec _col
 +       clc
@@ -162,18 +162,18 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         clc                     ;nothing to do if already at leftmost position
         rts
 +       dec _col
-        lda #KEY_CURSOR         ;delete previous letter by replacing it with the cursor char
+        lda #A_CURSOR           ;delete previous letter by replacing it with the cursor char
         jsr VPrintChar
         lda .inputpos
         cmp .inputlength
         beq +                   ;do not print a space if at rightmost position
-        lda #KEY_SPACE
+        lda #A_SPACE
         jsr VPrintChar          ;delete previous cursor by replacing it with a space            
         dec _col
 +       dec _col
         dec .inputpos
         ldy .inputpos
-        lda #KEY_SPACE
+        lda #A_SPACE
         sta .inputstring,y
         clc
         rts
@@ -215,7 +215,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         rts
 +       lda .cursorcolor
         sta _color
-        lda #KEY_CURSOR
+        lda #A_CURSOR
         jsr VPrintChar
         dec _col
         lda #TEXTBOX_COLORS
@@ -372,14 +372,14 @@ VPrintTime:                     ;IN: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
         lda ZP0
         jsr .VPrintMinutes
 
-        lda #COLON
+        lda #S_COLON
         sta VERA_DATA0
         stx VERA_DATA0
 
         lda ZP1
         jsr .VPrintSeconds
 
-        lda #COLON
+        lda #S_COLON
         sta VERA_DATA0
         stx VERA_DATA0
 
