@@ -170,26 +170,28 @@
         ;Skid car
 +       lda .turncount
         cmp #SKID_LIMIT         ;fixed point 6.2
-        bmi +                   ;do not skid if turn is less than skid limit
+        bmi ++                  ;do not skid if turn is less than skid limit
 
         lda .speed
         lsr                     ;skip fraction, skid ratio is fixed point 6.2
         lsr                     ;skidding in direct proportion to speed.
         lsr
-        tax                     ;skid amount in .X
+        bne +
+        lda #1                  ;min value = 1
++       tax                     ;skid amount in .X
         lda .skidangle          ;angle in .A
         jsr .Move               ;skid cars outwards when turning      
 
         ;Calculate display angle for car depending on skidding
         lda .turncount
         cmp #SKID_LIMIT             ;don't increase extra rotation if car is not skidding
-        bcc +    
+        bcc ++    
         jsr .IncreaseExtraRotation
         jsr .PlaySkiddingSound
-        bra ++
-+       jsr .DecreaseExtraRotation
+        bra +++
+++      jsr .DecreaseExtraRotation
         jsr .StopSkiddingSound
-++      lda .angle                  ;add extra rotation to direction car is moving
++++     lda .angle                  ;add extra rotation to direction car is moving
         clc
         adc .plusangle             
         sta .displayangle        
@@ -552,17 +554,17 @@
 ++      rts
 
 .IncreaseSpeed:
+
+        ldx .speed
         lda .offroadflag
-        bne +
-        lda #MAX_SPEED          ;set speed limit for car on road
-        bra ++
-+       lda #MIN_SPEED          ;set speed limit for car off road
-
-++      cmp .speed          
-        bcs +
+        beq +
+        cpx #MIN_SPEED
+        bcc ++
         rts
-
-+       inc .speeddelay
++       cpx #MAX_SPEED
+        bcc ++
+        rts
+++      inc .speeddelay
         lda .speeddelay
         cmp #SPEED_DELAY
         bcc +
@@ -578,9 +580,10 @@
         cmp #BRAKE_DELAY
         bne +
         stz .brakedelay
-        lda .speed
-        cmp #MIN_SPEED          ;fixed 6.2, 14 = 3.5
-        bmi +
+        lda .speed              ;fixed 6.2, 14 = 3.5
+        cmp #MIN_SPEED
+        beq +
+        bcc +
         dec
         sta .speed
 +       rts
@@ -604,6 +607,7 @@
 .brakedelay     !byte 0
 
 .TurnLeft:
+        sta .turndirection      ;flag that car is turning left
         lda .speed
         bne +
         rts
@@ -616,10 +620,10 @@
         sbc #64                 ;subtract 90 degrees
         sta .skidangle
         lda #1
-        sta .turndirection      ;flag that car is turning left
         bra .IncreaseTurnCount
 
 .TurnRight:
+        stz .turndirection      ;flag that car is turning right
         lda .speed
         bne +
         rts
@@ -631,7 +635,6 @@
         clc
         adc #64                 ;add 90 degrees
         sta .skidangle
-        stz .turndirection      ;flag that car is turning right
 
 .IncreaseTurnCount:
         lda .turncount          ;count how long user is turning

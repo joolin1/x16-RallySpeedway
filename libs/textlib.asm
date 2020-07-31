@@ -327,6 +327,32 @@ VPrintDecimalDigit:             ;IN: .A = digit to print
         jsr VPrintChar
         rts
 
+VPrintNumber:                   ;IN: .A = number to print
+    ldx #$ff
+    sec 
+-   inx
+    sbc #100
+    bcs -
+    adc #100
+    jsr +
+
+    ldx #$ff
+    sec
+--  inx
+    sbc #10
+    bcs --
+    adc #10
+    jsr +
+
+    tax
++   pha
+    txa
+    clc
+    adc #$30
+    jsr VPrintChar
+    pla
+    rts
+
 VPrintNullableTime:
         lda ZP0
         bne VPrintTime

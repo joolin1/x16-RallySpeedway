@@ -143,12 +143,14 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         jmp .WaitForEnd
 
         ;race is on
-+       jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
++       jsr YCar_PrintDebugInformation  ;TEMP
+        jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
-        jsr YCar_DetectCollision        ;check if the car has collided
+        jsr YCar_DetectCollision       ;check if the car has collided
         lda _noofplayers
         cmp #1
-        beq +        
+        beq +
+        jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
         jsr BCar_DetectCollision
@@ -287,7 +289,6 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !src "libs/filelib.asm"
 !src "libs/textlib.asm"
 !src "libs/helperslib.asm"
-!src "libs/debuglib.asm"
 !src "libs/joysticklib.asm"
 
 ;*** Set up screen and sprites ********

@@ -16,22 +16,18 @@ BCar_TimeAddSeconds             = .TimeAddSeconds
 BCar_TimeSubSeconds             = .TimeSubSeconds
 
 BCar_PrintDebugInformation:             ;DEBUG
-        lda #5
-        jsr DebugSetLine
-        lda .distance
-        jsr DebugPrintNumber
-        lda #6
-        jsr DebugSetLine
+        +SetPrintParams 5,0,$01
+        lda .speed
+        jsr VPrintNumber
+        +SetPrintParams 6,0,$01
         lda .checkpoint_block_xpos
-        jsr DebugPrintNumber
-        lda #7
-        jsr DebugSetLine
+        jsr VPrintNumber
+        +SetPrintParams 7,0,$01
         lda .checkpoint_block_ypos
-        jsr DebugPrintNumber
-        lda #8
-        jsr DebugSetLine
+        jsr VPrintNumber
+        +SetPrintParams 8,0,$01
         lda .checkpointdirection
-        jsr DebugPrintNumber
+        jsr VPrintNumber
         rts
 
 _bcarxpos_lo = .xpos_lo_int

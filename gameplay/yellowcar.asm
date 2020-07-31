@@ -16,22 +16,18 @@ YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
 
 YCar_PrintDebugInformation:             ;DEBUG
-        lda #0
-        jsr DebugSetLine
-        lda .distance
-        jsr DebugPrintNumber
-        lda #1
-        jsr DebugSetLine
+        +SetPrintParams 0,0,$01
+        lda .speed
+        jsr VPrintNumber
+        +SetPrintParams 1,0,$01
         lda .checkpoint_block_xpos
-        jsr DebugPrintNumber
-        lda #2
-        jsr DebugSetLine
+        jsr VPrintNumber
+        +SetPrintParams 2,0,$01
         lda .checkpoint_block_ypos
-        jsr DebugPrintNumber
-        lda #3
-        jsr DebugSetLine
+        jsr VPrintNumber
+        +SetPrintParams 3,0,$01
         lda .checkpointdirection
-        jsr DebugPrintNumber
+        jsr VPrintNumber
         rts
 
 _ycarxpos_lo = .xpos_lo_int
