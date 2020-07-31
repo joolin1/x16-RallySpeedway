@@ -56,8 +56,16 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         beq -
         jsr .GameTick
         stz .vsynctrigger
+
+        ; jsr VPoke               ;TEMP Change black back to green
+        ; !word PALETTE+10        ;TEMP
+        ; !byte $c5               ;TEMP
+        ; jsr VPoke               ;TEMP
+        ; !word PALETTE+11        ;TEMP
+        ; !byte $00               ;TEMP
+        
         lda _gamestatus
-        cmp #ST_QUITGAME
+        cmp #ST_QUITGAME 
         bne -
         jsr .EndGame
         rts
@@ -74,6 +82,14 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         lda _gamestatus
         cmp #ST_RACING
         bne +
+
+        ; jsr VPoke               ;TEMP Change green to black for measuring how much time a race update takes
+        ; !word PALETTE+10        ;TEMP
+        ; !byte $00               ;TEMP
+        ; jsr VPoke               ;TEMP
+        ; !word PALETTE+11        ;TEMP
+        ; !byte $00               ;TEMP
+
         jsr UpdateView
         ;alt 1 - jump to default handler
 +       jmp (.defaulthandler_lo)     
@@ -173,7 +189,6 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         and #8                  ;player 1 - up pressed?
         bne +
         lda #ST_RACING
-        ;lda #ST_FINISH
         sta _gamestatus
         rts
 +       lda _noofplayers

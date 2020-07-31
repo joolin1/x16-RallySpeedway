@@ -578,7 +578,6 @@
         cmp #BRAKE_DELAY
         bne +
         stz .brakedelay
-
         lda .speed
         cmp #MIN_SPEED          ;fixed 6.2, 14 = 3.5
         bmi +

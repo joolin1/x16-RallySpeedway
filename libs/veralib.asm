@@ -79,7 +79,6 @@ VPoke:  ;routine for poking VRAM that takes inline parameters
         sta $0102,x         ;and store the high byte of the return address
             
         ;Then use the original return address to access inline arguments
-        
         ldy #1              ;The return address is actually pointing to the return address-1
         lda (ZP0),y         ;therefore access the first argument with an offset of 1 and so on
         sta VERA_ADDR_L
