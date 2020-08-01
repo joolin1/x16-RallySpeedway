@@ -6,7 +6,7 @@
 
 ;Constants for car behaviour
 SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
-MAX_SPEED = 16          ;maximum speed that car accelerates to by itself when on road
+MAX_SPEED = 18          ;maximum speed that car accelerates to by itself when on road
 MIN_SPEED = 8           ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
 MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
@@ -14,7 +14,6 @@ BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
 
 CAR_START_DISTANCE = 24 ;space between cars when two players
-
 
 PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outrun
 COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for a car that has collided with the background 

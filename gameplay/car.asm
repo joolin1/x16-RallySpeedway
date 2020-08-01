@@ -345,7 +345,7 @@
 
 .UpdateSprite:
         ;update which car sprite to show
-        lda .displayangle           ;update car sprite to point in right direction, a skidding car will be rotated up to 22.5 degrees extra        
+        lda .displayangle           ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees        
         lsr                         ;get rid of fraction
         lsr
         tay
