@@ -440,3 +440,31 @@ VPrintTime:                     ;IN: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
 ;tables for showing seconds and minutes, jiffies is converted to tenths of a second
 .secondstable   !scr "000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859"
 .jiffiestable   !scr "000000000000101010101010202020202020303030303030404040404040505050505050606060606060707070707070808080808080909090909090"
+
+;*** Conversion ************************************************************************************
+
+Petscii2Screen:                 ;IN: .A = petscii code. OUT: .A = screen code
+        cmp #$20		;if A<32 then...
+	bcc .dRev
+	cmp #$60		;if A<96 then...
+	bcc .d1
+	cmp #$80		;if A<128 then...
+	bcc .d2
+	cmp #$a0		;if A<160 then...
+	bcc .d3
+	cmp #$c0		;if A<192 then...
+	bcc .d4
+	cmp #$ff		;if A<255 then...
+	bcc .dRev
+	lda #$7e		;A=255, then A=126
+	rts
+.d1:	and #$3f		;if A=32..95 then strip bits 6 and 7
+	rts     		
+.d2:	and #$5f		;if A=96..127 then strip bits 5 and 7
+	rts
+.d3:	ora #$40		;if A=128..159, then set bit 6
+	rts
+.d4:    eor #$c0		;if A=160..191 then flip bits 6 and 7
+	rts
+.dRev:	eor #$80		;flip bit 7 (reverse on when off and vice versa)
+        rts

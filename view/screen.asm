@@ -1,5 +1,8 @@
 ;*** Set up screen and sprites ************************************************************************
 
+SCREEN_WIDTH = 320
+SCREEN_HEIGHT = 240
+
 ;Sprite collisions
 COLLISION_MASK = %00010000
 
@@ -98,7 +101,6 @@ InitScreenAndSprites:
         rts
 
 SetLayer0ToTileMode:
-
         lda #2                          ;set map size to 32x32, color depth 4bpp
         sta L0_CONFIG 
         lda #L0_MAP_ADDR>>9             ;set map base address
@@ -109,7 +111,6 @@ SetLayer0ToTileMode:
         rts
 
 SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode background in shifting colors for start screen and menus
-
         lda #%00100000                  ;set map size to 128x32 (128 columns = 256 bytes/row which is practical, 32 rows because screen holds 30 rows at 320x200), color depth 1bpp    
         sta L0_CONFIG
         lda #L0_MAP_ADDR>>9             ;set map base address

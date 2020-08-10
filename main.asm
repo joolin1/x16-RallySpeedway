@@ -1,8 +1,27 @@
+;*** main.asm - Entry point for game, setup and main game loop *************************************
+
 !cpu 65c02
 !to "rallyspeedway.prg", cbm
 !src "includes/x16.asm"
 
-;*** main.asm - Entry point for game,setup and main game loop **************************************
+;*** Basic program ("10 SYS 2064") *****************************************************************
+
+*=$0801
+	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
+*=$0810
+
+;*** Game globals **********************************************************************************
+
+;Status for game
+ST_MENU         = 0     ;show start screen or menu
+ST_SETUPRACE    = 1     ;draw track, position cars
+ST_READYTORACE  = 2     ;wait for player/s to start race
+ST_RACING       = 3     ;race on
+ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
+ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
+ST_FINISH       = 7     ;race is finished, announce winner
+ST_RACEOVER     = 8     ;wait for player/s to continue game
+ST_QUITGAME     = 9     ;end game
 
 ;Constants for car behaviour
 SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
@@ -12,17 +31,10 @@ MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
-
 CAR_START_DISTANCE = 24 ;space between cars when two players
 
 PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outrun
 COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for a car that has collided with the background 
-
-;*** Basic program ("10 SYS 2064") *****************************************************************
-
-*=$0801
-	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
-*=$0810
 
 ;*** Main program **********************************************************************************
 
@@ -32,9 +44,32 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         bcc +
         rts                             ;exit if some resource failed to load
 +       jsr InitScreenAndSprites
-        jsr InitJoysticks               ;set type of joysticks (game controllers) being used 
+        jsr InitJoysticks               ;set which type of joysticks (game controllers) being used 
+        jsr .SetupIrqHandler
         lda #ST_MENU
         sta _gamestatus	
+
+        ;main loop
+-       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
+        lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
+        beq -
+ 
+        ;jsr ChangeDebugColor
+        jsr .GameTick
+        ;jsr RestoreDebugColor
+        stz .vsynctrigger
+       
+        lda _gamestatus
+        cmp #ST_QUITGAME 
+        bne -
+        jsr .EndGame
+        rts
+
+_gamestatus     !byte   0       
+_noofplayers	!byte   1       ;number of players
+_debug          !byte   0       ;DEBUG - flag for breaking into debugger
+
+.SetupIrqHandler:
         sei
 	lda IRQ_HANDLER_L	        ;save original IRQ handler
 	sta .defaulthandler_lo
@@ -48,25 +83,6 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         lda #1                          				
 	sta VERA_IEN		        ;enable Vera vertical blanking interrupts
 	cli
-
-        ;main loop
--       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
-        lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
-        beq -
-        jsr .GameTick
-        stz .vsynctrigger
-
-        ; jsr VPoke               ;TEMP Change black back to green
-        ; !word PALETTE+10        ;TEMP
-        ; !byte $c5               ;TEMP
-        ; jsr VPoke               ;TEMP
-        ; !word PALETTE+11        ;TEMP
-        ; !byte $00               ;TEMP
-        
-        lda _gamestatus
-        cmp #ST_QUITGAME 
-        bne -
-        jsr .EndGame
         rts
 
 .IrqHandler:
@@ -81,15 +97,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         lda _gamestatus
         cmp #ST_RACING
         bne +
-
-        ; jsr VPoke               ;TEMP Change green to black for measuring how much time a race update takes
-        ; !word PALETTE+10        ;TEMP
-        ; !byte $00               ;TEMP
-        ; jsr VPoke               ;TEMP
-        ; !word PALETTE+11        ;TEMP
-        ; !byte $00               ;TEMP
-
-        jsr UpdateView
+        jsr UpdateRaceView
         ;alt 1 - jump to default handler
 +       jmp (.defaulthandler_lo)     
         ;alt 2 - skip default handler, return directly from interrupt
@@ -113,6 +121,24 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 .defaulthandler_lo 	!byte 0
 .defaulthandler_hi	!byte 0
 .vsynctrigger           !byte 0
+
+ChangeDebugColor:
+        jsr VPoke               ;TEMP 
+        !word PALETTE+10        ;TEMP
+        !byte $00               ;TEMP
+        jsr VPoke               ;TEMP
+        !word PALETTE+11        ;TEMP
+        !byte $00               ;TEMP
+        rts
+
+RestoreDebugColor:
+        jsr VPoke               ;TEMP
+        !word PALETTE+10        ;TEMP
+        !byte $c5               ;TEMP
+        jsr VPoke               ;TEMP
+        !word PALETTE+11        ;TEMP
+        !byte $00               ;TEMP
+        rts
 
 .GameTick:                              ;Main game loop
         jsr GetJoys                     ;read gamepads and store for all functions to use
@@ -155,7 +181,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         jsr BCar_DetectCollision
         jsr CheckInteraction            ;check if one car has outrun the other or if cars have collided
 +       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
-        jsr UpdateCamera                ;set camera, i e what part of the map that will be displayed
+        jsr UpdateMap                   ;update all tilemap information
         rts
 
 .ShowMenu:
@@ -170,8 +196,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         rts
 
 .SetUpRace:
-        jsr SetTrack
-        jsr InitMap
+        jsr SetTrack                    ;set track and start position
 	jsr YCar_Init
         jsr YCar_Show
         lda _noofplayers
@@ -179,9 +204,8 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         beq +
         jsr BCar_Init
         jsr BCar_Show
-+	jsr InitCamera
-        jsr InitView
-        jsr UpdateView
++	jsr InitMap                     ;update all tilemap information
+        jsr UpdateRaceView
         inc _gamestatus
         rts
 
@@ -262,26 +286,9 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         sta _gamestatus
         rts
 
-;*** Game globals **********************************************************************************
-
-;Status for game
-ST_MENU         = 0     ;show start screen or menu
-ST_SETUPRACE    = 1     ;draw track, position cars
-ST_READYTORACE  = 2     ;wait for player/s to start race
-ST_RACING       = 3     ;race on
-ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
-ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
-ST_FINISH       = 7     ;race is finished, announce winner
-ST_RACEOVER     = 8     ;wait for player/s to continue game
-ST_QUITGAME     = 9     ;end game
-
-_gamestatus     !byte   0       
-_noofplayers	!byte   1       ;number of players
-_debug          !byte   0       ;DEBUG - flag for breaking into debugger
-
 ;*** Other source files ****************************************************************************
 
-;*** General files ********************
+;*** library files *********************
 !zone
 !src "libs/mathlib.asm"
 !src "libs/veralib.asm"
@@ -290,34 +297,30 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 !src "libs/helperslib.asm"
 !src "libs/joysticklib.asm"
 
-;*** Set up screen and sprites ********
+;*** View *****************************
 !zone
-!src "init/screen.asm"
+!src "view/screen.asm"
+!src "view/graphics.asm"
+!src "view/tilemap.asm"
 !zone
-!src "init/graphics.asm"
+!src "gameplay/soundfx.asm"
 
 ;*** User interface *******************
 !zone
-!src "interface/menu.asm"
+!src "userinterface/menu.asm"
 !zone
-!src "interface/leaderboard.asm"
+!src "userinterface/leaderboard.asm"
 !zone
-!src "interface/board.asm"
+!src "userinterface/board.asm"
 !zone
-!src "interface/spritetext.asm"
+!src "userinterface/spritetext.asm"
 
-;*** Actual car race ******************
+;*** Model *****************************
 !zone
-!src "gameplay/map.asm"
-!src "gameplay/view.asm"
-!src "gameplay/camera.asm"
-!zone;
 !src "gameplay/yellowcar.asm"
 !zone
 !src "gameplay/bluecar.asm"
 !zone
 !src "gameplay/carinteraction.asm"
-!zone
-!src "gameplay/soundfx.asm"
 !zone
 !src "gameplay/tracks.asm"

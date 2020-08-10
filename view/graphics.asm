@@ -2,8 +2,11 @@
 
 ;Memory layout for screen and graphic resources
 !addr L1_MAP_ADDR       = $0000                   ;         8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
-                                                  ;              | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = $1e00
-!addr L0_MAP_ADDR       = $2000                   ;         8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode
+                                                  ;              | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = 7680 bytes
+!addr L0_MAP_ADDR       = $2000                   ;         8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode.
+                                                  ;              |           text mode: 40 cols (each 256 bytes) x 30 rows = 7680 bytes
+                                                  ;              |           tile mode: 32 cols (each 64 bytes)  x 32 rows = 2048 bytes
+!addr L0_MAP_ADDR_2     = $2800                   ;              | Layer 0 - The lower half of the tilemap can be used as a second buffer because only the upper half (the first 16 rows) are displayed.
                                                   ;Total   16 Kb of screen memory
                                                   
 !addr TILE_ADDR         = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes
@@ -17,10 +20,10 @@
 !addr BCAR_PALETTE      = PALETTE + $40
 
 ;Graphic resources to load
-.tilesname              !raw "RESOURCES/TILES.BIN",0
-.carsname               !raw "RESOURCES/CARS.BIN",0
-.explosionname          !raw "RESOURCES/EXPLOSION.BIN",0
-.textname               !raw "RESOURCES/TEXT.BIN",0
+.tilesname              !raw "TILES.BIN",0
+.carsname               !raw "CARS.BIN",0
+.explosionname          !raw "EXPLOSION.BIN",0
+.textname               !raw "TEXT.BIN",0
 
 .errorflag      !byte   0   ;at least one i/o error has occurred if set
 
@@ -168,7 +171,7 @@ LoadGraphics:
         !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
         !byte $ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$38,$38,$38,$18,$30,$00,$00
         !byte $00,$1c,$38,$70,$70,$70,$38,$1c,$00,$70,$38,$1c,$1c,$1c,$38,$70
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$30,$30,$fc,$fc,$30,$30,$00
+        !byte $00,$c6,$38,$fe,$38,$c6,$00,$00,$00,$30,$30,$fc,$fc,$30,$30,$00
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$7c,$7c,$00,$00,$00
         !byte $00,$00,$00,$00,$00,$38,$38,$38,$00,$06,$0e,$1c,$38,$70,$e0,$c0
         !byte $00,$7c,$e6,$ee,$f6,$fe,$fe,$7c,$00,$38,$78,$38,$38,$fe,$fe,$fe
@@ -176,9 +179,9 @@ LoadGraphics:
         !byte $00,$1c,$3c,$7c,$dc,$fe,$fe,$1c,$00,$fe,$e0,$fc,$06,$e6,$fe,$7c
         !byte $00,$7c,$e0,$fc,$e6,$fe,$fe,$7c,$00,$fe,$0e,$1e,$3c,$7c,$f8,$f8
         !byte $00,$7c,$ee,$7c,$ee,$fe,$fe,$7c,$00,$7c,$e6,$7e,$0e,$fe,$fc,$f8
-        !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$00,$00
+        !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$fe,$fe
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
-        !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00
+        !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
 
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0EE7, $0FFF, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;yellow car (color 2 = yellow)

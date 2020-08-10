@@ -182,7 +182,7 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         bra -
 +       rts
 
-.leaderboardname                !raw "RESOURCES/LEADERBOARD.BIN",0
+.leaderboardname                !raw "LEADERBOARD.BIN",0
 
 .leaderboard                    ;data are read from file
 .leaderboard_names              !fill LEADERBOARD_NUMBER_OF_TRACKS*12,0 ;each name is max 11 chars long
