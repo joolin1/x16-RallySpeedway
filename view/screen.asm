@@ -126,6 +126,26 @@ SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode backgroun
         stz L0_HSCROLL_H
         rts
 
+ClearTextLayer:				;IN: .X, .Y = address of layer
+	stx VERA_ADDR_L
+	tya
+	clc
+	adc #30
+	sta VERA_ADDR_M
+	lda #$10			;increment 1
+	sta VERA_ADDR_H
+	lda #S_SPACE
+	ldy #$01			;bg = black (transparent), fg = white
+--	ldx #40
+-	sta VERA_DATA0			;print space						
+	sty VERA_DATA0			;set color
+	dex
+	bne -
+	stz VERA_ADDR_L
+	dec VERA_ADDR_M
+	bpl --
+	rts
+
 RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         
         stz VERA_CTRL           ;R-----DA (R=RESET, D=DCSEL, A=ADDRSEL)

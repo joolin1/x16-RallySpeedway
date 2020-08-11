@@ -1,6 +1,6 @@
 ;*** texthandler.asm *******************************************************************************
 
-A_CURSOR                = 59    ;char for cursor
+S_CURSOR                = 59    ;char for cursor
 TEXTBOX_COLORS          = $b1   ;bg and fg (= text) color
 CURSOR_REVERSE_COLOR    = $bb   ;color for invisible cursor
 MAX_STRING_INPUT        = 20
@@ -85,7 +85,7 @@ InitInputString:
 .InitTextBox:
         lda #TEXTBOX_COLORS         ;initialize a "text box" by printing spaces with black bg and a cursor
         sta _color
-        lda #A_CURSOR
+        lda #S_CURSOR
         jsr VPrintChar
         ldx .inputlength
         dex
@@ -149,7 +149,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         ldy .inputpos
         cpy .inputlength
         beq +
-        lda #A_CURSOR
+        lda #S_CURSOR
         jsr VPrintChar
         dec _col
 +       clc
@@ -162,7 +162,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         clc                     ;nothing to do if already at leftmost position
         rts
 +       dec _col
-        lda #A_CURSOR           ;delete previous letter by replacing it with the cursor char
+        lda #S_CURSOR           ;delete previous letter by replacing it with the cursor char
         jsr VPrintChar
         lda .inputpos
         cmp .inputlength
@@ -215,7 +215,7 @@ InputString:                    ;IN: .A = string length. OUT: ZP0, ZP1 = address
         rts
 +       lda .cursorcolor
         sta _color
-        lda #A_CURSOR
+        lda #S_CURSOR
         jsr VPrintChar
         dec _col
         lda #TEXTBOX_COLORS

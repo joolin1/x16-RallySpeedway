@@ -4,14 +4,15 @@ JOYSTICK_NOT_PRESENT    = 0
 JOYSTICK_TYPE_NES       = 1
 JOYSTICK_TYPE_SNES      = 2
 
-JOY_BUTTON_A    = 128
-JOY_BUTTON_B    = 64
-JOY_SELECT      = 32
-JOY_START       = 16
-JOY_UP          = 8
-JOY_DOWN        = 4
-JOY_LEFT        = 2
-JOY_RIGHT       = 1
+JOY_NOTHING_PRESSED     = 255
+JOY_BUTTON_A            = 128
+JOY_BUTTON_B            = 64
+JOY_SELECT              = 32
+JOY_START               = 16
+JOY_UP                  = 8
+JOY_DOWN                = 4
+JOY_LEFT                = 2
+JOY_RIGHT               = 1
 
 _joy0type:	!byte 0
 _joy1type:	!byte 0
@@ -49,7 +50,7 @@ InitJoysticks:
 	sta _joy1type
 	rts
 
-GetJoys:                        ;RETURNS: status of both joysticks in _joy0 and _joy1
+GetJoys:                        ;OUT: status of both joysticks in _joy0 and _joy1
         jsr joystick_scan
         ldx #0
         jsr joystick_get
@@ -77,7 +78,7 @@ GetJoys:                        ;RETURNS: status of both joysticks in _joy0 and 
         sta _joy1
         rts
 
-GetJoy0:                        ;RETURNS: .A = status of joystick 0 in NES layout regardless of joystick type
+GetJoy0:                        ;OUT: .A = status of joystick 0 in NES layout regardless of joystick type
         jsr joystick_scan
         ldx #0
         jsr joystick_get        
@@ -89,7 +90,7 @@ GetJoy0:                        ;RETURNS: .A = status of joystick 0 in NES layou
         rts                     
 
 GetJoy1:
-        jsr joystick_scan       ;RETURNS: .A = status of joystick 0 in NES layout regardless of joystick type
+        jsr joystick_scan       ;OUT: .A = status of joystick 1 in NES layout regardless of joystick type
         ldx #1
         jsr joystick_get
         pha

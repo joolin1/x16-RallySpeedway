@@ -1,8 +1,10 @@
 ;*** board.asm - board displayed when race is finished *********************************************
 
-BOARD_COLORS = $c1      ;bg color = grey, fg color = white 
-BOARD_YELLOW = $c7      ;bg color = grey, fg color = yellow
-BOARD_BLUE   = $c6      ;bg color = grey, fg color = blue  
+BOARD_COLORS            = $c1     ;bg color = grey, fg color = white 
+BOARD_YELLOW            = $c7     ;bg color = grey, fg color = yellow
+BOARD_BLUE              = $c6     ;bg color = grey, fg color = blue  
+BOARD_SELECTED          = $c1     ;bg color = grey, fg color = white           
+BOARD_UNSELECTED        = $cb     ;bg color = grey, fg color = black
 
 ;Special characters used for board shadow effect
 BOTTOM_RIGHT_BORDER = 27
@@ -109,7 +111,93 @@ BOTTOM_BORDER       = 36
         sta _boardinputflag
 }
 
-;*** public subroutines ****************************************************************************
+;*** Pause menu ************************************************************************************
+
+PAUSEMENU_ITEMCOUNT = 2         ;(has to be 2, 4, 8...)
+
+.pausemenu        !scr "             ",0
+.pausemenuitems   !scr " resume race ",0
+                  !scr " quit        ",0
+                  !scr "             ",0
+.selecteditem     !byte 0
+.inputwait        !byte 0
+
+ShowPauseMenu:
+        stz .selecteditem
+        lda #1
+        sta .inputwait
+        jsr .PrintPauseMenu
+        rts
+
+UpdatePauseMenu:     
+        lda _joy0
+        and _joy1
+        cmp #JOY_NOTHING_PRESSED        ;before accepting new input all buttons must be released
+        bne +
+        stz .inputwait
+        lda #-1
+        rts
+
++       lda .inputwait
+	beq +
+	lda #-1
+        rts
+
++       lda _joy0
+        and _joy1
+        bit #JOY_BUTTON_A
+        bne +
+        lda .selecteditem
+        rts
+
++       bit #JOY_UP
+        bne +
+        lda .selecteditem
+        dec                             ;change to menu item above
+        and #PAUSEMENU_ITEMCOUNT-1
+        sta .selecteditem
+        bra ++
+
++       bit #JOY_DOWN
+        bne ++
+        lda .selecteditem               ;change to menu item below
+        inc
+        and #PAUSEMENU_ITEMCOUNT-1
+        sta .selecteditem
+
+++      jsr .PrintPauseMenu
+        lda #1
+        sta .inputwait
+        lda #-1
+        rts
+
+.PrintPauseMenu:
+        +PrintBoard 13,4,12,13,.pausemenu       ;start with printing the whole menu with white text
+        lda #13
+        sta _row
+        lda #0      
+-       cmp .selecteditem                       ;loop through all menu items, printing all unselected items in black
+        bne +        
+        ldx #BOARD_SELECTED
+        bra ++
++       ldx #BOARD_UNSELECTED
+++      stx _color
+        ldx #13
+        stx _col
+        ldx #<.pausemenuitems
+        stx ZP0
+        ldx #>.pausemenuitems
+        stx ZP1
+        pha
+        jsr GetStringInArray         
+        jsr VPrintString
+        pla
+        inc
+        cmp #PAUSEMENU_ITEMCOUNT
+        bne -        
+        rts
+
+;*** Finish boardd **********************************************************************************
 
 PrintBoard:
         lda _noofplayers
@@ -127,8 +215,6 @@ PrintBoard:
         rts
 +       jsr .PrintTwoPlayerRecordBoard
         rts
-
-;*** private subroutines ***************************************************************************
 
 .PrintOnePlayerBoard:
         +PrintBoard 25, 9, 9, 7, .sboard                ;print board

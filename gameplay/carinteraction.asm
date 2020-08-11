@@ -1,4 +1,4 @@
-;*** interaction.asm - when a car outruns the other or cars collides *******************************
+;*** interaction.asm - when a car outdistanceds the other or cars collides *******************************
 
 .xdist_lo       = ZP0   ;horizontal distance between cars
 .xdist_hi       = ZP1
@@ -80,7 +80,7 @@ SetWinnerAndRecord:             ;OUT: global variable _winner = 0, 1 or 2. 0 = r
 +       +SetParams _bcartime, _bcartime+1, _bcartime+2
         rts
 
-UpdateStartPosition:                    ;set new start position after collision or outrun
+UpdateStartPosition:                    ;set new start position after collision or outdistancing
         lda _noofplayers
         cmp #1
         bne +
@@ -153,23 +153,23 @@ CheckInteraction:
         lda .absydist_hi
         bne +                           ;high y byte must be 0
         jsr SetClash
-        rts                             ;if clash, outrun calculations are unnecessary   
+        rts                             ;if clash, outdistancing calculations are unnecessary   
 
-        ;check for horizontal outrun
+        ;check for horizontal outdistancing
 +       lda .absxdist_lo
         cmp #44                         ;low byte must be 44 or higher
         bcc +
         lda .absxdist_hi
         cmp #1                          ;high byte must be 1 (1 * 256 + 44 = 300)
-        beq SetOutrun                   
+        beq SetOutdistanced                   
 
-        ;check for vertical outrun
+        ;check for vertical outdistancing
 +       lda .absydist_lo
         cmp #220                        ;low byte must be 220 or higher (high byte is irrelevant)
-        bcs SetOutrun
+        bcs SetOutdistanced
         rts
 
-SetOutrun:                              ;if one car is outrun - decide which and set new game status
+SetOutdistanced:                        ;if one car is outdistanced - decide which and set new game status
         lda _ycarfinishflag             ;if any of the cars have finished the race just abort
         beq +
         rts
@@ -178,27 +178,27 @@ SetOutrun:                              ;if one car is outrun - decide which and
         rts
 +       jsr StopCarSounds
         jsr PlayOutrunSound
-        lda #ST_OUTRUN
+        lda #ST_OUTDISTANCED
         sta _gamestatus
         lda _ycardistance
         cmp _bcardistance
         bcc +
         lda #1
-        sta _bcaroutrun
+        sta _bcaroutdistanced
         jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr BCar_TimeAddSeconds
         inc _bcarpenaltycount           ;count number of penalties in decimal mode
         rts
 +       lda #0
-        sta _bcaroutrun
+        sta _bcaroutdistanced
         jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr YCar_TimeAddSeconds
         inc _ycarpenaltycount           ;count number of penalties in decimal mode
         rts        
 
-_bcaroutrun     !byte   0       ;1 = blue car outrun, 0 = yellow car outrun
+_bcaroutdistanced       !byte   0       ;1 = blue car outdistanced, 0 = yellow car outdistanced
 
 SetClash:
         jsr PlayClashSound

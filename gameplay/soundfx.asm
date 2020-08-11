@@ -33,7 +33,7 @@ _playingtable   !fill 12,0      ;boolean table for sound effects (NOTE: Make sur
         bra ++
 +       ldy #.playing_fx
         lda #0
-        sta _playingtable,y       ;no, stop sound
+        sta _playingtable,y     ;no, stop sound
         lda #.voice             
         jsr StopSound
         bra +++

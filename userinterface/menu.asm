@@ -120,7 +120,7 @@ MenuHandler:
 
 HandleUserInput:
 	lda _joy0
-	cmp #$ff					;prevent repeating
+	cmp #JOY_NOTHING_PRESSED	;prevent repeating
 	bne ++
 	stz .inputwait				;nothing pressed - ready for input again
 	inc .inactivitytimer_lo		;increase timer for user's inactivity
@@ -479,26 +479,6 @@ CloseMainMenu:
 	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
 	lda #START_RACE
 	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
-	rts
-
-ClearTextLayer:
-	stx VERA_ADDR_L
-	tya
-	clc
-	adc #30
-	sta VERA_ADDR_M
-	lda	#$10				;increment 1
-	sta	VERA_ADDR_H
-	lda #S_SPACE
-	ldy #$01				;bg = black (transparent), fg = white
---	ldx #40
--	sta VERA_DATA0			;.A = char						
-	sty VERA_DATA0			;color
-	dex
-	bne -
-	stz VERA_ADDR_L
-	dec VERA_ADDR_M
-	bpl --
 	rts
 
 ;*** Methods on layer 0 ********************************************************

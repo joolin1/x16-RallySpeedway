@@ -17,8 +17,9 @@ ST_MENU         = 0     ;show start screen or menu
 ST_SETUPRACE    = 1     ;draw track, position cars
 ST_READYTORACE  = 2     ;wait for player/s to start race
 ST_RACING       = 3     ;race on
+ST_PAUSED       = 4     ;game paused, quit/resume menu displayed
 ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
-ST_OUTRUN       = 6     ;one car has outrun the other (if two players)
+ST_OUTDISTANCED = 6     ;one car has outdistanced the other (if two players)
 ST_FINISH       = 7     ;race is finished, announce winner
 ST_RACEOVER     = 8     ;wait for player/s to continue game
 ST_QUITGAME     = 9     ;end game
@@ -33,32 +34,29 @@ BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
 CAR_START_DISTANCE = 24 ;space between cars when two players
 
-PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outrun
+PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outdistanced
 COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for a car that has collided with the background 
 
 ;*** Main program **********************************************************************************
 
 .StartGame:
+        ;init everything
         jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
-+       jsr InitScreenAndSprites
-        jsr InitJoysticks               ;set which type of joysticks (game controllers) being used 
-        jsr .SetupIrqHandler
-        lda #ST_MENU
++       lda #ST_MENU
         sta _gamestatus	
+        jsr InitScreenAndSprites
+        jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
+        jsr .SetupIrqHandler
 
         ;main loop
 -       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
         lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
         beq -
- 
-        ;jsr ChangeDebugColor
         jsr .GameTick
-        ;jsr RestoreDebugColor
-        stz .vsynctrigger
-       
+        stz .vsynctrigger     
         lda _gamestatus
         cmp #ST_QUITGAME 
         bne -
@@ -66,8 +64,8 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         rts
 
 _gamestatus     !byte   0       
-_noofplayers	!byte   1       ;number of players
-_debug          !byte   0       ;DEBUG - flag for breaking into debugger
+_noofplayers	!byte   1               ;number of players
+_debug          !byte   0               ;DEBUG - flag for breaking into debugger
 
 .SetupIrqHandler:
         sei
@@ -98,15 +96,7 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
         cmp #ST_RACING
         bne +
         jsr UpdateRaceView
-        ;alt 1 - jump to default handler
 +       jmp (.defaulthandler_lo)     
-        ;alt 2 - skip default handler, return directly from interrupt
-        ; pla                            
-        ; tay
-        ; pla
-        ; tax
-        ; pla
-        ; rti
 
 .EndGame:                       
  	sei                             ;restore default irq handler
@@ -122,27 +112,15 @@ _debug          !byte   0       ;DEBUG - flag for breaking into debugger
 .defaulthandler_hi	!byte 0
 .vsynctrigger           !byte 0
 
-ChangeDebugColor:
-        jsr VPoke               ;TEMP 
-        !word PALETTE+10        ;TEMP
-        !byte $00               ;TEMP
-        jsr VPoke               ;TEMP
-        !word PALETTE+11        ;TEMP
-        !byte $00               ;TEMP
-        rts
+.GameTick:                              ;this subroutine is called every jiffy and advances the game one "frame"
+        jsr GetJoys                     ;read game controllers and store for all routines to use           
 
-RestoreDebugColor:
-        jsr VPoke               ;TEMP
-        !word PALETTE+10        ;TEMP
-        !byte $c5               ;TEMP
-        jsr VPoke               ;TEMP
-        !word PALETTE+11        ;TEMP
-        !byte $00               ;TEMP
-        rts
+        lda _gamestatus                 ;first of all check if game paused, then everything including sound effects should be freezed
+        cmp #ST_PAUSED                  
+        bne +
+        jmp .HandlePause
 
-.GameTick:                              ;Main game loop
-        jsr GetJoys                     ;read gamepads and store for all functions to use
-        jsr SfxTick                     ;update all sound effects that are currently playing
++       jsr SfxTick                     ;update all sound effects that are currently playing
 
         lda _gamestatus
         cmp #ST_MENU                    ;show start screen and menu
@@ -154,12 +132,12 @@ RestoreDebugColor:
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
         jmp .WaitForStart
-+       cmp #ST_COLLISION               ;one car has collided, animate explosion
++       cmp #ST_COLLISION               ;one car has collided, stop movement and animate explosion (in theory both cars can collide and explode at the same time)
         bne +
         jmp .HandleCollision
-+       cmp #ST_OUTRUN                  ;one car has outrun the other (only when two players) 
++       cmp #ST_OUTDISTANCED            ;one car has outdistanced the other (only when two players) 
         bne +
-        jmp .HandleOutrun
+        jmp .HandleOutdistancing
 +       cmp #ST_FINISH                  ;race finished, announce winner
         bne + 
         jmp .HandleFinishedRace
@@ -168,6 +146,9 @@ RestoreDebugColor:
         jmp .WaitForEnd
 
         ;race is on
++       jsr .CheckForPause              ;check for pause before starting to change the model for next frame
+        bcc +
+        rts
 +       jsr YCar_PrintDebugInformation  ;TEMP
         jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
@@ -179,7 +160,7 @@ RestoreDebugColor:
         jsr BCar_ReactOnPlayerInput
         jsr BCar_UpdatePosition
         jsr BCar_DetectCollision
-        jsr CheckInteraction            ;check if one car has outrun the other or if cars have collided
+        jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
 +       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
         jsr UpdateMap                   ;update all tilemap information
         rts
@@ -211,29 +192,56 @@ RestoreDebugColor:
 
 .WaitForStart:
         lda _joy0
-        and #8                  ;player 1 - up pressed?
-        bne +
-        lda #ST_RACING
-        sta _gamestatus
-        rts
-+       lda _noofplayers
-        cmp #2
-        beq +
-        rts
-+       lda _joy1               ;give both players the chance to start race
-        and #8
+        and _joy1
+        and #JOY_UP             ;up pressed on any game control?
         bne +
         lda #ST_RACING
         sta _gamestatus
 +       rts
 
+.CheckForPause:
+        lda _joy0
+        and _joy1
+        and #JOY_START          ;start pressed by any player?
+        beq +
+        clc
+        rts
++       jsr StopCarSounds
+        jsr ShowPauseMenu    
+        lda #ST_PAUSED
+        sta _gamestatus
+        sec
+        rts
+ 
+.HandlePause:
+        jsr UpdatePauseMenu     ;OUT: .A = seleced menu item. -1 = nothing selected
+        cmp #-1
+        bne +
+        rts
++       cmp #0
+        beq +
+        lda #ST_MENU
+        sta _gamestatus         ;quit game
+        rts
++       ldx #<L1_MAP_ADDR       ;delete menu by simply clearing text layer     
+        ldy #>L1_MAP_ADDR
+        jsr ClearTextLayer
+        jsr PlayYCarEngineSound ;start engine sounds again
+        lda _noofplayers
+        cmp #1
+        beq +
+        jsr PlayBCarEngineSound
++       lda #ST_RACING          ;resume game
+        sta _gamestatus
+        rts
+
 .HandleCollision:
-        jsr YCar_Explode                ;each car has a collision flag which is set when the car has collided with the background
+        jsr YCar_Explode        ;each car has a collision flag which is set when the car has collided with the background
         jsr BCar_Explode
         jsr UpdateStartPosition
         rts
 
-.HandleOutrun:
+.HandleOutdistancing:
         jsr TextDelay
         beq +
         rts
@@ -258,17 +266,11 @@ RestoreDebugColor:
         jsr .WaitForPlayerName
         rts
 +       lda _joy0
-        and #JOY_START          ;player 1 - start button pressed?
-        beq ++
-        lda _noofplayers
-        cmp #2
+        and _joy1
+        and #JOY_START          ;start button pressed on any game control?
         beq +
         rts
-+       lda _joy1               ;give both players the chance to end race
-        and #JOY_START
-        beq ++
-        rts      
-++      jsr HideText
++       jsr HideText
         lda #ST_MENU
         sta _gamestatus
         rts
