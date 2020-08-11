@@ -25,7 +25,7 @@ ST_RACEOVER     = 8     ;wait for player/s to continue game
 ST_QUITGAME     = 9     ;end game
 
 ;Constants for car behaviour
-SKID_LIMIT = 16         ;how deep the turn needs to be before the car starts to skid
+SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
 MAX_SPEED = 18          ;maximum speed that car accelerates to by itself when on road
 MIN_SPEED = 8           ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
 MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding

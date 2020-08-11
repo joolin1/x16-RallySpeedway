@@ -17,13 +17,11 @@
 
 .ReactOnPlayerInput:
         lda .joy
-        and #3
-        cmp #1                  ;left?
+        bit #JOY_LEFT
         bne +
         jsr .TurnLeft
         bra ++
-
-+       cmp #2                  ;right?
++       bit #JOY_RIGHT
         bne +
         jsr .TurnRight
         bra ++
