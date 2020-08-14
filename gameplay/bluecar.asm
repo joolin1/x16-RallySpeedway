@@ -5,38 +5,39 @@
 BCar_Show                       = .Show
 BCar_Hide                       = .Hide
 BCar_ReactOnPlayerInput         = .ReactOnPlayerInput
-BCar_Init                       = .Init
+BCar_StartRace                  = .StartRace
+BCar_ResumeRace                 = .ResumeRace
 BCar_UpdatePosition             = .UpdatePosition
 BCar_UpdateSprite               = .UpdateSprite
-BCar_UpdateStartPosition        = .UpdateStartPosition
 BCar_DetectCollision            = .DetectCollision
 BCar_Explode                    = .Explode
-BCar_TimeDataReset              = .TimeDataReset
 BCar_TimeAddSeconds             = .TimeAddSeconds
 BCar_TimeSubSeconds             = .TimeSubSeconds
 
 BCar_PrintDebugInformation:             ;DEBUG
-        +SetPrintParams 5,0,$01
-        lda .speed
-        jsr VPrintNumber
+        ; +SetPrintParams 5,0,$01
+        ; lda .distance
+        ; jsr VPrintNumber
         +SetPrintParams 6,0,$01
-        lda .checkpoint_block_xpos
+        lda .checkpoint_xpos
         jsr VPrintNumber
         +SetPrintParams 7,0,$01
-        lda .checkpoint_block_ypos
+        lda .checkpoint_ypos
         jsr VPrintNumber
         +SetPrintParams 8,0,$01
         lda .checkpointdirection
         jsr VPrintNumber
         rts
 
-_bcarxpos_lo = .xpos_lo_int
+_bcarxpos_lo = .xpos_lo_int                     ;world position (0-4095)
 _bcarxpos_hi = .xpos_hi_int
 _bcarypos_lo = .ypos_lo_int
 _bcarypos_hi = .ypos_hi_int
 
-_bcardistance = .distance
+_bcar_checkpoint_xpos = .checkpoint_xpos        ;block position (0-31)
+_bcar_checkpoint_ypos = .checkpoint_ypos
 _bcarspeed = .speed
+_bcardistance = .distance
 _bcarangle = .angle
 _bcarclashpush = .clashpush
 _bcarclashangle = .clashangle

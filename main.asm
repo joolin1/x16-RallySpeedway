@@ -14,15 +14,16 @@
 
 ;Status for game
 ST_MENU         = 0     ;show start screen or menu
-ST_SETUPRACE    = 1     ;draw track, position cars
-ST_READYTORACE  = 2     ;wait for player/s to start race
-ST_RACING       = 3     ;race on
-ST_PAUSED       = 4     ;game paused, quit/resume menu displayed
-ST_COLLISION    = 5     ;one car (or possibly both) has/have crashed
-ST_OUTDISTANCED = 6     ;one car has outdistanced the other (if two players)
-ST_FINISH       = 7     ;race is finished, announce winner
-ST_RACEOVER     = 8     ;wait for player/s to continue game
-ST_QUITGAME     = 9     ;end game
+ST_SETUPRACE    = 1     ;init track and cars, reset time
+ST_RESUMERACE   = 2     ;resume at last checkpoint, 
+ST_READYTORACE  = 3     ;wait for player/s to start race
+ST_RACING       = 4     ;race on
+ST_PAUSED       = 5     ;game paused, quit/resume menu displayed
+ST_COLLISION    = 6     ;one car (or possibly both) has/have crashed
+ST_OUTDISTANCED = 7     ;one car has outdistanced the other (if two players)
+ST_FINISH       = 8     ;race is finished, announce winner
+ST_RACEOVER     = 9     ;wait for player/s to continue game
+ST_QUITGAME     = 10    ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
@@ -46,7 +47,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         bcc +
         rts                             ;exit if some resource failed to load
 +       lda #ST_MENU
-        sta _gamestatus	
+        sta _gamestatus
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
         jsr .SetupIrqHandler
@@ -129,6 +130,9 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 +       cmp #ST_SETUPRACE               ;set up race, prepare everything
         bne +
         jmp .SetUpRace
++       cmp #ST_RESUMERACE              ;resume race from last checkpoint
+        bne +
+        jmp .ResumeRace
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
         jmp .WaitForStart
@@ -169,25 +173,37 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         ; inc _gamestatus                ;TEMP - skip menu, start race
 	; jsr SetLayer0ToTileMode        ;TEMP
 	; jsr ClearTextLayer             ;TEMP
-        jsr YCar_Hide                   ;comment out to skip status menu
-        jsr BCar_Hide                   ;comment out to skip status menu
         jsr MenuHandler                 ;comment out to skip status menu
-        jsr YCar_TimeDataReset
-        jsr BCar_TimeDataReset
         rts
 
 .SetUpRace:
-        jsr SetTrack                    ;set track and start position
-	jsr YCar_Init
+        jsr SetTrack                    ;set track
+	jsr YCar_StartRace
         jsr YCar_Show
         lda _noofplayers
         cmp #1
         beq +
-        jsr BCar_Init
+        jsr BCar_StartRace
         jsr BCar_Show
 +	jsr InitMap                     ;update all tilemap information
         jsr UpdateRaceView
-        inc _gamestatus
+        lda #ST_READYTORACE
+        sta _gamestatus
+        rts
+
+.ResumeRace:
+        lda _noofplayers
+        cmp #1
+        beq +
+        jsr SetStartPosition            ;if two players, set start position based on last location of cars
+        jsr BCar_ResumeRace
+        jsr BCar_Show
++       jsr YCar_ResumeRace
+        jsr YCar_Show
+	jsr InitMap                     ;update all tilemap information
+        jsr UpdateRaceView
+        lda #ST_READYTORACE
+        sta _gamestatus
         rts
 
 .WaitForStart:
@@ -213,7 +229,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         sec
         rts
  
-.HandlePause:
+.HandlePause:                   ;pause is made by just cutting sound and stop car movement
         jsr UpdatePauseMenu     ;OUT: .A = seleced menu item. -1 = nothing selected
         cmp #-1
         bne +
@@ -231,22 +247,20 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         cmp #1
         beq +
         jsr PlayBCarEngineSound
-+       lda #ST_RACING          ;resume game
++       lda #ST_RACING          ;resume race exactly where we were (= do not initialize any car variables)
         sta _gamestatus
         rts
 
 .HandleCollision:
         jsr YCar_Explode        ;each car has a collision flag which is set when the car has collided with the background
         jsr BCar_Explode
-        jsr UpdateStartPosition
         rts
 
 .HandleOutdistancing:
         jsr TextDelay
         beq +
         rts
-+       jsr UpdateStartPosition
-        lda #ST_SETUPRACE
++       lda #ST_RESUMERACE
         sta _gamestatus
         rts
 
@@ -271,6 +285,8 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         beq +
         rts
 +       jsr HideText
+        jsr YCar_Hide
+        jsr BCar_Hide
         lda #ST_MENU
         sta _gamestatus
         rts
@@ -284,6 +300,8 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jsr SetLeaderboardName
         jsr SaveLeaderboard
         jsr HideText
+        jsr YCar_Hide
+        jsr BCar_Hide
         lda #ST_MENU
         sta _gamestatus
         rts

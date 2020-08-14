@@ -55,6 +55,36 @@
         sta ZP5
 }
 
+!macro GetElementInArray .address, .colpoweroftwo, .row, .col { ;OUT: ZP0-ZP1 = address of element in a two-dimensional array
+        ;start with row offset
+        lda .row
+        sta ZP0
+        stz ZP1
+        ldy #.colpoweroftwo
+-       asl ZP0                 ;multiply by two
+        rol ZP1                 
+        dey
+        bne - 
+ 
+        ;add col offset
+        lda .col      
+        clc
+        adc ZP0
+        sta ZP0
+        lda ZP1
+        adc #0
+        sta ZP1
+        
+        ;finally add base address
+        lda ZP0
+        clc
+        adc .address
+        sta ZP0
+        lda ZP1
+        adc .address+1                  
+        sta ZP1                 ;now ZP0 and ZP1 = address to element
+}
+
 CopyMem:                ;IN: ZP0, ZP1 = src. ZP2, ZP3 = dest. ZP4, ZP5 = number of bytes.      
 -       lda (ZP0)
         sta (ZP2)

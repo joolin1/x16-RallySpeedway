@@ -4,6 +4,36 @@
 ;in another file and then map the public funtions here to global instance specific labels.
 ;By including the file, all variables will be added once for every instance. The drawback is that the code is will as well (like a macro). 
 
+.offroadflag            !byte 0         ;flag for offroad driving
+.collisionflag          !byte 0         ;flag for collision between car and background
+.finishflag             !byte 0         ;flag for finished race
+.clashpush              !byte 0         ;the force car is pushed by the other car when clashing
+.clashangle             !byte 0         ;direction car is pushed by the other car when clashing
+.speed                  !byte 0         ;fixed point 6.2. 256 = 64.0 = theoretical max speed (+1)
+.angle                  !byte 0         ;fixed point 6.2. 256 = 64.0 = 360 deg
+.plusangle              !byte 0         ;fixed point 6.2. Extra rotation for skidding car
+.displayangle           !byte 0         ;fixed point 6.2. The actual angle car is rendered in, will equal .angle when not skidding
+.turncount              !byte 0         ;measurement for how fast user turns. Holding left or right down for long = fast turn -> skidding
+.skidangle              !byte 0         ;angle for skidding, car turns left -> angle 90 degrees less than angle for direction, car turns right -> angle 90 degrees more
+.turndirection          !byte 0         ;1 = left turn, 0 = right turn
+.xpos_lo                !byte 0         ;fixed point 12.4 (0-4095), horizontal location for car on block map that is 32 blocks x 128 pixels = 4096 pixels wide
+.xpos_hi                !byte 0
+.ypos_lo                !byte 0         ;fixed point 12.4. 0-4095), vertical location for car on block map that is 32 blocks x 128 pixels = 4096 pixels high 
+.ypos_hi                !byte 0
+.xpos_lo_int            !byte 0         ;integer value of car position
+.xpos_hi_int            !byte 0
+.ypos_lo_int            !byte 0
+.ypos_hi_int            !byte 0
+.block_xpos             !byte 0         ;current position in block map (0-31)
+.block_ypos             !byte 0
+.checkpoint_xpos        !byte 0         ;last checkpoint in block map (0-31)
+.checkpoint_ypos        !byte 0
+.checkpointdirection    !byte 0         ;start direction when resuming race from last checkpoint 
+.distance               !byte 0         ;distance since last checkpoint
+.block                  !byte 0         ;which type of block car is on
+.penaltycount           !byte 0         ;how many times the car has got a time penalty
+.collisioncount         !byte 0         ;how many times the cas has collided/crashed
+
 ;*** Public functions ******************************************************************************
 
 .Show:
@@ -59,16 +89,27 @@
 +       jsr .IncreaseSpeed      ;not braking, not offroad, not skidding -> increase speed
         rts
 
-.TimeDataReset:
+.StartRace:                     ;Start new race
         jsr .TimeReset
         stz .penaltycount
         stz .collisioncount
+        stz .finishflag
+        lda _xstartblock
+        sta .checkpoint_xpos
+        lda _ystartblock
+        sta .checkpoint_ypos
+        lda _startdirection
+        sta .checkpointdirection
+        jsr .InitRace
         rts
 
-.Init:
-        stz .distance
+.ResumeRace:                    
+        jsr .InitRace        
+        rts
+
+.InitRace:                      ;initialization shared for both new and resumed races
         stz .speed
-        lda _startdirection
+        lda .checkpointdirection
         sta .angle
         sta .displayangle
         stz .skidangle
@@ -76,7 +117,6 @@
         stz .turncount
         stz .clashpush
         stz .clashangle
-        stz .finishflag
 
         lda _noofplayers
         cmp #1
@@ -88,7 +128,7 @@
         ldx #64+CAR_START_DISTANCE/2
         bra ++
 +       ldx #64-CAR_START_DISTANCE/2
-++      lda _startdirection
+++      lda .checkpointdirection
         bit #64                 ;start direction horizontal or vertical?
         beq +
         stx .xstartoffset
@@ -101,7 +141,7 @@
 
         ;position car in start block
 ++      stz .xpos_lo
-        lda _xstartblock
+        lda .checkpoint_xpos
         sta .xpos_hi
         lsr .xpos_hi            ;start block in high byte divided by 2 = 128 * block.        
         ror .xpos_lo
@@ -115,7 +155,7 @@
         +MultiplyBy16 .xpos_lo  ;fixed point 12.4. Upper 12 bits represent the integer part
 
         stz .ypos_lo
-        lda _ystartblock
+        lda .checkpoint_ypos
         sta .ypos_hi
         lsr .ypos_hi
         ror .ypos_lo
@@ -128,23 +168,20 @@
         sta .ypos_hi
         +MultiplyBy16 .ypos_lo
 
-        lda _xstartblock        ;current position and former positions are simply set to start position when race is about to begin
+        lda .checkpoint_xpos
         sta .block_xpos
-        sta .old_block_xpos
-        sta .older_block_xpos
-        lda _ystartblock
+        lda .checkpoint_ypos
         sta .block_ypos
-        sta .old_block_ypos
-        sta .older_block_ypos
 
         jsr .PlayEngineSound
-        jsr .UpdatePosition        
+        jsr .UpdateCarProperties        
         rts
 
 .xstartoffset   !byte 0
 .ystartoffset   !byte 0
 
 .UpdatePosition:                ;calculate new positions of cars according to speed and direction
+        jsr .TimeTick           ;add a jiffy to the timer
         lda .speed              
         lsr
         lsr                     ;skip fraction, speed is fixed point 6.2
@@ -192,18 +229,13 @@
 +++     lda .angle                  ;add extra rotation to direction car is moving
         clc
         adc .plusangle             
-        sta .displayangle        
-
-        jsr .UpdateCarProperties 
-        rts
+        sta .displayangle
+        ;continue with .UpdateCarProperties
 
 .UpdateCarProperties:
-        lda .finishflag
-        bne +
-        jsr .TimeTick               ;add a jiffy to the timer
 
         ;update integer value of cars position
-+       lda .xpos_lo
+        lda .xpos_lo
         clc
         adc #8                          ;add 8 = 0.5 to round the number instead of truncating it                          
         sta .xpos_lo_int
@@ -220,16 +252,7 @@
         +DivideBy16 .xpos_lo_int        ;divide by 16 to convert 16 bit fixed point to 12 bit integer
         +DivideBy16 .ypos_lo_int
 
-        ;update block position, save two last blocks
-        lda .old_block_xpos
-        sta .older_block_xpos
-        lda .old_block_ypos
-        sta .older_block_ypos
-        lda .block_xpos
-        sta .old_block_xpos
-        lda .block_ypos
-        sta .old_block_ypos
-
+        ;update block position
         lda .xpos_lo_int
         asl
         lda .xpos_hi_int
@@ -245,100 +268,9 @@
         sta .block_ypos
 
         ;update current block
-        sta ZP0
-        stz ZP1
-        +MultiplyBy32 ZP0       ;y pos * 32               
-
-        lda .block_xpos      
-        clc
-        adc ZP0                 ;add x pos
-        sta ZP0
-        lda ZP1
-        adc #0
-        sta ZP1
-        
-        lda ZP0                 ;add base address
-        clc
-        adc _blockmap_lo
-        sta ZP0
-        lda ZP1
-        adc _blockmap_hi                  
-        sta ZP1                 ;now ZP0 and ZP1 = address in block map where to read current block
-        lda (ZP0)               ;load current block
+        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos
+        lda (ZP0)
         sta .block
-
-        ;update distance
-        tay
-        lda _blockroadstatus,y  ;see if block is terrain or road
-        bne +
-        rts                     ;don't add terrain blocks to route
-+       lda .block_xpos
-        cmp .old_block_xpos
-        beq +
-        cmp .older_block_xpos
-        beq +
-        inc .distance
-        jsr .UpdateCheckpoint
-        rts
-+       lda .block_ypos
-        cmp .old_block_ypos
-        beq +
-        cmp .older_block_ypos
-        beq +
-        inc .distance
-        jsr .UpdateCheckpoint
-+       rts
-
-.UpdateCheckpoint:
-        lda .block
-        tay
-        lda _blockroadstatus,y
-
-        ;set checkpoint for horizontal road
-        cmp #BLOCK_HOR_ROAD             
-        bne ++
-        lda .block_xpos                 ;set new horizontal checkpoint
-        sta .checkpoint_block_xpos
-        lda .block_ypos
-        sta .checkpoint_block_ypos
-        lda .old_block_xpos
-        inc
-        cmp .block_xpos
-        bne +
-        stz .checkpointdirection        ;car is coming from west, set 0 deg
-        rts
-+       lda #128
-        sta .checkpointdirection        ;car is coming from east, set 180 deg
-        rts
-
-        ;set checkpoint for vertical road
-++      cmp #BLOCK_VER_ROAD
-        bne ++
-        lda .block_xpos                 ;set new vertical checkpoint
-        sta .checkpoint_block_xpos
-        lda .block_ypos
-        sta .checkpoint_block_ypos
-        lda .old_block_ypos
-        inc
-        cmp .block_ypos
-        bne +
-        lda #192
-        sta .checkpointdirection        ;car is coming from north, set 270 deg
-        rts
-+       lda #64
-        sta .checkpointdirection        ;car is coming from south, set 90 deg        
-++      rts
-
-.UpdateStartPosition                    ;set global start position variables to last checkpoint of this car
-        lda .distance
-        bne +
-        rts
-+       lda .checkpoint_block_xpos      
-        sta _xstartblock
-        lda .checkpoint_block_ypos
-        sta _ystartblock
-        lda .checkpointdirection
-        sta _startdirection
         rts
 
 .UpdateSprite:
@@ -429,9 +361,7 @@
         sta .collisionflag
         lda .finishflag
         bne ++
-        inc .collisioncount             ;count number of collisions in decimal mode
-        lda #%10100000
-        +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
+        inc .collisioncount             ;count number of collisions
         jsr StopCarSounds
         jsr PlayExplosionSound
         rts
@@ -463,7 +393,8 @@
         +VPoke .SPR_ADDR_L
         lda ZP1                         ;set high address of next sprite in animation
         +VPoke .SPR_MODE_ADDR_H
-        
+        lda #%10100000
+        +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
         inc .animationdelay              ;wait a certain amount of interrupt calls before advancing frame
         lda .animationdelay
         cmp #ANIMATION_DELAY
@@ -482,7 +413,7 @@
 
 +++     stz .animationindex
         stz .animationdelay
-        lda #ST_SETUPRACE
+        lda #ST_RESUMERACE
         sta _gamestatus
         stz .collisionflag
         lda #COLLISION_TIME             ;add extra time for the colliding car
@@ -641,37 +572,3 @@
         inc .turncount 
         inc .turncount 
 +       rts
-
-.offroadflag            !byte 0         ;flag for offroad driving
-.collisionflag          !byte 0         ;flag for collision between car and background
-.finishflag             !byte 0         ;flag for finished race
-.clashpush              !byte 0         ;the force car is pushed by the other car when clashing
-.clashangle             !byte 0         ;direction car is pushed by the other car when clashing
-.speed                  !byte 0         ;fixed point 6.2. 256 = 64.0 = theoretical max speed (+1)
-.angle                  !byte 0         ;fixed point 6.2. 256 = 64.0 = 360 deg
-.plusangle              !byte 0         ;fixed point 6.2. Extra rotation for skidding car
-.displayangle           !byte 0         ;fixed point 6.2. The actual angle car is rendered in, will equal .angle when not skidding
-.turncount              !byte 0         ;measurement for how fast user turns. Holding left or right down for long = fast turn -> skidding
-.skidangle              !byte 0         ;angle for skidding, car turns left -> angle 90 degrees less than angle for direction, car turns right -> angle 90 degrees more
-.turndirection          !byte 0         ;1 = left turn, 0 = right turn
-.xpos_lo                !byte 0         ;fixed point 12.4 (0-4095), horizontal location for car on block map that is 32 blocks x 128 pixels = 4096 pixels wide
-.xpos_hi                !byte 0
-.ypos_lo                !byte 0         ;fixed point 12.4. 0-4095), vertical location for car on block map that is 32 blocks x 128 pixels = 4096 pixels high 
-.ypos_hi                !byte 0
-.xpos_lo_int            !byte 0         ;integer value of car position
-.xpos_hi_int            !byte 0
-.ypos_lo_int            !byte 0
-.ypos_hi_int            !byte 0
-.block_xpos             !byte 0         ;current position in block map (0-31)
-.block_ypos             !byte 0
-.old_block_xpos         !byte 0         ;former position in block map (0-31)
-.old_block_ypos         !byte 0
-.older_block_xpos       !byte 0         ;former former position in block map (0-31)
-.older_block_ypos       !byte 0
-.checkpoint_block_xpos  !byte 0         ;last block passed that was a horizontal or vertical road block, called checkpoint because this is where car will start over if collision or outrun occurs.
-.checkpoint_block_ypos  !byte 0
-.checkpointdirection    !byte 0         ;direction last checkpoint was passed. 
-.block                  !byte 0         ;which type of block car is on
-.distance               !byte 0         ;how many blocks the car has passed
-.penaltycount           !byte 0         ;how many times the car has got a time penalty
-.collisioncount         !byte 0         ;how many times the cas has collided/crashed

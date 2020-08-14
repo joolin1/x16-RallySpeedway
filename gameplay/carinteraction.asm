@@ -80,18 +80,25 @@ SetWinnerAndRecord:             ;OUT: global variable _winner = 0, 1 or 2. 0 = r
 +       +SetParams _bcartime, _bcartime+1, _bcartime+2
         rts
 
-UpdateStartPosition:                    ;set new start position after collision or outdistancing
+SetStartPosition:                       ;if two players, set new start position after collision or outdistancing
         lda _noofplayers
         cmp #1
         bne +
-        jsr YCar_UpdateStartPosition    ;if one player simply set last checkpoint of yellow car
         rts
-+       lda _ycardistance               ;if two players set last checkpoint of the car which has driven the longest distance
++       lda _ycardistance               ;set startpoint to the last checkpoint for the car which has driven the longest distance
         cmp _bcardistance
         bcc +
-        jsr YCar_UpdateStartPosition
-        rts
-+       jsr BCar_UpdateStartPosition
+        lda _ycar_checkpoint_xpos       ;set startpoint to checkpoint of yellow car
+        sta _bcar_checkpoint_xpos
+        lda _ycar_checkpoint_ypos
+        sta _ycar_checkpoint_ypos
+        bra ++
++       lda _bcar_checkpoint_xpos       ;set startpoint to checkpoint of blue car
+        sta _ycar_checkpoint_xpos
+        lda _bcar_checkpoint_ypos
+        sta _ycar_checkpoint_ypos
+++      stz _ycardistance
+        stz _bcardistance
         rts
 
 CheckInteraction:
