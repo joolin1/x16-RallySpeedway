@@ -7,25 +7,24 @@ YCar_Hide                       = .Hide
 YCar_ReactOnPlayerInput         = .ReactOnPlayerInput
 YCar_StartRace                  = .StartRace
 YCar_ResumeRace                 = .ResumeRace
-YCar_UpdatePosition             = .UpdatePosition
+YCar_CarTick                    = .CarTick
 YCar_UpdateSprite               = .UpdateSprite
-YCar_DetectCollision            = .DetectCollision
 YCar_Explode                    = .Explode
 YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
 
 YCar_PrintDebugInformation:             ;DEBUG
-        ; +SetPrintParams 0,0,$01
-        ; lda .distance
-        ; jsr VPrintNumber
         +SetPrintParams 1,0,$01
-        lda .checkpoint_xpos
+        lda .block_xpos
         jsr VPrintNumber
         +SetPrintParams 2,0,$01
-        lda .checkpoint_ypos
+        lda .block_ypos
         jsr VPrintNumber
         +SetPrintParams 3,0,$01
-        lda .checkpointdirection
+        lda .old_block_xpos
+        jsr VPrintNumber
+        +SetPrintParams 4,0,$01
+        lda .old_block_ypos
         jsr VPrintNumber
         rts
 
@@ -36,6 +35,7 @@ _ycarypos_hi = .ypos_hi_int
 
 _ycar_checkpoint_xpos = .checkpoint_xpos        ;block position (0-31)
 _ycar_checkpoint_ypos = .checkpoint_ypos
+_ycar_checkpoint_direction = .checkpointdirection
 _ycarspeed = .speed
 _ycardistance = .distance
 _ycarangle = .angle

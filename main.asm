@@ -155,15 +155,13 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 +       jsr YCar_PrintDebugInformation  ;TEMP
         jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
-        jsr YCar_UpdatePosition         ;calculate new direction, speed and skidding, update timer
-        jsr YCar_DetectCollision       ;check if the car has collided
+        jsr YCar_CarTick                ;Move car and take actions depending on new block and tile position
         lda _noofplayers
         cmp #1
         beq +
         jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_ReactOnPlayerInput
-        jsr BCar_UpdatePosition
-        jsr BCar_DetectCollision
+        jsr BCar_CarTick
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
 +       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
         jsr UpdateMap                   ;update all tilemap information
@@ -236,8 +234,10 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 +       cmp #0
         beq +
+        jsr YCar_Hide
+        jsr BCar_Hide
         lda #ST_MENU
-        sta _gamestatus         ;quit game
+        sta _gamestatus         ;quit race
         rts
 +       ldx #<L1_MAP_ADDR       ;delete menu by simply clearing text layer     
         ldy #>L1_MAP_ADDR

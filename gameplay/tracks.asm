@@ -1,20 +1,22 @@
 ;*** tracks.asm - definitions of tracks ************************************************************
 
-;Directions (360 deg = 256)
-.EAST   = 0
-.NORTH  = 64
-.WEST   = 128
-.SOUTH  = 192
+;Directions (360 deg = 256), used for route information
+ROUTE_EAST      = 0     ;route continues to the east
+ROUTE_NORTH     = 64    ;...
+ROUTE_WEST      = 128
+ROUTE_SOUTH     = 192
+ROUTE_OFFROAD   = -1    ;not part of route
+ROUTE_FINISH    = -2    ;finish block
 
-;Tile status used for collision detection
+;Type of tiles (used for collision detection)
 TILE_ROAD = 0                   ;car is on road
 TILE_TERRAIN = 1                ;car is off road, slow down speed
 TILE_OBSTACLE = 2               ;car has collided and will explode
 TILE_FINISH = 3                 ;car has finished race 
 
 ;Table for character of tiles
-_tilecollisionstatus:   !byte TILE_TERRAIN
-                        !byte TILE_ROAD
+_tilecollisionstatus:   !byte TILE_TERRAIN      ;first tile definition is of type terrain
+                        !byte TILE_ROAD         ;...
                         !byte TILE_ROAD
                         !byte TILE_ROAD
                         !byte TILE_ROAD
@@ -40,27 +42,48 @@ _tilecollisionstatus:   !byte TILE_TERRAIN
                         !byte TILE_OBSTACLE
 
 ;Type of blocks
-.TERRAIN         = 0
-.EW_ROAD         = 1    ;road from east to west
-.NS_ROAD         = 2    ;road from north to south
-.CURVE1          = 3    ;curve   0- 90 deg
-.CURVE2          = 4    ;curve  90-180 deg
-.CURVE3          = 5    ;curve 180-270 deg
-.CURVE4          = 6    ;curve 270-360 deg
-.CROSSING        = 7
-.EW_START_FINISH = 8    ;road from east to west which marks start and finish
-.NS_START_FINISH = 9    ;road from north to south which marks start and finish
+BLOCK_TERRAIN         = 0
+BLOCK_EW_ROAD         = 1    ;road from east to west
+BLOCK_NS_ROAD         = 2    ;road from north to south
+BLOCK_CURVE1          = 3    ;curve   0- 90 deg
+BLOCK_CURVE2          = 4    ;curve  90-180 deg
+BLOCK_CURVE3          = 5    ;curve 180-270 deg
+BLOCK_CURVE4          = 6    ;curve 270-360 deg
+BLOCK_CROSSING        = 7
+BLOCK_EW_STARTFINISH  = 8    ;road from east to west which marks start and finish
+BLOCK_NS_STARTFINISH  = 9    ;road from north to south which marks start and finish
 
-;Mapping between block definitions and types
-_blockroadstatus:       !byte .TERRAIN          ;block definition 0 = terrain
-                        !byte .CURVE1           ;block definition 1 = a curve 0-90 deg
-                        !byte .CURVE2           ;...
-                        !byte .CURVE3
-                        !byte .CURVE4
-                        !byte .EW_ROAD
-                        !byte .NS_ROAD
-                        !byte .CROSSING
-                        !byte .EW_START_FINISH
+;Table for character of blocks
+_blockroadstatus:       !byte BLOCK_TERRAIN             ;first block definition is of type terrain
+                        !byte BLOCK_CURVE1              ;...
+                        !byte BLOCK_CURVE2
+                        !byte BLOCK_CURVE3
+                        !byte BLOCK_CURVE4
+                        !byte BLOCK_EW_ROAD
+                        !byte BLOCK_NS_ROAD
+                        !byte BLOCK_CROSSING
+                        !byte BLOCK_EW_STARTFINISH
+                        !byte BLOCK_NS_STARTFINISH
+
+;Global infor about current track
+_track		        !byte 1	        ;selected track - track one is preselected
+_xstartblock            !byte 0         ;start position
+_ystartblock            !byte 0
+_startdirection         !byte 0         ;start direction
+_blockmap_lo            !byte 0         ;address of track map
+_blockmap_hi            !byte 0
+_route_lo               !byte 0         ;address of route map
+_route_hi               !byte 0
+
+;route variables
+.row                    !byte 0
+.col                    !byte 0
+.direction              !byte 0
+.finishedflag           !byte 0
+.errorflag              !byte 0
+.errorstartmissing      !scr "route must start with a start block.",0
+.errorfinishmissing     !scr "route must end with a finish block.",0
+.errorroutebroken       !scr "route is broken.",0
 
 SetTrack:
         ;set address for selected track
@@ -88,36 +111,23 @@ SetTrack:
         jsr .CalculateRoute
         rts
 
-!macro IncBlockPos .pos {
-        lda .pos
-        inc
-        and #31
-        sta .pos
-}
-
-!macro DecBlockPos .pos {
-        lda .pos
-        dec
-        and #31
-        sta .pos
-}
-
-.CalculateRoute:                        ;calculate route data for current track
-
-        stz .routefinishedflag
+.CalculateRoute:                        ;calculate route data for current track.
+                                        ;OUT: if error carry is set, ZP0-ZP1 points to error message, ZP2-ZP3 = row and col where error was found.
+        stz .finishedflag
+        stz .errorflag
         
-        ;save address of route in pointers to be able to use macro for getting element in array
+        ;1 - save address of route in pointers to be able to use macro for getting element in array
         lda #<_route
         sta _route_lo
         lda #>_route
         sta _route_hi
 
-        ;clear route
+        ;2- clear route
         lda #<_route
         sta ZP0
         lda #>_route
         sta ZP1
-        lda #-1
+        lda #ROUTE_OFFROAD
         ldy #32
 --      ldx #32
 -       sta (ZP0)
@@ -127,274 +137,262 @@ SetTrack:
         dey
         bne --
 
-        ;set start position
+        ;3 - set and check start position
         lda _xstartblock
         sta .col
         lda _ystartblock
         sta .row 
-
-        ;check start position
         +GetElementInArray _blockmap_lo, 5, .row, .col  ;OUT: ZP0-ZP1 = address of block
         lda (ZP0)
-        !byte $ff
         tay
         lda _blockroadstatus,y
-        cmp #.EW_START_FINISH
+        cmp #BLOCK_EW_STARTFINISH
         bne +
-        lda #.EAST
-        sta .angle              ;start by going east
+        lda #ROUTE_EAST
+        sta .direction              ;start by going east
         sta _startdirection
         jsr .AddToRoute
-        +IncBlockPos .col
+        +IncAndWrap32 .col
         bra ++
-+       cmp #.NS_START_FINISH   
++       cmp #BLOCK_NS_STARTFINISH   
         bne +
-        lda #.NORTH
-        sta .angle              ;start by going north
+        lda #ROUTE_NORTH
+        sta .direction              ;start by going north
         sta _startdirection
         jsr .AddToRoute
-        +DecBlockPos .row
+        +DecAndWrap32 .row
         bra ++
-+       sec                     ;flag error, start block is not of type start/goal
-        rts
++       lda #<.errorstartmissing
+        sta ZP0
+        lda #>.errorstartmissing
+        sta ZP1
+        bra .ReturnError        ;error, route does not start with a block is of type start/finish
 
-        ;track route through block map
+        ;4 - track route through map
 
-++      ;get type of current block
+++      ;loop through every block in route
 -       +GetElementInArray _blockmap_lo, 5, .row, .col   ;OUT: ZP0-ZP1 = address of block
         lda (ZP0)
         tay
         lda _blockroadstatus,y
-        cmp #.TERRAIN
+        cmp #BLOCK_TERRAIN
         bne +
-        sec                             ;road continues directly into the terrain, set carry to flag error
+        lda #<.errorfinishmissing
+        sta ZP0
+        lda #>.errorfinishmissing
+        sta ZP1
+        bra .ReturnError        ;error, route does not end with a block of type start/finish
         rts
 
         ;add block to the route after checking that road is not broken between last block and current block 
-+       ldx .angle
-        cpx #.EAST
++       ldx .direction
+        cpx #ROUTE_EAST
         bne +
         jsr .RouteComingFromWest
         bra ++
-+       cpx #.NORTH
++       cpx #ROUTE_NORTH
         bne +
         jsr .RouteComingFromSouth
         bra ++
-+       cpx #.WEST
++       cpx #ROUTE_WEST
         bne +
         jsr .RouteComingFromEast
         bra ++                       
 +       jsr .RouteComingFromNorth       ;direction south (the only alternative left)
 
-++      bcc +
-        rts                             ;route is broken (eg an east-west road is followed by a north-south road)
-+       lda .routefinishedflag
+++      lda .errorflag
+        beq +
+        lda #<.errorroutebroken
+        sta ZP0
+        lda #>.errorroutebroken
+        sta ZP1
+        bra .ReturnError                ;route is broken (eg an east-west road is followed by a north-south road)
++       lda .finishedflag
         beq -                           ;continue route tracking with next block
-        clc                             ;route tracking finished, no errors found
-        !byte $ff
+        clc                             ;route tracking complete, no errors found!
+        rts
+
+.ReturnError:
+        lda .row
+        sta ZP2
+        lda .col
+        sta ZP3
+        sec
         rts
 
 .RouteComingFromWest:       
-        cmp #.CURVE1
-        bne +     
-        lda #.SOUTH
-        sta .angle
-        jsr .AddToRoute
-        +IncBlockPos .row
-        clc
-        rts
-+       cmp #.CURVE4
+        cmp #BLOCK_CURVE1
         bne +
-        lda #.NORTH
-        sta .angle
+        lda #ROUTE_SOUTH        
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .row
-        clc
+        +IncAndWrap32 .row
         rts
-+       cmp #.EW_ROAD
++       cmp #BLOCK_CURVE4
         bne +
-        lda #.EAST
-        sta .angle
+        lda #ROUTE_NORTH
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .col
-        clc
+        +DecAndWrap32 .row
         rts
-+       cmp #.CROSSING
++       cmp #BLOCK_EW_ROAD
         bne +
-        lda #.EAST
-        sta .angle
+        lda #ROUTE_EAST
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .col
-        clc
+        +IncAndWrap32 .col
         rts
-+       cmp #.EW_START_FINISH
++       cmp #BLOCK_CROSSING
         bne +
-        lda #.EAST
-        sta .angle
+        lda #ROUTE_EAST
+        sta .direction
+        jsr .AddToRoute
+        +IncAndWrap32 .col
+        rts
++       cmp #BLOCK_EW_STARTFINISH
+        bne +
+        lda #ROUTE_FINISH
+        sta .direction
         jsr .AddToRoute
         lda #1
-        sta .routefinishedflag
-        clc
+        sta .finishedflag
         rts
-+       sec                     ;route is broken
++       lda #1
+        sta .errorflag          ;route is broken
         rts         
 
 .RouteComingFromSouth:
-        cmp #.CURVE1
+        cmp #BLOCK_CURVE1
         bne +     
-        lda #.WEST
-        sta .angle
+        lda #ROUTE_WEST
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .col
-        clc
+        +DecAndWrap32 .col
         rts
-+       cmp #.CURVE2
++       cmp #BLOCK_CURVE2
         bne +
-        lda #.EAST
-        sta .angle
+        lda #ROUTE_EAST
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .col
-        clc
+        +IncAndWrap32 .col
         rts
-+       cmp #.NS_ROAD
++       cmp #BLOCK_NS_ROAD
         bne +
-        lda #.NORTH
-        sta .angle
+        lda #ROUTE_NORTH
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .row
-        clc
+        +DecAndWrap32 .row
         rts
-+       cmp #.CROSSING
++       cmp #BLOCK_CROSSING
         bne +
-        lda #.NORTH
-        sta .angle
+        lda #ROUTE_NORTH
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .row
-        clc
+        +DecAndWrap32 .row
         rts
-+       cmp #.NS_START_FINISH
++       cmp #BLOCK_NS_STARTFINISH
         bne +
-        lda #.NORTH
-        sta .angle
+        lda #ROUTE_FINISH
+        sta .direction
         jsr .AddToRoute
         lda #1
-        sta .routefinishedflag
-        clc
+        sta .finishedflag
         rts
-+       sec                     ;route is broken
++       lda #1
+        sta .errorflag          ;route is broken
         rts         
 
 .RouteComingFromEast:
-        cmp #.CURVE2
-        bne +     
-        lda #.SOUTH
-        sta .angle
-        jsr .AddToRoute
-        +IncBlockPos .row
-        clc
-        rts
-+       cmp #.CURVE3
+        cmp #BLOCK_CURVE2
         bne +
-        lda #.NORTH
-        sta .angle
+        lda #ROUTE_SOUTH
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .row
-        clc
+        +IncAndWrap32 .row
         rts
-+       cmp #.EW_ROAD
++       cmp #BLOCK_CURVE3
         bne +
-        lda #.WEST
-        sta .angle
+        lda #ROUTE_NORTH
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .col
-        clc
+        +DecAndWrap32 .row
         rts
-+       cmp #.CROSSING
++       cmp #BLOCK_EW_ROAD
         bne +
-        lda #.WEST
-        sta .angle
+        lda #ROUTE_WEST
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .col
-        clc
+        +DecAndWrap32 .col
         rts
-+       cmp #.EW_START_FINISH
++       cmp #BLOCK_CROSSING
         bne +
-        lda #.WEST
-        sta .angle
+        lda #ROUTE_WEST
+        sta .direction
+        jsr .AddToRoute
+        +DecAndWrap32 .col
+        rts
++       cmp #BLOCK_EW_STARTFINISH
+        bne +
+        lda #ROUTE_FINISH
+        sta .direction
         jsr .AddToRoute
         lda #1
-        sta .routefinishedflag
-        clc
+        sta .finishedflag
         rts
-+       sec                     ;route is broken
++       lda #1
+        sta .errorflag          ;route is broken
         rts         
 
 .RouteComingFromNorth:
-        cmp #.CURVE3
+        cmp #BLOCK_CURVE3
         bne +     
-        lda #.EAST
-        sta .angle
+        lda #ROUTE_EAST
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .col
-        clc
+        +IncAndWrap32 .col
         rts
-+       cmp #.CURVE4
++       cmp #BLOCK_CURVE4
         bne +
-        lda #.WEST
-        sta .angle
+        lda #ROUTE_WEST
+        sta .direction
         jsr .AddToRoute
-        +DecBlockPos .col
-        clc
+        +DecAndWrap32 .col
         rts
-+       cmp #.NS_ROAD
++       cmp #BLOCK_NS_ROAD
         bne +
-        lda #.SOUTH
-        sta .angle
+        lda #ROUTE_SOUTH
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .row
-        clc
+        +IncAndWrap32 .row
         rts
-+       cmp #.CROSSING
++       cmp #BLOCK_CROSSING
         bne +
-        lda #.SOUTH
-        sta .angle
+        lda #ROUTE_SOUTH
+        sta .direction
         jsr .AddToRoute
-        +IncBlockPos .row
-        clc
+        +IncAndWrap32 .row
         rts
-+       cmp #.NS_START_FINISH
++       cmp #BLOCK_NS_STARTFINISH
         bne +
-        lda #.SOUTH
-        sta .angle
+        lda #ROUTE_FINISH
+        sta .direction
         jsr .AddToRoute
         lda #1
-        sta .routefinishedflag
-        clc
+        sta .finishedflag
         rts
-+       sec                     ;route is broken
++       lda #1
+        sta .errorflag          ;route is broken
         rts  
 
 .AddToRoute:
         +GetElementInArray _route_lo, 5, .row, .col
-        lda .angle
+        lda .direction
         sta (ZP0)
         rts
 
-.row                    !byte 0
-.col                    !byte 0
-.angle                  !byte 0
-.routefinishedflag      !byte 0
+;*** Tracks data ***********************************************************************************
 
-;Current track info
-_track		        !byte 1	        ;selected track - track one is preselected
-_xstartblock            !byte 0         ;start position
-_ystartblock            !byte 0
-_startdirection         !byte 0         ;start direction
-_blockmap_lo            !byte 0         ;address of track map
-_blockmap_hi            !byte 0
-_route_lo               !byte 0         ;address of route map
-_route_hi               !byte 0
-_route                  !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
+_route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
 
 ;Definitions for all tracks
 

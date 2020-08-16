@@ -26,11 +26,14 @@
 .ypos_hi_int            !byte 0
 .block_xpos             !byte 0         ;current position in block map (0-31)
 .block_ypos             !byte 0
+.old_block_xpos         !byte 0         ;former position in block map (0-31)
+.old_block_ypos         !byte 0
+.older_block_xpos       !byte 0         ;former former position in block map (0-1)
+.older_block_ypos       !byte 0
 .checkpoint_xpos        !byte 0         ;last checkpoint in block map (0-31)
 .checkpoint_ypos        !byte 0
-.checkpointdirection    !byte 0         ;start direction when resuming race from last checkpoint 
+.checkpointdirection    !byte 0         ;direction when resuming race
 .distance               !byte 0         ;distance since last checkpoint
-.block                  !byte 0         ;which type of block car is on
 .penaltycount           !byte 0         ;how many times the car has got a time penalty
 .collisioncount         !byte 0         ;how many times the cas has collided/crashed
 
@@ -94,6 +97,7 @@
         stz .penaltycount
         stz .collisioncount
         stz .finishflag
+        stz .distance
         lda _xstartblock
         sta .checkpoint_xpos
         lda _ystartblock
@@ -107,7 +111,7 @@
         jsr .InitRace        
         rts
 
-.InitRace:                      ;initialization shared for both new and resumed races
+.InitRace:                      ;initialization that both new and resumed races share
         stz .speed
         lda .checkpointdirection
         sta .angle
@@ -117,7 +121,19 @@
         stz .turncount
         stz .clashpush
         stz .clashangle
+        stz .offroadflag
 
+        ;set start block and init block history
+        lda .checkpoint_xpos
+        sta .block_xpos
+        sta .old_block_xpos
+        sta .older_block_xpos
+        lda .checkpoint_ypos
+        sta .block_ypos
+        sta .old_block_ypos
+        sta .older_block_ypos
+
+        ;decide where to put car/cars in startblock
         lda _noofplayers
         cmp #1
         bne +
@@ -168,11 +184,6 @@
         sta .ypos_hi
         +MultiplyBy16 .ypos_lo
 
-        lda .checkpoint_xpos
-        sta .block_xpos
-        lda .checkpoint_ypos
-        sta .block_ypos
-
         jsr .PlayEngineSound
         jsr .UpdateCarProperties        
         rts
@@ -180,13 +191,21 @@
 .xstartoffset   !byte 0
 .ystartoffset   !byte 0
 
-.UpdatePosition:                ;calculate new positions of cars according to speed and direction
+.CarTick:                       ;advance one jiffy, calculate new positions of cars according to speed and direction
         jsr .TimeTick           ;add a jiffy to the timer
         lda .speed              
         lsr
         lsr                     ;skip fraction, speed is fixed point 6.2
-        beq .UpdateCarProperties ;nothing to do if speed is 0
+        bne +
+        jsr .UpdateCarProperties ;no need to calculate new position if speed is 0
+        rts
++       jsr .UpdateCarPosition
+        jsr .UpdateCarProperties
+        jsr .DetectCollision
+        jsr .UpdateRouteInformation
+        rts
 
+.UpdateCarPosition:
         ;Move car
         tax                     ;speed in .X
         lda .angle              ;angle in .A       
@@ -230,10 +249,9 @@
         clc
         adc .plusangle             
         sta .displayangle
-        ;continue with .UpdateCarProperties
+        rts
 
 .UpdateCarProperties:
-
         ;update integer value of cars position
         lda .xpos_lo
         clc
@@ -266,12 +284,40 @@
         rol                     ;convert car y position (0-4095) to block y position (0-31)     
         and #31
         sta .block_ypos
-
-        ;update current block
-        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos
-        lda (ZP0)
-        sta .block
         rts
+
+.UpdateRouteInformation:      
+        ;check if car entered a new block...
+        lda .block_xpos
+        cmp .old_block_xpos
+        bne +
+        lda .block_ypos
+        cmp .old_block_ypos
+        bne +
+        rts
+
+        ;...it that is the case, update route information
++       inc .distance           ;always update distance, it doesn't matter if car is driving offroad
+        lda .old_block_xpos     ;update block history
+        sta .older_block_xpos
+        lda .block_xpos               
+        sta .old_block_xpos
+        lda .old_block_ypos
+        sta .older_block_ypos
+        lda .block_ypos
+        sta .old_block_ypos
+        +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos
+        lda (ZP0)
+        cmp #ROUTE_OFFROAD
+        beq +
+        cmp #ROUTE_FINISH
+        beq +
+        sta .checkpointdirection        ;if car is on road AND road is part of route AND not finish block, then update checkpoint information
+        lda .block_xpos
+        sta .checkpoint_xpos
+        lda .block_ypos
+        sta .checkpoint_ypos
++       rts
 
 .UpdateSprite:
         ;update which car sprite to show
@@ -300,7 +346,8 @@
 
 .DetectCollision:       
         ;1 - get address of current block
-        lda .block
+        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos
+        lda (ZP0)               ;load block index from block map
         stz ZP0
         lsr                     ;interpret block index as the high byte, that means index * 256, shift right to get index * 128 which gives the address of the block
         sta ZP1                 ;store high byte result
@@ -340,7 +387,7 @@
 
         ;3 - check collision status
         tay
-        lda _tilecollisionstatus,y       ;read collision status for current tile
+        lda _tilecollisionstatus,y      ;read collision status for current tile
 
         cmp #TILE_ROAD
         bne +
@@ -349,28 +396,78 @@
 
 +       cmp #TILE_TERRAIN
         bne +
-        lda #1                          ;car is off road
-        sta .offroadflag
+        lda #1                          
+        sta .offroadflag                ;car is off road
+        rts
+
++       cmp #TILE_FINISH
+        bne +
+        jsr .CheckDirection             ;check if car has crossed the finish line from the right direction
+        sta .finishflag                 ;car has finished race!
         rts
 
 +       cmp #TILE_OBSTACLE
-        bne +
-        lda #ST_COLLISION               ;car has collided
+        beq +
+        rts
++       lda #ST_COLLISION               ;car has collided
         sta _gamestatus
         lda #1
         sta .collisionflag
         lda .finishflag
-        bne ++
-        inc .collisioncount             ;count number of collisions
+        beq +
+        stz .speed                      ;car has collided but has also finished the race, in this case ignore collision and just abruptly set speed to 0
+        rts
++       inc .collisioncount             ;count number of collisions
         jsr StopCarSounds
         jsr PlayExplosionSound
         rts
+                          
+.CheckDirection:                        ;OUT: .A = true (1) if car has crossed the finish line in the right direction, false otherwise
+        lda .older_block_xpos           ;when entering a new block, older = old and old = new -> older contains former block
+        sta .temp_block_x
+        lda .older_block_ypos
+        sta .temp_block_y
+        +GetElementInArray _route_lo, 5, .older_block_ypos, .older_block_xpos
+        lda (ZP0)                       ;get route direction from previous block
 
-+       lda #1
-        sta .finishflag                 ;car has finished race!
+        cmp #ROUTE_OFFROAD
+        bne +
+        lda #0                          ;previous block was not part of route, return false
         rts
-++      stz .speed
-        rts                             ;if car has finished race and is now slowing down, just stop the car abruptly if a collision occurs
+
+        ;start with previous block, go to next block according to route direction for that block
++       cmp #ROUTE_EAST
+        bne +
+        +IncAndWrap32 .temp_block_x
+        bra ++
++       cmp #ROUTE_NORTH
+        bne +
+        +DecAndWrap32 .temp_block_y
+        bra ++
++       cmp #ROUTE_WEST
+        bne +
+        +DecAndWrap32 .temp_block_x
+        bra ++
++       cmp #ROUTE_SOUTH
+        bne ++
+        +IncAndWrap32 .temp_block_y
+
+        ;now see if we ended up in current block, if that is the case, we know the car came from the right direction
+++      lda .temp_block_x
+        cmp .block_xpos
+        beq +
+        lda #0                          ;columns differ - return false
+        rts
++       lda .temp_block_y
+        cmp .block_ypos
+        beq +
+        lda #0                          ;rows differ - return false
+        rts
++       lda #1                          ;previous block continued to current block, return true, car has finished race
+        rts
+
+.temp_block_x   !byte 0
+.temp_block_y   !byte 0
 
 .Explode:
         lda .collisionflag

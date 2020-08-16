@@ -14,6 +14,20 @@
 +
 }
 
+!macro IncAndWrap32 .pos {
+        lda .pos
+        inc
+        and #31
+        sta .pos
+}
+
+!macro DecAndWrap32 .pos {
+        lda .pos
+        dec
+        and #31
+        sta .pos
+}
+
 !macro DivideBy16 .address_lo {
         lsr .address_lo+1
         ror .address_lo
