@@ -154,13 +154,11 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         bcc +
         rts
 +       jsr YCar_PrintDebugInformation  ;TEMP
-        jsr YCar_ReactOnPlayerInput     ;adjust direction and speed based on player input
         jsr YCar_CarTick                ;Move car and take actions depending on new block and tile position
         lda _noofplayers
         cmp #1
         beq +
         jsr BCar_PrintDebugInformation  ;TEMP        
-        jsr BCar_ReactOnPlayerInput
         jsr BCar_CarTick
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
 +       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
@@ -316,6 +314,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 !src "libs/textlib.asm"
 !src "libs/helperslib.asm"
 !src "libs/joysticklib.asm"
+!src "libs/debug.asm"
 
 ;*** View *****************************
 !zone

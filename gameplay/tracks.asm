@@ -6,7 +6,6 @@ ROUTE_NORTH     = 64    ;...
 ROUTE_WEST      = 128
 ROUTE_SOUTH     = 192
 ROUTE_OFFROAD   = -1    ;not part of route
-ROUTE_FINISH    = -2    ;finish block
 
 ;Type of tiles (used for collision detection)
 TILE_ROAD = 0                   ;car is on road
@@ -251,7 +250,7 @@ SetTrack:
         rts
 +       cmp #BLOCK_EW_STARTFINISH
         bne +
-        lda #ROUTE_FINISH
+        lda #ROUTE_EAST
         sta .direction
         jsr .AddToRoute
         lda #1
@@ -292,7 +291,7 @@ SetTrack:
         rts
 +       cmp #BLOCK_NS_STARTFINISH
         bne +
-        lda #ROUTE_FINISH
+        lda #ROUTE_NORTH
         sta .direction
         jsr .AddToRoute
         lda #1
@@ -333,7 +332,7 @@ SetTrack:
         rts
 +       cmp #BLOCK_EW_STARTFINISH
         bne +
-        lda #ROUTE_FINISH
+        lda #ROUTE_WEST
         sta .direction
         jsr .AddToRoute
         lda #1
@@ -374,7 +373,7 @@ SetTrack:
         rts
 +       cmp #BLOCK_NS_STARTFINISH
         bne +
-        lda #ROUTE_FINISH
+        lda #ROUTE_SOUTH
         sta .direction
         jsr .AddToRoute
         lda #1
@@ -663,7 +662,7 @@ _blocks:
         !word   19,   1,   1,   1,   1,   1,   1,$413
         !word   20,  21,   1,   1,   1,   1,$415,$414
 
-        ;8 - start/goal
+        ;8 - start/finish
         !word    0,   0,   0,   0,   0,   0,   0,   0
         !word    2,   2,$016,   2,   2,   2,   2,   2
         !word    1,   1,  23,   1,   1,   1,   1,   1

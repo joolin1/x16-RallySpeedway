@@ -4,7 +4,6 @@
 
 YCar_Show                       = .Show
 YCar_Hide                       = .Hide
-YCar_ReactOnPlayerInput         = .ReactOnPlayerInput
 YCar_StartRace                  = .StartRace
 YCar_ResumeRace                 = .ResumeRace
 YCar_CarTick                    = .CarTick
@@ -21,10 +20,10 @@ YCar_PrintDebugInformation:             ;DEBUG
         lda .block_ypos
         jsr VPrintNumber
         +SetPrintParams 3,0,$01
-        lda .old_block_xpos
+        lda .block
         jsr VPrintNumber
         +SetPrintParams 4,0,$01
-        lda .old_block_ypos
+        lda .routedirection
         jsr VPrintNumber
         rts
 

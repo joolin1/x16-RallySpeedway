@@ -4,7 +4,6 @@
 
 BCar_Show                       = .Show
 BCar_Hide                       = .Hide
-BCar_ReactOnPlayerInput         = .ReactOnPlayerInput
 BCar_StartRace                  = .StartRace
 BCar_ResumeRace                 = .ResumeRace
 BCar_CarTick                    = .CarTick

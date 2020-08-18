@@ -4,38 +4,43 @@
 ;in another file and then map the public funtions here to global instance specific labels.
 ;By including the file, all variables will be added once for every instance. The drawback is that the code is will as well (like a macro). 
 
-.offroadflag            !byte 0         ;flag for offroad driving
-.collisionflag          !byte 0         ;flag for collision between car and background
-.finishflag             !byte 0         ;flag for finished race
-.clashpush              !byte 0         ;the force car is pushed by the other car when clashing
-.clashangle             !byte 0         ;direction car is pushed by the other car when clashing
+;Car properties
 .speed                  !byte 0         ;fixed point 6.2. 256 = 64.0 = theoretical max speed (+1)
 .angle                  !byte 0         ;fixed point 6.2. 256 = 64.0 = 360 deg
+.skidangle              !byte 0         ;angle for skidding, car turns left -> angle 90 degrees less than angle for direction, car turns right -> angle 90 degrees more
 .plusangle              !byte 0         ;fixed point 6.2. Extra rotation for skidding car
 .displayangle           !byte 0         ;fixed point 6.2. The actual angle car is rendered in, will equal .angle when not skidding
-.turncount              !byte 0         ;measurement for how fast user turns. Holding left or right down for long = fast turn -> skidding
-.skidangle              !byte 0         ;angle for skidding, car turns left -> angle 90 degrees less than angle for direction, car turns right -> angle 90 degrees more
-.turndirection          !byte 0         ;1 = left turn, 0 = right turn
-.xpos_lo                !byte 0         ;fixed point 12.4 (0-4095), horizontal location for car on block map that is 32 blocks x 128 pixels = 4096 pixels wide
+.turncount              !byte 0         ;how long car has been turning. high value means steep turn which will cause car to skid
+.turndirection          !byte 0         ;current direction car is turning, 1 = left turn, 0 = right turn
+.clashpush              !byte 0         ;the force car is pushed by the other car when clashing
+.clashangle             !byte 0         ;direction car is pushed by the other car when clashing
+.xpos_lo                !byte 0         ;current position in game world, a fixed point number 12.4 (0-4095) 
 .xpos_hi                !byte 0
-.ypos_lo                !byte 0         ;fixed point 12.4. 0-4095), vertical location for car on block map that is 32 blocks x 128 pixels = 4096 pixels high 
+.ypos_lo                !byte 0
 .ypos_hi                !byte 0
 .xpos_lo_int            !byte 0         ;integer value of car position
 .xpos_hi_int            !byte 0
 .ypos_lo_int            !byte 0
 .ypos_hi_int            !byte 0
-.block_xpos             !byte 0         ;current position in block map (0-31)
+.xstartoffset           !byte 0         ;distance from middle of block when positioned for start
+.ystartoffset           !byte 0
+.offroadflag            !byte 0         ;flag for offroad driving
+.collisionflag          !byte 0         ;flag for collision between car and background
+
+;Route variables
+.block_xpos             !byte 0         ;current position in block map
 .block_ypos             !byte 0
-.old_block_xpos         !byte 0         ;former position in block map (0-31)
+.old_block_xpos         !byte 0         ;former position in block map
 .old_block_ypos         !byte 0
-.older_block_xpos       !byte 0         ;former former position in block map (0-1)
-.older_block_ypos       !byte 0
-.checkpoint_xpos        !byte 0         ;last checkpoint in block map (0-31)
+.checkpoint_xpos        !byte 0         ;current checkpoint in block map (used when resuming race after collision and outdistancing)
 .checkpoint_ypos        !byte 0
-.checkpointdirection    !byte 0         ;direction when resuming race
+.checkpointdirection    !byte 0         ;current direction for checkpoint
+.block                  !byte 0         ;current type of block according to block map
+.routedirection         !byte 0         ;current direction of route according to route map
 .distance               !byte 0         ;distance since last checkpoint
 .penaltycount           !byte 0         ;how many times the car has got a time penalty
 .collisioncount         !byte 0         ;how many times the cas has collided/crashed
+.finishflag             !byte 0         ;flag for finished race
 
 ;*** Public functions ******************************************************************************
 
@@ -127,11 +132,9 @@
         lda .checkpoint_xpos
         sta .block_xpos
         sta .old_block_xpos
-        sta .older_block_xpos
         lda .checkpoint_ypos
         sta .block_ypos
         sta .old_block_ypos
-        sta .older_block_ypos
 
         ;decide where to put car/cars in startblock
         lda _noofplayers
@@ -185,24 +188,21 @@
         +MultiplyBy16 .ypos_lo
 
         jsr .PlayEngineSound
-        jsr .UpdateCarProperties        
+        jsr .UpdateCarProperties
+        jsr .UpdateRouteInformation     ;explicitly call this routine here, it is otherwise only called when car is entering a new block        
         rts
-
-.xstartoffset   !byte 0
-.ystartoffset   !byte 0
 
 .CarTick:                       ;advance one jiffy, calculate new positions of cars according to speed and direction
         jsr .TimeTick           ;add a jiffy to the timer
+        jsr .ReactOnPlayerInput
         lda .speed              
         lsr
         lsr                     ;skip fraction, speed is fixed point 6.2
         bne +
-        jsr .UpdateCarProperties ;no need to calculate new position if speed is 0
         rts
 +       jsr .UpdateCarPosition
         jsr .UpdateCarProperties
-        jsr .DetectCollision
-        jsr .UpdateRouteInformation
+        jsr .UpdateTileInformation
         rts
 
 .UpdateCarPosition:
@@ -252,7 +252,7 @@
         rts
 
 .UpdateCarProperties:
-        ;update integer value of cars position
+        ;update integer value of car position
         lda .xpos_lo
         clc
         adc #8                          ;add 8 = 0.5 to round the number instead of truncating it                          
@@ -284,33 +284,35 @@
         rol                     ;convert car y position (0-4095) to block y position (0-31)     
         and #31
         sta .block_ypos
-        rts
-
-.UpdateRouteInformation:      
-        ;check if car entered a new block...
+   
+        ;update route information if car entered a new block...
         lda .block_xpos
         cmp .old_block_xpos
-        bne +
-        lda .block_ypos
-        cmp .old_block_ypos
-        bne +
+        bne .UpdateRouteInformation
         rts
-
-        ;...it that is the case, update route information
-+       inc .distance           ;always update distance, it doesn't matter if car is driving offroad
-        lda .old_block_xpos     ;update block history
-        sta .older_block_xpos
-        lda .block_xpos               
++       lda .block_ypos
+        cmp .old_block_ypos
+        bne .UpdateRouteInformation
+        rts
+        
+.UpdateRouteInformation:
+        inc .distance           ;always update distance, it doesn't matter if car is driving offroad
+        lda .block_xpos         ;update block route history           
         sta .old_block_xpos
-        lda .old_block_ypos
-        sta .older_block_ypos
         lda .block_ypos
         sta .old_block_ypos
-        +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos
+        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block type
         lda (ZP0)
+        sta .block
+        +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction that current block is leading to
+        lda (ZP0)
+        sta .routedirection
         cmp #ROUTE_OFFROAD
         beq +
-        cmp #ROUTE_FINISH
+        lda .block
+        cmp #BLOCK_EW_STARTFINISH
+        beq +
+        cmp #BLOCK_NS_STARTFINISH
         beq +
         sta .checkpointdirection        ;if car is on road AND road is part of route AND not finish block, then update checkpoint information
         lda .block_xpos
@@ -344,10 +346,10 @@
         +VPoke .SPR_ATTR_0
         rts
 
-.DetectCollision:       
+.UpdateTileInformation:
+
         ;1 - get address of current block
-        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos
-        lda (ZP0)               ;load block index from block map
+        lda .block              ;load block index from block map
         stz ZP0
         lsr                     ;interpret block index as the high byte, that means index * 256, shift right to get index * 128 which gives the address of the block
         sta ZP1                 ;store high byte result
@@ -391,7 +393,7 @@
 
         cmp #TILE_ROAD
         bne +
-        stz .offroadflag                 ;car is on road
+        stz .offroadflag                ;car is on road
         rts
 
 +       cmp #TILE_TERRAIN
@@ -423,51 +425,43 @@
         rts
                           
 .CheckDirection:                        ;OUT: .A = true (1) if car has crossed the finish line in the right direction, false otherwise
-        lda .older_block_xpos           ;when entering a new block, older = old and old = new -> older contains former block
-        sta .temp_block_x
-        lda .older_block_ypos
-        sta .temp_block_y
-        +GetElementInArray _route_lo, 5, .older_block_ypos, .older_block_xpos
-        lda (ZP0)                       ;get route direction from previous block
+        !byte $ff
+        lda .angle
+        ldx .routedirection
 
-        cmp #ROUTE_OFFROAD
+        cpx #ROUTE_OFFROAD
         bne +
-        lda #0                          ;previous block was not part of route, return false
+        lda #0          ;return false if there against all odds is another finish line that is not part of the route that the car has crossed. 
         rts
 
-        ;start with previous block, go to next block according to route direction for that block
-+       cmp #ROUTE_EAST
+        ;adjust angle depending on route direction. If route goes east, car should cross finish line with 192 < angle < 64.
+        ;if this case we add 64 so we then can check if 0 < result < 128    
++       cpx #ROUTE_EAST
         bne +
-        +IncAndWrap32 .temp_block_x
-        bra ++
-+       cmp #ROUTE_NORTH
-        bne +
-        +DecAndWrap32 .temp_block_y
-        bra ++
+        clc
+        adc #64
+        bra ++       
 +       cmp #ROUTE_WEST
         bne +
-        +DecAndWrap32 .temp_block_x
+        sec
+        sbc #64
         bra ++
 +       cmp #ROUTE_SOUTH
-        bne ++
-        +IncAndWrap32 .temp_block_y
+        bne +
+        clc
+        adc #128
++       ;(if north, do nothing)
 
-        ;now see if we ended up in current block, if that is the case, we know the car came from the right direction
-++      lda .temp_block_x
-        cmp .block_xpos
-        beq +
-        lda #0                          ;columns differ - return false
+++      cmp #128
+        bcc +
+        lda #0
         rts
-+       lda .temp_block_y
-        cmp .block_ypos
-        beq +
-        lda #0                          ;rows differ - return false
++       cmp #1
+        bcs +
+        lda #0
         rts
-+       lda #1                          ;previous block continued to current block, return true, car has finished race
++       lda #1          ;return true because angle 0 < angle < 128
         rts
-
-.temp_block_x   !byte 0
-.temp_block_y   !byte 0
 
 .Explode:
         lda .collisionflag
