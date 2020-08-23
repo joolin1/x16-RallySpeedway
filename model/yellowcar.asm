@@ -2,13 +2,9 @@
 
 ;**** Public functions and properties **************************************************************
 
-YCar_Show                       = .Show
-YCar_Hide                       = .Hide
 YCar_StartRace                  = .StartRace
 YCar_ResumeRace                 = .ResumeRace
 YCar_CarTick                    = .CarTick
-YCar_UpdateSprite               = .UpdateSprite
-YCar_Explode                    = .Explode
 YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
 
@@ -38,8 +34,10 @@ _ycar_checkpoint_direction = .checkpointdirection
 _ycarspeed = .speed
 _ycardistance = .distance
 _ycarangle = .angle
+_ycardisplayangle = .displayangle
 _ycarclashpush = .clashpush
 _ycarclashangle = .clashangle
+_ycarcollisionflag = .collisionflag
 _ycarfinishflag = .finishflag
 _ycarpenaltycount = .penaltycount
 _ycarcollisioncount = .collisioncount
@@ -49,16 +47,10 @@ _ycartime = .minutes
 
 .ID     = 0
 .joy    = _joy0         ;use gamepad 1
-.CAR_PALETTE = 1        ;use palette 1 to make car yellow
 
 .PlayEngineSound        = PlayYCarEngineSound
 .PlaySkiddingSound      = PlayYCarSkiddingSound
 .StopSkiddingSound      = StopYCarSkiddingSound
 
-.SPR_ADDR_L       = SPR1_ADDR_L         ;yellow car is sprite 1
-.SPR_MODE_ADDR_H  = SPR1_MODE_ADDR_H
-.SPR_ATTR_0       = SPR1_ATTR_0
-.SPR_ATTR_1       = SPR1_ATTR_1
-
-!src "gameplay/car.asm"        ;add an instance of car class
-!src "libs/timer.asm"      ;add an instance of timer class 
+!src "model/car.asm"    ;add an instance of car class
+!src "libs/timer.asm"   ;add an instance of timer class 

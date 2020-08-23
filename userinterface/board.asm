@@ -252,6 +252,7 @@ PrintBoard:
 .PrintTwoPlayerRecordBoard:
         +PrintBoard 36, 13, 9, 2, .dboard
         lda _winner                                     ;announce which car holds the new record (can also be both!)
+        cmp #3                                          ;3 = 1 +2 = race ended in a draw
         bne +
         lda #BOARD_YELLOW
         sta _color

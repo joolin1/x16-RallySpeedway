@@ -161,7 +161,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_CarTick
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
-+       jsr CheckRaceOver               ;check if cars have finished race and speed have slowed down to 0
++       jsr CheckForWinner              ;check for winner and if race is completely over (= cars have stopped)
         jsr UpdateMap                   ;update all tilemap information
         rts
 
@@ -174,6 +174,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 
 .SetUpRace:
         jsr SetTrack                    ;set track
+        jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
         lda _noofplayers
@@ -232,8 +233,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 +       cmp #0
         beq +
-        jsr YCar_Hide
-        jsr BCar_Hide
+        jsr HideCars
         lda #ST_MENU
         sta _gamestatus         ;quit race
         rts
@@ -250,9 +250,14 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 
 .HandleCollision:
-        jsr YCar_Explode        ;each car has a collision flag which is set when the car has collided with the background
-        jsr BCar_Explode
-        rts
+        jsr BlowUpCars          ;cars will blow upp if their collision flags are set
+        lda _ycarcollisionflag
+        bne +
+        lda _bcarcollisionflag
+        bne +
+        lda #ST_RESUMERACE
+        sta _gamestatus
++       rts
 
 .HandleOutdistancing:
         jsr TextDelay
@@ -263,7 +268,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 
 .HandleFinishedRace:
-        jsr SetWinnerAndRecord
+        jsr CheckForRecord
         jsr ShowRaceOverText
         jsr PrintBoard
         jsr StopCarSounds
@@ -283,8 +288,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         beq +
         rts
 +       jsr HideText
-        jsr YCar_Hide
-        jsr BCar_Hide
+        jsr HideCars
         lda #ST_MENU
         sta _gamestatus
         rts
@@ -298,8 +302,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jsr SetLeaderboardName
         jsr SaveLeaderboard
         jsr HideText
-        jsr YCar_Hide
-        jsr BCar_Hide
+        jsr HideCars
         lda #ST_MENU
         sta _gamestatus
         rts
@@ -321,8 +324,9 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 !src "view/screen.asm"
 !src "view/graphics.asm"
 !src "view/tilemap.asm"
-!zone
-!src "gameplay/soundfx.asm"
+!src "view/soundfx.asm"
+!src "view/carsprites.asm"
+!src "view/textsprites.asm"
 
 ;*** User interface *******************
 !zone
@@ -331,15 +335,13 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 !src "userinterface/leaderboard.asm"
 !zone
 !src "userinterface/board.asm"
-!zone
-!src "userinterface/spritetext.asm"
 
 ;*** Model *****************************
 !zone
-!src "gameplay/yellowcar.asm"
+!src "model/yellowcar.asm"
 !zone
-!src "gameplay/bluecar.asm"
+!src "model/bluecar.asm"
 !zone
-!src "gameplay/carinteraction.asm"
+!src "model/carinteraction.asm"
 !zone
-!src "gameplay/tracks.asm"
+!src "model/tracks.asm"

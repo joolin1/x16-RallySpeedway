@@ -1,4 +1,4 @@
-;*** debug.asm - routines used for debugging and optimizing code ***********************************
+;*** debuglib.asm - routines used for debugging and optimizing code ********************************
 
 ChangeDebugColor:
         jsr VPoke               ;TEMP 

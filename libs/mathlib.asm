@@ -1,4 +1,4 @@
-;*** mathhandler.asm - functions, macros and precalculated tables ***************************************************************
+;*** mathlib.asm - functions, macros and precalculated tables ***************************************************************
 
 !macro Inc16bit .addr {
         inc .addr

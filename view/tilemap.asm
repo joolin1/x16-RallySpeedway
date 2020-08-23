@@ -7,10 +7,10 @@
 ;World coordinates (12-bit integers 0-4095) can be interpreted like this: ----bbbbbtttpppp
 ;b = current block (0-31), t = current tile within block (0-7), p = current pixel within tile (0-15)
 
-.camxpos_lo             !byte 0         ;camera position in world coordinates (0-4095)
-.camxpos_hi             !byte 0
-.camypos_lo             !byte 0         
-.camypos_hi             !byte 0
+_camxpos_lo             !byte 0         ;camera position in world coordinates (0-4095)
+_camxpos_hi             !byte 0
+_camypos_lo             !byte 0         
+_camypos_hi             !byte 0
 
 .mapxpos_lo             !byte 0         ;map position in world coordinates (0-4095)
 .mapxpos_hi             !byte 0
@@ -61,93 +61,19 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
         sta L0_VSCROLL_L
         stz L0_VSCROLL_H
 
-        ;set position and select sprite for yellow car
-        lda _ycarxpos_lo                ;start with car pos - cam pos
-        sec
-        sbc .camxpos_lo
-        sta ZP0
-        lda _ycarxpos_hi
-        sbc .camxpos_hi
-        sta ZP1
-        lda #(SCREEN_WIDTH/2)-16        ;add middle of screen - half sprite width
-        clc
-        adc ZP0
-        sta ZP0
-        lda #0
-        adc ZP1
-        sta ZP1
-
-        lda _ycarypos_lo                ;start with car pos-cam pos
-        sec
-        sbc .camypos_lo
-        sta ZP2
-        lda _ycarypos_hi
-        sbc .camypos_hi
-        sta ZP3
-        lda #(SCREEN_HEIGHT/2)-16       ;add middle of screen - half sprite width
-        clc
-        adc ZP2
-        sta ZP2
-        lda #0
-        adc ZP3
-        sta ZP3
-
-        +VPoke SPR1_XPOS_L, ZP0
-        +VPoke SPR1_XPOS_H, ZP1
-        +VPoke SPR1_YPOS_L, ZP2
-        +VPoke SPR1_YPOS_H, ZP3
-
-        jsr YCar_UpdateSprite
-        +SetPrintParams 28,1,$01
+        jsr YCar_UpdateSprite           ;update sprite position and selection for yellow car
+        +SetPrintParams 28,1,$01        ;print racetime
         +SetParams _ycartime,_ycartime+1,_ycartime+2
         jsr VPrintTime
 
-        ;Set position and select sprite for blue car
         lda _noofplayers
         cmp #1
-        bne +
-        rts
-
-+       lda _bcarxpos_lo                ;start with car pos - cam pos
-        sec
-        sbc .camxpos_lo
-        sta ZP0
-        lda _bcarxpos_hi
-        sbc .camxpos_hi
-        sta ZP1
-        lda #160-16                     ;add middle of screen - half sprite width
-        clc
-        adc ZP0
-        sta ZP0
-        lda #0
-        adc ZP1
-        sta ZP1
-
-        lda _bcarypos_lo                ;start with car pos - cam pos
-        sec
-        sbc .camypos_lo
-        sta ZP2
-        lda _bcarypos_hi
-        sbc .camypos_hi
-        sta ZP3
-        lda #120-16                     ;add middle of screen - half sprite width
-        clc
-        adc ZP2
-        sta ZP2
-        lda #0
-        adc ZP3
-        sta ZP3
-
-        +VPoke SPR2_XPOS_L, ZP0
-        +VPoke SPR2_XPOS_H, ZP1
-        +VPoke SPR2_YPOS_L, ZP2
-        +VPoke SPR2_YPOS_H, ZP3
-        
-        jsr BCar_UpdateSprite
-        +SetPrintParams 28,31,$01
+        beq +
+        jsr BCar_UpdateSprite           ;update sprite position and selection for blue car
+        +SetPrintParams 28,31,$01       ;print racetime
         +SetParams _bcartime,_bcartime+1,_bcartime+2
         jsr VPrintTime
-        rts
++       rts
 
 InitMap:                                ;init is like update but we make sure all map calculations are made 
         jsr .SetCameraPosition
@@ -182,53 +108,71 @@ UpdateMap:                              ;prepare the not displayed buffer with t
         ;set camera position
         lda _noofplayers
         cmp #1
-        bne +
-        lda _ycarxpos_lo        ;if one player - simply set camera on yellow car
-        sta .camxpos_lo
-        lda _ycarxpos_hi
-        sta .camxpos_hi
-        lda _ycarypos_lo
-        sta .camypos_lo
-        lda _ycarypos_hi
-        sta .camypos_hi
-        rts
-
-+       lda _ycarxpos_lo        ;if two players - set camera in the middle between the cars by adding coordinates and divide by two
+        beq .FocusOnYCar        ;if one player, simply set camera on yellow car
++       lda _winner             ;if two players, it is more complicated...
+        cmp #1
+        beq .FocusOnBCar        ;if yellow car has won the race, move camera to blue car
+        cmp #2
+        beq .FocusOnYCar        ;if blue car has won the race, move camera to yellow car
+        
+        lda _ycarxpos_lo        ;if race is on, set camera in the middle between the cars by adding coordinates and divide by two
         clc
         adc _bcarxpos_lo
-        sta .camxpos_lo
+        sta _camxpos_lo
         lda _ycarxpos_hi
         adc _bcarxpos_hi
-        sta .camxpos_hi
-        lsr .camxpos_hi                
-        ror .camxpos_lo
+        sta _camxpos_hi
+        lsr _camxpos_hi                
+        ror _camxpos_lo
 
         lda _ycarypos_lo
         clc
         adc _bcarypos_lo
-        sta .camypos_lo
+        sta _camypos_lo
         lda _ycarypos_hi
         adc _bcarypos_hi
-        sta .camypos_hi
-        lsr .camypos_hi
-        ror .camypos_lo
+        sta _camypos_hi
+        lsr _camypos_hi
+        ror _camypos_lo
+        rts
+
+.FocusOnYCar:
+        lda _ycarxpos_lo        ;if one player - simply set camera on yellow car
+        sta _camxpos_lo
+        lda _ycarxpos_hi
+        sta _camxpos_hi
+        lda _ycarypos_lo
+        sta _camypos_lo
+        lda _ycarypos_hi
+        sta _camypos_hi
+        rts
+
+.FocusOnBCar:
+        lda _bcarxpos_lo        ;if one player - simply set camera on yellow car
+        sta _camxpos_lo
+        lda _bcarxpos_hi
+        sta _camxpos_hi
+        lda _bcarypos_lo
+        sta _camypos_lo
+        lda _bcarypos_hi
+        sta _camypos_hi
         rts
 
 .SetMapPosition:             ;Update all position information (world coordinates, which block, whick tile in block and which pixel in tile)
 
         ;subtract half screen width an height from camera pos to get tilemap position for topleft corner of screen
         sec                             
-        lda .camxpos_lo
+        lda _camxpos_lo
         sbc #SCREEN_WIDTH/2
         sta .mapxpos_lo
-        lda .camxpos_hi
+        lda _camxpos_hi
         sbc #0
         sta .mapxpos_hi
         sec
-        lda .camypos_lo
+        lda _camypos_lo
         sbc #SCREEN_HEIGHT/2
         sta .mapypos_lo
-        lda .camypos_hi
+        lda _camypos_hi
         sbc #0
         sta .mapypos_hi
 

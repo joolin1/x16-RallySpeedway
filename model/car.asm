@@ -44,15 +44,6 @@
 
 ;*** Public functions ******************************************************************************
 
-.Show:
-        +VPokeI .SPR_ATTR_0,COLLISION_MASK+8            ;enable sprite 
-        +VPokeI .SPR_ATTR_1, %10100000 + .CAR_PALETTE   ;set palette 1 for yellow car and palette 2 for blue car
-        rts
-
-.Hide:
-        +VPokeI .SPR_ATTR_0,0    ;disable sprite
-        rts
-
 .ReactOnPlayerInput:
         lda .joy
         bit #JOY_LEFT
@@ -72,11 +63,6 @@
         bne +
         lda #1
         sta _debug              ;END DEBUG
-
-+       lda .finishflag         
-        beq +
-        jsr .StopCar            ;car has finished race, stop by slowing down to speed 0
-        rts
 
 +       lda .joy
         and #JOY_BUTTON_A       ;button A?
@@ -112,9 +98,11 @@
         jsr .InitRace
         rts
 
-.ResumeRace:                    
-        jsr .InitRace        
-        rts
+.ResumeRace:
+        lda .finishflag
+        bne +                    
+        jsr .InitRace           ;if car has finished race it is out of the race, just let it be
++       rts
 
 .InitRace:                      ;initialization that both new and resumed races share
         stz .speed
@@ -193,9 +181,13 @@
         rts
 
 .CarTick:                       ;advance one jiffy, calculate new positions of cars according to speed and direction
-        jsr .TimeTick           ;add a jiffy to the timer
+        lda .finishflag
+        beq +
+        jsr .StopCar            ;if car has finished race, just slow down until it has stopped
+        bra ++
++       jsr .TimeTick           ;add a jiffy to the timer
         jsr .ReactOnPlayerInput
-        lda .speed              
+++      lda .speed              
         lsr
         lsr                     ;skip fraction, speed is fixed point 6.2
         bne +
@@ -289,8 +281,7 @@
         lda .block_xpos
         cmp .old_block_xpos
         bne .UpdateRouteInformation
-        rts
-+       lda .block_ypos
+        lda .block_ypos
         cmp .old_block_ypos
         bne .UpdateRouteInformation
         rts
@@ -314,37 +305,13 @@
         beq +
         cmp #BLOCK_NS_STARTFINISH
         beq +
+        lda .routedirection
         sta .checkpointdirection        ;if car is on road AND road is part of route AND not finish block, then update checkpoint information
         lda .block_xpos
         sta .checkpoint_xpos
         lda .block_ypos
         sta .checkpoint_ypos
 +       rts
-
-.UpdateSprite:
-        ;update which car sprite to show
-        lda .displayangle           ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees        
-        lsr                         ;get rid of fraction
-        lsr
-        tay
-        lda _anglespritetable,y
-        sta ZP0
-        stz ZP1
-        +MultiplyBy16 ZP0           ;multiply with 16 to get actual offset
-        lda ZP0
-        +VPoke .SPR_ADDR_L       
-        lda ZP1
-        clc
-        adc #$04                    ;add base address of sprites (sprite 1 located at $8000 and $8000/32=$400)
-        +VPoke .SPR_MODE_ADDR_H
-        lda .displayangle           ;flip sprite if necessary
-        lsr                         ;get rid of fraction
-        lsr             
-        tay                                          
-        lda _anglefliptable,y
-        ora #8                      ;don't forget to set bit 4 to keep a z depth of 2 (= between layers)
-        +VPoke .SPR_ATTR_0
-        rts
 
 .UpdateTileInformation:
 
@@ -408,24 +375,25 @@
         sta .finishflag                 ;car has finished race!
         rts
 
-+       cmp #TILE_OBSTACLE
++       ;cmp #TILE_OBSTACLE
+        ;beq +
+        rts
++       lda .finishflag
         beq +
+        stz .speed                      ;car has collided but also finished the race, in this case ignore collision and just abruptly set speed to 0
         rts
 +       lda #ST_COLLISION               ;car has collided
         sta _gamestatus
         lda #1
         sta .collisionflag
-        lda .finishflag
-        beq +
-        stz .speed                      ;car has collided but has also finished the race, in this case ignore collision and just abruptly set speed to 0
-        rts
-+       inc .collisioncount             ;count number of collisions
+        inc .collisioncount             ;count number of collisions
         jsr StopCarSounds
         jsr PlayExplosionSound
         rts
+
+;Private functions *************************************************************
                           
 .CheckDirection:                        ;OUT: .A = true (1) if car has crossed the finish line in the right direction, false otherwise
-        !byte $ff
         lda .angle
         ldx .routedirection
 
@@ -462,59 +430,6 @@
         rts
 +       lda #1          ;return true because angle 0 < angle < 128
         rts
-
-.Explode:
-        lda .collisionflag
-        bne +
-        rts
-+       lda .animationindex             ;load current animation index
-        cmp #12                         ;12 sprites in explosion animation
-        beq ++    
-
-        clc
-        adc #17                         ;add offset, first sprite in animation is no 17
-        sta ZP0
-        stz ZP1
-        +MultiplyBy16 ZP0               ;multiply with 16 to get actual offset
-        lda ZP1                         ;add sprite base address = $8000 ($8000/32 = $400)
-        clc
-        adc #$04
-        sta ZP1                       
-        lda ZP0                         ;set low address of next sprite in animation
-        +VPoke .SPR_ADDR_L
-        lda ZP1                         ;set high address of next sprite in animation
-        +VPoke .SPR_MODE_ADDR_H
-        lda #%10100000
-        +VPoke .SPR_ATTR_1              ;set palette offset to 0 (explosion colors)
-        inc .animationdelay              ;wait a certain amount of interrupt calls before advancing frame
-        lda .animationdelay
-        cmp #ANIMATION_DELAY
-        beq +
-        rts
-
-+       inc .animationindex  
-        stz .animationdelay
-        rts
-
-++      inc .animationdelay              ;after animation is over, add a short wait
-        lda .animationdelay
-        cmp #30
-        beq +++
-        rts
-
-+++     stz .animationindex
-        stz .animationdelay
-        lda #ST_RESUMERACE
-        sta _gamestatus
-        stz .collisionflag
-        lda #COLLISION_TIME             ;add extra time for the colliding car
-        jsr .TimeAddSeconds
-        rts
-
-.animationindex !byte 0         ;current sprite in explosion animation
-.animationdelay !byte 0         ;delay counter to slow down animation 
-
-;Private functions *************************************************************
 
 .Move:                          ;IN: .A = angle, .X = speed. Move car in given direction.
         lsr

@@ -1,4 +1,4 @@
-;*** spritetext.asm - handle texts built up by sprites *********************************************
+;*** textsprites.asm - handle texts built up by sprites *********************************************
 
 PENALTY_TEXT_POSITION = 98
 FINISH_TEXT_POSITION = 44
@@ -54,6 +54,7 @@ ShowRaceOverText:
         jsr .ShowFinishedText
         rts
 +       lda _winner
+        cmp #3                  ;3 = race ended in a draw
         bne +
         jsr .ShowFinishedText
         rts

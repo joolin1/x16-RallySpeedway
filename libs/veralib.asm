@@ -1,4 +1,4 @@
-;*** verahandler.asm ****************************************************************
+;*** veralib.asm ****************************************************************
 
 !macro VPoke .addr, .data {                     ;.addr = address to change value of
         ldx #<.addr                             ;.data = absolute value (memory address which holds the value to set)

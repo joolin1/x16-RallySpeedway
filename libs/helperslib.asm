@@ -1,4 +1,4 @@
-;*** helpers.asm - global helper routines **********************************************************
+;*** helperslib.asm - global helper routines *******************************************************
 
 !macro SetParams .p0, .p1 {
         lda .p0

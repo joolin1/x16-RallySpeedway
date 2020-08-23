@@ -1,4 +1,4 @@
-;*** interaction.asm - when a car outdistanceds the other or cars collides *******************************
+;*** interaction.asm - when a car outdistances the other or cars collide with each other ***********
 
 .xdist_lo       = ZP0   ;horizontal distance between cars
 .xdist_hi       = ZP1
@@ -11,54 +11,46 @@
 .collisionangle = ZP8   ;angle of collision with yellow car as reference point (= center in coordinate system)
 .tableadr       = ZP9   ;(and ZPA) where to read from in atan table
 
-_winner         !byte   0       ;0 = race ended in a draw, 1 = yellow car, 2 = blue car
-_isrecord       !byte   0       ;whether winning time is a new record
+_winner         !byte   0       ;winner of race
+_isrecord       !byte   0       ;whether winner time is a new record
 
-CheckRaceOver:                          ;check if race is over  
+InitCarInteraction:
+        stz _isrecord
+        stz _winner
+        rts
+
+CheckForWinner:                 ;OUT: _winner = 0-3 (0 = no winner yet, 1 = yellow car has won, 2 = blue car has won, 3 = race ended in a draw)
+        ;set winner if any
+        lda _winner
+        bne ++                  ;if winner is set continue to check if race is over
         lda _ycarfinishflag
-        bne +
-        rts       
-+       lda _ycarspeed
+        ora _winner
+        sta _winner             ;set bit 0 if yellow car has finished
+        lda _bcarfinishflag
         beq +
-        rts
-+       lda _noofplayers
-        cmp #1
-        bne +
-        lda #ST_FINISH                  ;one player, finish flag is set, speed is 0 -> race over
-        sta _gamestatus
-        rts
-+       lda _bcarfinishflag
-        bne +
-        rts
-+       lda _bcarspeed
-        beq +
-        rts
-+       lda #ST_FINISH                  ;two players, both finish flags set, speed is 0 for both cars - > race over
-        sta _gamestatus
-        rts
+        lda #2
+        ora _winner
+        sta _winner             ;set bit 1 if blue car has finished
++       rts                     ;(race is not over when winner is set, it takes a short wile before cars have stopped)
 
-SetWinnerAndRecord:             ;OUT: global variable _winner = 0, 1 or 2. 0 = race ended in a draw, 1 = yellow car has won, 2 = blue car has won
+        ;check if race over (= cars have crossed finish line and stopped)
+++      lda _ycarfinishflag
+        beq ++
+        lda _ycarspeed
+        bne ++
         lda _noofplayers
         cmp #1
-        bne +
-        lda #1                  ;yellow car is "winner" when only one player
-        sta _winner
-        bra ++
-+       +SetParams _ycartime, _ycartime+1, _ycartime+2, _bcartime, _bcartime+1, _bcartime+2
-        jsr AreTimesEqual
-        bne +
-        lda #0
-        sta _winner
-        bra ++
-+       jsr IsTimeLess          ;is time of blue car less than time of yellow car?
-        bcc +
-        lda #1
-        sta _winner
-        bra ++
-+       lda #2
-        sta _winner
+        beq +
+        lda _bcarfinishflag
+        beq ++
+        lda _bcarspeed
+        bne ++
++       lda #ST_FINISH
+        sta _gamestatus
+++      rts   
 
-++      jsr .SetWinnerParams
+CheckForRecord:
+        jsr .SetWinnerParams
         lda _track
         jsr IsNewLeaderboardRecord
         bcc +
