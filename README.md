@@ -4,8 +4,7 @@ A topdown racing game for the retro computer Commander X16. If you ever played R
 Here is how you start the emulator depending on how many game controllers you have:
 
 No controllers:
-Just start the emulator and use the following keys: Ctrl - Button A, Alt - Button B, Enter - START, Cursor Keys - UP, DOWN, LEFT, RIGHT
-Naturally, you can just play in one-player-mode
+Just start the emulator and use the following keys: Ctrl - Button A, Alt - Button B, Enter - START, Cursor Keys - UP, DOWN, LEFT, RIGHT. Naturally, you can just play in one-player-mode.
 
 One controller:
 Start the emulator with -joy2 SNES (or "NES", depending on you controller type). Now player 1 uses the keyboard and player 2 the game controller.
