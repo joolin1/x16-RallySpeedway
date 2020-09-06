@@ -1,5 +1,5 @@
 # x16-RallySpeedway
-A topdown racing game for the retro computer Commander X16. If you ever played RallySpeedway for C64 or Atari, it will feel familiar. I consider it a late sequel, slightly approved actually and hopefully still fun. 
+A topdown racing game for the retro computer Commander X16. If you ever played Rally Speedway for Commodore 64 or Atari, it will feel familiar. I consider it a late sequel, slightly approved actually and hopefully still fun. 
 
 Here is how you start the emulator depending on how many game controllers you have:
 
