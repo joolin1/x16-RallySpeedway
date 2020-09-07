@@ -42,7 +42,10 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 
 .StartGame:
         ;init everything
-        jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
+        jsr VerifyTracks                ;make sure there are coherent routes on all tracks
+        bcc +
+        rts
++       jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
@@ -56,7 +59,9 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 -       !byte $cb		        ;wait for an interrupt to trigger (ACME does not know the opcode WAI)
         lda .vsynctrigger               ;check if interrupt was triggered by on vertical blank
         beq -
+        ;jsr ChangeDebugColor
         jsr .GameTick
+        ;jsr RestoreDebugColor
         stz .vsynctrigger     
         lda _gamestatus
         cmp #ST_QUITGAME 
@@ -64,9 +69,12 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         jsr .EndGame
         rts
 
-_gamestatus     !byte   0       
-_noofplayers	!byte   1               ;number of players
-_debug          !byte   0               ;DEBUG - flag for breaking into debugger
+_gamestatus             !byte 0       
+_noofplayers	        !byte 1         ;number of players
+.defaulthandler_lo 	!byte 0
+.defaulthandler_hi	!byte 0
+.vsynctrigger           !byte 0
+.sprcoltrigger          !byte 0
 
 .SetupIrqHandler:
         sei
@@ -78,18 +86,20 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 	sta IRQ_HANDLER_L
 	lda #>.IrqHandler
 	sta IRQ_HANDLER_H	
-	;lda #5                         ;enable vertical blanking and sprite collision interrupts
-        lda #1                          				
-	sta VERA_IEN		        ;enable Vera vertical blanking interrupts
+	lda #5                          ;enable vertical blanking and sprite collision interrupts
+	sta VERA_IEN
 	cli
         rts
 
 .IrqHandler:
-        ; lda VERA_ISR  ;no support for hardware sprite collisions yet
-        ; and #$04
-        ; beq +
-+       lda VERA_ISR
-        and #$01
+        lda VERA_ISR
+        bit #4                          ;sprite collision interrupt?
+        beq +
+        sta VERA_ISR
+        lda #1
+        sta .sprcoltrigger
+        jmp (.defaulthandler_lo)
++       bit #1                          ;vertical blank interrupt?
         beq +
         sta .vsynctrigger
         sta VERA_ISR
@@ -109,10 +119,6 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jsr RestoreScreenAndSprites
         rts
 
-.defaulthandler_lo 	!byte 0
-.defaulthandler_hi	!byte 0
-.vsynctrigger           !byte 0
-
 .GameTick:                              ;this subroutine is called every jiffy and advances the game one "frame"
         jsr GetJoys                     ;read game controllers and store for all routines to use           
 
@@ -124,7 +130,10 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
 +       jsr SfxTick                     ;update all sound effects that are currently playing
 
         lda _gamestatus
-        cmp #ST_MENU                    ;show start screen and menu
+        cmp #ST_RACING                  ;race is on
+        bne +
+        jmp .RaceTick
++       cmp #ST_MENU                    ;show start screen and menu
         bne +
         jmp .ShowMenu
 +       cmp #ST_SETUPRACE               ;set up race, prepare everything
@@ -135,7 +144,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jmp .ResumeRace
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
-        jmp .WaitForStart
+        jmp .ReadyToRace
 +       cmp #ST_COLLISION               ;one car has collided, stop movement and animate explosion (in theory both cars can collide and explode at the same time)
         bne +
         jmp .HandleCollision
@@ -147,29 +156,32 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jmp .HandleFinishedRace
 +       cmp #ST_RACEOVER                ;wait for players selection of how to continue game
         bne +
-        jmp .WaitForEnd
+        jmp .RaceOver
++       rts
 
-        ;race is on
+.RaceTick:
 +       jsr .CheckForPause              ;check for pause before starting to change the model for next frame
         bcc +
         rts
-+       jsr YCar_PrintDebugInformation  ;TEMP
++       ;jsr YCar_PrintDebugInformation  ;TEMP
         jsr YCar_CarTick                ;Move car and take actions depending on new block and tile position
         lda _noofplayers
         cmp #1
         beq +
-        jsr BCar_PrintDebugInformation  ;TEMP        
+        ;jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_CarTick
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
+        lda .sprcoltrigger
+        beq +
+        jsr SetClash                    ;make clash calculations if sprite collision interrupt has been triggered
+        stz .sprcoltrigger
 +       jsr CheckForWinner              ;check for winner and if race is completely over (= cars have stopped)
         jsr UpdateMap                   ;update all tilemap information
         rts
 
 .ShowMenu:
-        ; inc _gamestatus                ;TEMP - skip menu, start race
-	; jsr SetLayer0ToTileMode        ;TEMP
-	; jsr ClearTextLayer             ;TEMP
-        jsr MenuHandler                 ;comment out to skip status menu
+        jsr EnableLayers
+        jsr MenuHandler
         rts
 
 .SetUpRace:
@@ -184,6 +196,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         jsr BCar_Show
 +	jsr InitMap                     ;update all tilemap information
         jsr UpdateRaceView
+        jsr EnableLayer0
         lda #ST_READYTORACE
         sta _gamestatus
         rts
@@ -203,7 +216,9 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         sta _gamestatus
         rts
 
-.WaitForStart:
+.ReadyToRace:
+        jsr .CheckForPause
+        bcs +
         lda _joy0
         and _joy1
         and #JOY_UP             ;up pressed on any game control?
@@ -277,7 +292,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         sta _gamestatus
         rts
 
-.WaitForEnd:
+.RaceOver:
         lda _boardinputflag     ;check if we should wait for player to enter name because of new record
         beq +
         jsr .WaitForPlayerName
@@ -289,6 +304,7 @@ _debug          !byte   0               ;DEBUG - flag for breaking into debugger
         rts
 +       jsr HideText
         jsr HideCars
+        jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
         lda #ST_MENU
         sta _gamestatus
         rts

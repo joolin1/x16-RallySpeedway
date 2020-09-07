@@ -12,8 +12,8 @@
 !addr TILE_ADDR         = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes
 !addr CARS_ADDR         = $8000                   ;       8.5 Kb | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16 = $2200 bytes 
 !addr EXPLOSION_ADDR    = CARS_ADDR + $2200       ;         6 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16 = $1800 bytes
-!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        14 Kb | 14 text sprites      (64 rows x 16 bytes/row) ->  14 x 64 x 16 = $3800 bytes
-                                                  ;Total 44.5 Kb of graphical resources
+!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        15 Kb | 15 text sprites      (64 rows x 16 bytes/row) ->  15 x 64 x 16 = $3C00 bytes
+                                                  ;Total 45.5 Kb of graphical resources
 
 !addr CAR_PALETTES      = PALETTE + $20
 !addr YCAR_PALETTE      = PALETTE + $20
@@ -38,7 +38,7 @@ LoadGraphics:
         sec                             ;set carry to flag error
         rts
 +       jsr .CopySpritePalettesToVRAM
-        jsr .CopyCharactersToVRAM
+        jsr .SetCharset
         clc                             ;clear carry to flag everything is ok
         rts
 
@@ -114,40 +114,12 @@ LoadGraphics:
         bne -
         rts
 
-.CopyCharactersToVRAM:
-    ;This is a simpler way! - but does not seem to work
-    ;lda #0
-    ;ldx #<_charset
-    ;ldy #>_charset
-    ;jsr screen_set_charset
-
-	stz	VERA_CTRL
-	lda	#$00		
-	sta	VERA_ADDR_L
-	lda	#$F8		        ;base address of font is $F800
-	sta	VERA_ADDR_M
-	lda	#$10		        ;increment by 1, bank 0
-	sta	VERA_ADDR_H
-	lda	#<.charset	
-	sta	ZP0
-	lda	#>.charset
-	sta	ZP1
-	ldy	#64		        ;number of characters to replace in font
---	ldx	#8		        ;number of bytes in each character
--	lda	(ZP0)
-	sta	VERA_DATA0
-	lda	#1
-	clc
-	adc	ZP0
-	sta	ZP0
-	lda	#0
-	adc	ZP1
-	sta	ZP1
-	dex
-	bne	-		
-	dey
-	bne	--
-	rts
+.SetCharset:
+    lda #0
+    ldx #<.charset
+    ldy #>.charset
+    jsr screen_set_charset
+rts
 
 .charset
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de

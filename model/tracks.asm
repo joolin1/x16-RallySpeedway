@@ -80,9 +80,15 @@ _route_hi               !byte 0
 .direction              !byte 0
 .finishedflag           !byte 0
 .errorflag              !byte 0
-.errorstartmissing      !scr "route must start with a start block.",0
-.errorfinishmissing     !scr "route must end with a finish block.",0
-.errorroutebroken       !scr "route is broken.",0
+.errormessage1          !scr "ERROR IN TRACK ",0
+.errormessage2          !scr " ROW ",0
+.errormessage3          !scr " COL ",0
+.errorstartmissing      !scr ". ROUTE MUST START WITH A START BLOCK.",0
+.errorfinishmissing     !scr ". ROUTE MUST END WITH A FINISH BLOCK.",0
+.errorroutebroken       !scr ". ROUTE IS BROKEN.",0
+_routelength_lo:        !byte 0
+_routelength_hi:        !byte 0
+_route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
 
 SetTrack:
         ;set address for selected track
@@ -102,18 +108,77 @@ SetTrack:
         dec
         asl
         tay
-        lda .track_startblocks,y
-        sta _xstartblock
         lda .track_startblocks+1,y
+        sta _xstartblock
+        lda .track_startblocks,y
         sta _ystartblock
 
         jsr .CalculateRoute
+        rts
+
+VerifyTracks:                   ;Verify that all tracks have a coherent route
+        lda #1
+-       pha
+        sta _track
+        jsr SetTrack
+        bcc +
+        pla
+        jsr .PrintTrackError
+        sec                     ;error occurred
+        rts
++       pla
+        inc
+        cmp #6
+        bne -
+        lda #1
+        sta _track
+        clc                     ;no error
+        rts
+
+.PrintTrackError:               ;IN: .A = track, ZP0-ZP1 = error message, ZP2-ZP3 = row and col where error was found
+        ldx ZP0                 
+        phx                     ;push error message
+        ldy ZP1
+        phy
+        ldx ZP3
+        phx                     ;push col
+        ldx ZP2                         
+        phx                     ;push row
+        pha                     ;push track number
+        ldx #<.errormessage1
+        ldy #>.errormessage1
+        jsr KPrintString        ;print "error in track "
+
+        pla
+        jsr KPrintDigit         ;print number of track          
+
+        ldx #<.errormessage2
+        ldy #>.errormessage2
+        jsr KPrintString        ;print " row "
+
+        pla                     ;pull row
+        inc                     ;increase because for user rows are not zero-indexed
+        jsr KPrintNumber        ;print row number
+
+        ldx #<.errormessage3
+        ldy #>.errormessage3
+        jsr KPrintString        ;print " col "
+
+        pla                     ;pull col
+        inc                     ;increase becauser for user columns are not zero-indexed
+        jsr KPrintNumber        ;print col number
+
+        ply                     ;pull error message
+        plx
+        jsr KPrintString        ;print error message
         rts
 
 .CalculateRoute:                        ;calculate route data for current track.
                                         ;OUT: if error carry is set, ZP0-ZP1 points to error message, ZP2-ZP3 = row and col where error was found.
         stz .finishedflag
         stz .errorflag
+        stz _routelength_lo
+        stz _routelength_hi
         
         ;1 - save address of route in pointers to be able to use macro for getting element in array
         lda #<_route
@@ -165,7 +230,7 @@ SetTrack:
         sta ZP0
         lda #>.errorstartmissing
         sta ZP1
-        bra .ReturnError        ;error, route does not start with a block is of type start/finish
+        jmp .ReturnError        ;error, route does not start with a block is of type start/finish
 
         ;4 - track route through map
 
@@ -385,37 +450,36 @@ SetTrack:
 
 .AddToRoute:
         +GetElementInArray _route_lo, 5, .row, .col
-        lda .direction
+        lda .direction                  ;add route direction to current block position
         sta (ZP0)
+        +Inc16bit _routelength_lo       ;add 1 to route length
         rts
 
 ;*** Tracks data ***********************************************************************************
 
-_route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
-
 ;Definitions for all tracks
 
-.track_names:
-                        !scr "Track 1",0
-                        !scr "Track 2",0
-                        !scr "Track 3",0
-                        !scr "Track 4",0
-                        !scr "Track 5",0
+_tracknames:
+                        !scr "steil autobahn",0
+                        !scr "texas roadtrip",0
+                        !scr "route mcfarling",0
+                        !scr "tour veryhectic",0
+                        !scr "grandis prix circuit",0
 
 .track_startblocks:
-                        !byte 0,0
-                        !byte 2,29
-                        !byte 4,2
+                        !byte 0,1       ;row, col (zero-indexed)
+                        !byte 2,2
+                        !byte 2,2
                         !byte 2,2
                         !byte 2,2
 
 ;Track definitions
 .tracks:       
 .track1:
-        !byte 8,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,0,3,5,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,2,8,5,5,5,5,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,6,0,0,0,0,0,0,0,6,0,0,0,2,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 2,8,5,5,5,5,5,5,5,5,5,1,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5
+        !byte 6,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 3,5,5,5,5,5,5,5,5,5,5,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 0,0,0,0,0,0,0,0,0,0,6,0,0,2,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,3,1,0,0,0,0,0,0,3,5,5,5,4,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,2,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -448,7 +512,7 @@ _route:                 !fill 1024,0    ;calculated route (every entry correspon
 .track2:
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-        !byte 0,2,8,1,5,5,5,5,5,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+        !byte 0,2,8,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,8,0,0,0,0,0,0
         !byte 0,6,0,6,0,0,0,0,0,6,0,0,0,5,5,5,1,0,0,0,5,5,5,5,5,5,5,5,5,1,0,0
         !byte 0,3,5,4,5,5,5,5,5,4,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0
         !byte 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,0,6,0,0

@@ -27,9 +27,9 @@ _camypos_hi             !byte 0
 .oldmaptileypos         !byte 0         ;y tile position last frame, used to see if tile position has changed
 
 .displayedBuffer:       !byte 0         ;buffer (part of tilemap) that currently is displayed
+.blinkcolor             !byte 0         ;color for blinking text
 
 .blockchangedflag       = ZP4           ;flag block change (when looping through map, the block will only change every 8th tile)
-         
 .currentxtile           = ZP7           ;current tile when looping through map      
 .currentytile           = ZP8
 .currentxblock          = ZP9           ;current block when looping through map
@@ -42,7 +42,16 @@ _camypos_hi             !byte 0
 
 ;*** Public subroutines ****************************************************************************
 
-UpdateRaceView:                         ;this subroutine is called at vertical blank to update track, text and sprites. Track is already prepared, all we do is switch buffer.
+!macro SetBlinkColor .blinkcolor {
+        lda .blinkcolor 
+        and #8
+        lsr
+        lsr
+        lsr
+        sta _color
+}
+
+UpdateRaceView:                         ;this subroutine is called at vertical blank to update track, text and sprites. Track is already prepared, all we have to do is to switch buffer.
 
         ;display the buffer (part of tilemap) that is not currently displayed
         lda .displayedBuffer         
@@ -61,19 +70,45 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
         sta L0_VSCROLL_L
         stz L0_VSCROLL_H
 
-        jsr YCar_UpdateSprite           ;update sprite position and selection for yellow car
-        +SetPrintParams 28,1,$01        ;print racetime
+        inc .blinkcolor
+
+        ;update sprite position and sprite selection for yellow car
+        jsr YCar_UpdateSprite
+
+        ;print time for yellow car                           
+        +SetPrintParams 28,1,$01        
         +SetParams _ycartime,_ycartime+1,_ycartime+2
         jsr VPrintTime
+        
+        ;print distance for yellow car
+        +SetPrintParams 28,10,$01        
+        +IsEqual16 _ycardistanceleft_lo                 ;blink text if distance left = 0
+        bne +
+        +SetBlinkColor .blinkcolor
++       +SetParams _ycardistanceleft_lo, _ycardistanceleft_lo+1
+        jsr VPrintLargeDecimalNumber                    ;print distance left
 
         lda _noofplayers
         cmp #1
-        beq +
-        jsr BCar_UpdateSprite           ;update sprite position and selection for blue car
-        +SetPrintParams 28,31,$01       ;print racetime
+        bne +
+        rts
+
+        ;update sprite position and sprite selection for blue car
++       jsr BCar_UpdateSprite
+
+        ;print time for blue car                          
+        +SetPrintParams 28,31,$01       
         +SetParams _bcartime,_bcartime+1,_bcartime+2
-        jsr VPrintTime
-+       rts
+        jsr VPrintTime                                  ;print racetime
+
+        ;print distance for yellow car
+        +SetPrintParams 28,27,$01
+        +IsEqual16 _bcardistanceleft_lo                 ;blink text if distance left = 0
+        bne +
+        +SetBlinkColor .blinkcolor
++       +SetParams _bcardistanceleft_lo, _bcardistanceleft_lo+1
+        jsr VPrintLargeDecimalNumber                    ;print distance left
+        rts
 
 InitMap:                                ;init is like update but we make sure all map calculations are made 
         jsr .SetCameraPosition
@@ -104,59 +139,242 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 
 ;*** Private subroutines ***************************************************************************
 
+!macro SetCamPosition .ycarpos_lo, .ycarpos_hi, .bcarpos_lo, .bcarpos_hi, .campos_lo, .campos_hi {
+
+        lda .ycarpos_lo        ;1 - start with adding car positions
+        clc
+        adc .bcarpos_lo
+        sta .campos_lo
+        lda .ycarpos_hi
+        adc .bcarpos_hi
+        sta .campos_hi
+
+        lda .ycarpos_lo         ;2 - check if cars are closer in this very map or closer or if we see them as positioned on different maps 
+        sec                     ;the fact that the map wraps makes this complicated...
+        sbc .bcarpos_lo
+        sta ZP0
+        lda .ycarpos_hi
+        sbc .bcarpos_hi
+        sta ZP1
+        +Abs16 ZP0
+        lda ZP1
+        cmp #8                  ;3- compare with 2048 (high byte)
+        bcc ++                  ;if distance < 2048, skip next step
+
+        lda .campos_hi          ;4 - if distance >= 2048 the cars are closer if we see them as positioned on two different maps beside each other
+        and #15                 ;reduce cam value to 12 bit (4096), then make a signed division by 2
+        bit #8                  ;e g ycar = 4000, bcar = 100 -> 4000 + 100 = 4100, wrap to 12 bit = 4, 4/2 = 2 = camera pos
+        beq +                   ;e g ycar = 4000, bcar = 50  -> 4000 + 50  = 4050, wrap to 12 bit = 4050 = -46, -46/2 = -23 = 4073 = camera pos
+        ora #16                 ;if bit 4 is set the 12 bit value is negative, therefore we set bit 5 so the sign will be preserved when we shift right
++       sta .campos_hi       
+
+++      lsr .campos_hi          ;5 - divide by 2 to achieve position between cars and in the same distance from them
+        ror .campos_lo
+}
+
+; .PanTowardsBCar:      good thought but will not work when cars are on different maps...
+;         ;calculate distance between blue car and camera
+;         +Sub16 _bcarxpos_lo, _camxpos_lo
+;         stx ZP0
+;         sty ZP1
+;         +Abs16 ZP0
+;         +Cmp16 ZP0, $06, $00
+;         bcc ++
+;         tya
+;         bit #8
+;         bne +      
+;         +Add16 _camxpos_lo, $05, $00
+;         rts
+; +       +Sub16 _camxpos_lo, $05, $00
+;         rts
+;         ;panning ready set camera on blue car
+; ++      lda _bcarxpos_lo
+;         sta _camxpos_lo
+;         lda _bcarxpos_hi
+;         sta _camxpos_hi
+;         rts
+
+.FollowYCar:
+        lda _ycarxpos_lo        ;set camera on yellow car
+        sta _camxpos_lo
+        lda _ycarxpos_hi
+        sta _camxpos_hi
+        lda _ycarypos_lo
+        sta _camypos_lo
+        lda _ycarypos_hi
+        sta _camypos_hi
+        rts
+
+
 .SetCameraPosition:     
         ;set camera position
         lda _noofplayers
         cmp #1
-        beq .FocusOnYCar        ;if one player, simply set camera on yellow car
-+       lda _winner             ;if two players, it is more complicated...
-        cmp #1
-        beq .FocusOnBCar        ;if yellow car has won the race, move camera to blue car
-        cmp #2
-        beq .FocusOnYCar        ;if blue car has won the race, move camera to yellow car
+        beq .FollowYCar         ;if one player, simply set camera on yellow car
         
-        lda _ycarxpos_lo        ;if race is on, set camera in the middle between the cars by adding coordinates and divide by two
-        clc
-        adc _bcarxpos_lo
-        sta _camxpos_lo
-        lda _ycarxpos_hi
-        adc _bcarxpos_hi
-        sta _camxpos_hi
-        lsr _camxpos_hi                
-        ror _camxpos_lo
-
-        lda _ycarypos_lo
-        clc
-        adc _bcarypos_lo
-        sta _camypos_lo
-        lda _ycarypos_hi
-        adc _bcarypos_hi
-        sta _camypos_hi
-        lsr _camypos_hi
-        ror _camypos_lo
+        ;set horizontal and vertical position of camera
+        +SetCamPosition _ycarxpos_lo, _ycarxpos_hi, _bcarxpos_lo, _bcarxpos_hi, _camxpos_lo, _camxpos_hi
+        +SetCamPosition _ycarypos_lo, _ycarypos_hi, _bcarypos_lo, _bcarypos_hi, _camypos_lo, _camypos_hi
         rts
 
-.FocusOnYCar:
-        lda _ycarxpos_lo        ;if one player - simply set camera on yellow car
-        sta _camxpos_lo
-        lda _ycarxpos_hi
-        sta _camxpos_hi
-        lda _ycarypos_lo
-        sta _camypos_lo
-        lda _ycarypos_hi
-        sta _camypos_hi
-        rts
+;         lda _ycarxpos_lo        ;1 - start with adding car positions
+;         clc
+;         adc _bcarxpos_lo
+;         sta _camxpos_lo
+;         lda _ycarxpos_hi
+;         adc _bcarxpos_hi
+;         sta _camxpos_hi
 
-.FocusOnBCar:
-        lda _bcarxpos_lo        ;if one player - simply set camera on yellow car
-        sta _camxpos_lo
-        lda _bcarxpos_hi
-        sta _camxpos_hi
-        lda _bcarypos_lo
-        sta _camypos_lo
-        lda _bcarypos_hi
-        sta _camypos_hi
-        rts
+;         lda _ycarxpos_lo        ;2 - check if cars are closer in this very map or closer or if we see them as positioned on different maps 
+;         sec                     ;the fact that the map wraps makes this complicated...
+;         sbc _bcarxpos_lo
+;         sta ZP0
+;         lda _ycarxpos_hi
+;         sbc _bcarxpos_hi
+;         sta ZP1
+;         +Abs16 ZP0
+;         lda ZP1
+;         cmp #8                  ;3- compare with 2048 (high byte)
+;         bcc ++                  ;if distance < 2048, skip next step
+
+;         lda _camxpos_hi         ;4 - if distance >= 2048 the cars are closer if we see one of them on different maps
+;         and #15                 ;reduce cam value to 12 bit (4096), then make a signed division by 2
+;         bit #8                  ;e g ycar = 4000, bcar = 100 -> 4000 + 100 = 4100, wrap to 12 bit = 4, 4/2 = 2 = camera pos
+;         beq +                   ;e g ycar = 4000, bcar = 50  -> 4000 + 50  = 4050, wrap to 12 bit = 4050 = -46, -46/2 = -23 = 4073 = camera pos
+;         ora #16                 ;if bit 4 is set the 12 bit value is negative, therefore we set bit 5 so the sign will be preserved when we shift right
+; +       sta _camxpos_hi       
+
+; ++      lsr _camxpos_hi         ;5 - divide by 2 to achieve position between cars and in the same distance from them
+;         ror _camxpos_lo
+        
+; ++      ;set vertical position of camera (see comments above)
+;         lda _ycarypos_lo
+;         sec
+;         sbc _bcarypos_lo
+;         sta ZP0
+;         lda _ycarypos_hi
+;         sbc _bcarypos_hi
+;         sta ZP1
+;         +Abs16 ZP0
+;         lda ZP1
+;         cmp #8
+;         bcs +
+
+;         lda _ycarypos_lo
+;         clc
+;         adc _bcarypos_lo
+;         sta _camypos_lo
+;         lda _ycarypos_hi
+;         adc _bcarypos_hi
+;         sta _camypos_hi
+;         lsr _camypos_hi
+;         ror _camypos_lo
+;         rts
+
+; +       lda _ycarypos_lo
+;         clc
+;         adc _bcarypos_lo
+;         sta _camypos_lo
+;         lda _ycarypos_hi
+;         adc _bcarypos_hi
+;         and #15
+;         bit #8
+;         beq +
+;         ora #16
+; +       sta _camypos_hi
+;         lsr _camypos_hi
+;         ror _camypos_lo
+;         rts
+
+; .SetCameraPosition:     
+;         ;set camera position
+;         lda _noofplayers
+;         cmp #1
+;         beq .FocusOnYCar        ;if one player, simply set camera on yellow car
+; +       lda _winner             ;if two players, it is more complicated...
+;         cmp #1
+;         beq .FocusOnBCar        ;if yellow car has won the race, move camera to blue car
+;         cmp #2
+;         beq .FocusOnYCar        ;if blue car has won the race, move camera to yellow car
+        
+;         +CondBreakpoint
+
+;         ;set horizontal position of camera
+;         lda _ycarxpos_lo        ;check if cars are closer in this very map or closer or if we see them as positioned on different maps 
+;         sec                     ;the fact that the map wraps makes this complicated...
+;         sbc _bcarxpos_lo
+;         sta ZP0
+;         lda _ycarxpos_hi
+;         sbc _bcarxpos_hi
+;         sta ZP1
+;         +Abs16 ZP0
+;         lda ZP1
+;         cmp #8                  ;compare with 2048 (high byte)
+;         bcs +
+
+;         lda _ycarxpos_lo        ;if distance < 2048 the easy alternative is right. Set camera in the middle between the cars by adding coordinates and divide by two
+;         clc
+;         adc _bcarxpos_lo
+;         sta _camxpos_lo
+;         lda _ycarxpos_hi
+;         adc _bcarxpos_hi
+;         sta _camxpos_hi
+;         lsr _camxpos_hi
+;         ror _camxpos_lo
+;         bra ++
+
+; +       lda _ycarxpos_lo        ;if distance >= 2048 the cars are closer if we see one of them on different maps
+;         clc                     ;(e g ycar x = 4000 and bcar = 100 -> distance becomes 196 instead of 3900)
+;         adc _bcarxpos_lo
+;         sta _camxpos_lo
+;         lda _ycarxpos_hi
+;         adc _bcarxpos_hi
+;         and #15                 ;reduce value to 12 bit (4096), then make a signed division by 2
+;         bit #8                  ;e g ycar x = 4000, bcar x = 100 -> 4000 + 100 = 4100, wrap to 12 bit = 4, 4/2 = 2 = camera x pos
+;         beq +                   ;e g ycar x = 4000, bcar x = 50  -> 4000 + 50  = 4050, wrap to 12 bit = 4050 = -46, -46/2 = -23 = 4073 = camera x pos
+;         ora #16
+; +       sta _camxpos_hi       
+;         lsr _camxpos_hi
+;         ror _camxpos_lo
+        
+; ++      ;set vertical position of camera (see comments above)
+;         lda _ycarypos_lo
+;         sec
+;         sbc _bcarypos_lo
+;         sta ZP0
+;         lda _ycarypos_hi
+;         sbc _bcarypos_hi
+;         sta ZP1
+;         +Abs16 ZP0
+;         lda ZP1
+;         cmp #8
+;         bcs +
+
+;         lda _ycarypos_lo
+;         clc
+;         adc _bcarypos_lo
+;         sta _camypos_lo
+;         lda _ycarypos_hi
+;         adc _bcarypos_hi
+;         sta _camypos_hi
+;         lsr _camypos_hi
+;         ror _camypos_lo
+;         rts
+
+; +       lda _ycarypos_lo
+;         clc
+;         adc _bcarypos_lo
+;         sta _camypos_lo
+;         lda _ycarypos_hi
+;         adc _bcarypos_hi
+;         and #15
+;         bit #8
+;         beq +
+;         ora #16
+; +       sta _camypos_hi
+;         lsr _camypos_hi
+;         ror _camypos_lo
+;         rts
 
 .SetMapPosition:             ;Update all position information (world coordinates, which block, whick tile in block and which pixel in tile)
 

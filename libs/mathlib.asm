@@ -14,6 +14,43 @@
 +
 }
 
+!macro Countdown16bit .addr {           ;decrease to 0, then stop
+        lda .addr
+        bne +
+        lda .addr+1
+        bne +
+        bra ++
++       dec .addr
+        bpl ++
+        dec .addr+1
+        bpl ++
+        stz .addr                       ;if reached $ffff set $0000
+        stz .addr+1
+++
+}
+
+!macro Countdown16bitDec .addr {        ;decrease decimal number to 0, then stop
+        sed
+        lda .addr
+        bne +
+        lda .addr+1
+        bne +
+        bra ++
++       lda .addr
+        sec
+        sbc #1
+        sta .addr
+        bpl ++
+        lda .addr+1
+        sec
+        sbc #1
+        sta .addr+1        
+        bpl ++
+        stz .addr                       ;if reached $ffff set $0000
+        stz .addr+1
+++      cld
+}
+
 !macro IncAndWrap32 .pos {
         lda .pos
         inc
@@ -26,6 +63,86 @@
         dec
         and #31
         sta .pos
+}
+
+!macro Add16 .addr1_lo, .addr2_lo {     ;OUT: .X = result lo, .Y = result hi
+        lda .addr1_lo
+        clc
+        adc .addr2_lo
+        tax
+        lda .addr1_hi
+        adc .addr2_hi
+        tay        
+}
+
+!macro Add16 .addr_lo, .value_lo, .value_hi {     ;OUT: result in .addr_lo and .addr_lo+1
+        lda .addr_lo
+        clc
+        adc #.value_lo
+        sta .addr_lo
+        lda .addr_lo+1
+        adc  #.value_hi
+        sta .addr_lo+1        
+}
+
+!macro Sub16 .addr1_lo, .addr2_lo {     ;OUT: .X = result lo, .Y = result hi
+        lda .addr1_lo
+        sec
+        sbc .addr2_lo
+        tax
+        lda .addr1_lo+1
+        sbc .addr2_lo+1
+        tay        
+}
+
+!macro Sub16 .addr_lo, .value_lo, .value_hi {     ;OUT: result in .addr_lo and .addr_lo+1
+        lda .addr_lo
+        sec
+        sbc .value_lo
+        sta .addr_lo
+        lda .addr_lo+1
+        sbc .value_hi
+        sta .addr_lo+1
+}
+
+!macro Abs16 .address_lo {
+        lda .address_lo+1       
+        bit #$80
+        beq +
+        eor #$ff                        ;if negative convert from minus to plus
+        sta .address_lo+1                        
+        lda .address_lo
+        eor #$ff
+        inc
+        sta .address_lo
++
+}
+
+!macro Cmp16 .addr1_lo, .addr2_lo {             ;OUT: carry clear if num 1 < num 2
+        lda .addr1_lo+1         ;start with comparing high bytes
+        cmp .addr2_lo+1
+        bcc +                   ;if number 1 hi <  number 2 hi then number 1 < number 2
+        bne +                   ;if number 1 hi <> number 2 hi then number 2 > number 2
+        lda .addr1_lo           ;if number 1 hi =  number 2 hi then compare low bytes to see which number is lowest
+        cmp .addr2_lo
++
+}
+
+!macro Cmp16 .addr_lo, .value_lo, .value_hi {   ;OUT: carry clear if num 1 < num 2
+        lda .addr_lo+1
+        cmp #.value_hi
+        bcc +
+        bne +
+        lda .addr_lo
+        cmp #.value_lo
++
+}
+
+!macro IsEqual16 .addr_lo {
+        lda .addr_lo
+        bne +
+        lda .addr_lo+1
++
 }
 
 !macro DivideBy16 .address_lo {

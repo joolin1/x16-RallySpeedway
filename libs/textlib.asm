@@ -12,6 +12,13 @@ _row    !byte 0                 ;current row
 _col    !byte 0                 ;current column
 _color  !byte 0                 ;text color (bg color = upper nybble, fg color = lower nybble)
 
+!macro SetPrintParams .row, .col {
+        lda #.row
+        sta _row
+        lda #.col
+        sta _col
+} 
+
 !macro SetPrintParams .row, .col, .color {
         lda #.row
         sta _row
@@ -252,9 +259,9 @@ KPrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = stri
         beq ++
 -       lda (ZP0)
         beq +
-        jsr .incAddr
+        +Inc16bit ZP0
         bra -
-+       jsr .incAddr
++       +Inc16bit ZP0
         dex
         bne -
         ldx ZP0
@@ -262,19 +269,22 @@ KPrintStringArrayElement:        ;IN: .X .Y = address of string array. .A = stri
 ++      jsr KPrintString
         rts
 
-.incAddr:
-        inc ZP0
-        bne +
-        inc ZP1
-+       rts
-
-KPrintDigit:                     ;IN: .A = digit to print
+KPrintNumber:                   ;IN .A = number to print (max 99!)
+        cmp #10
+        bcc KPrintDigit
+        asl
         tay
-        lda .number,y
+        lda .digitstable,y
+        jsr BSOUT
+        lda .digitstable+1,y
         jsr BSOUT
         rts
 
-.number     !scr "0123456789"
+KPrintDigit:                     ;IN: .A = digit to print
+        tay
+        lda .digittable,y
+        jsr BSOUT
+        rts
 
 ;*** Print to VERA directly ************************************************************************
 
@@ -285,6 +295,7 @@ VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated wi
         +Inc16bit ZP0
         bra -
 +       inc _row
+        stz _col
         +Inc16bit ZP0
         rts 
 
@@ -308,50 +319,80 @@ VPrintChar:                     ;IN: .A = screen code of character
         inc _col
         rts
 
-VPrintDecimalNumber:            ;IN: .A = number in decimal mode to print
+!macro VPrintDecimalDigit {     ;IN: .A = digit to print
+        clc
+        adc #48                 ;48 = screen code for "0"
+        jsr VPrintChar
+}
+
+VPrintLargeDecimalNumber:       ;Print 3 digit decimal number with leading zero(s) (000-999). IN: ZP0, ZP1 = number in decimal mode to print
+        lda ZP1
+        and #15
+        +VPrintDecimalDigit
++       lda ZP0                 ;(will continue with next subroutine and then return)
+
+VPrintDecimalNumber:            ;Print 2 digit decimal number with leading zero (0-99). IN: .A = number in decimal mode to print
         pha
         lsr
         lsr
         lsr
         lsr
-        beq +
-        jsr VPrintDecimalDigit
-+       pla
+        +VPrintDecimalDigit
+        pla
         and #15
-        jsr VPrintDecimalDigit
-        rts
-
-VPrintDecimalDigit:             ;IN: .A = digit to print
-        clc
-        adc #48
-        jsr VPrintChar
+        +VPrintDecimalDigit
         rts
 
 VPrintNumber:                   ;IN: .A = number to print
-    ldx #$ff
-    sec 
--   inx
-    sbc #100
-    bcs -
-    adc #100
-    jsr +
+        ldx #$ff
+        sec 
+-       inx
+        sbc #100
+        bcs -
+        adc #100
+        jsr +
 
-    ldx #$ff
-    sec
---  inx
-    sbc #10
-    bcs --
-    adc #10
-    jsr +
+        ldx #$ff
+        sec
+--      inx
+        sbc #10
+        bcs --
+        adc #10
+        jsr +
 
-    tax
-+   pha
-    txa
-    clc
-    adc #$30
-    jsr VPrintChar
-    pla
-    rts
+        tax
++       pha
+        txa
+        clc
+        adc #$30
+        jsr VPrintChar
+        pla
+        rts
+
+VPrintHexNumber:                ;IN: .A = number to print
+        pha
+        lsr
+        lsr
+        lsr
+        lsr
+        tay
+        lda .hexdigits,y
+        jsr VPrintChar
+        pla
+        and #15
+        tay
+        lda .hexdigits,y
+        jsr VPrintChar
+        rts
+
+!macro VPrintHex16Number .addr {
+        lda .addr+1
+        jsr VPrintHexNumber
+        lda .addr
+        jsr VPrintHexNumber
+}
+
+.hexdigits      !scr "0123456789abcdef"
 
 VPrintNullableTime:
         lda ZP0
@@ -372,9 +413,9 @@ VPrintNullableTime:
 VPrintSeconds:                  ;IN: .A = seconds
         asl
         tay
-        lda .secondstable,y
+        lda .digitstable,y
         jsr VPrintChar
-        lda .secondstable+1,y
+        lda .digitstable+1,y
         jsr VPrintChar
         lda #<.secondtime
         sta ZP0
@@ -418,10 +459,10 @@ VPrintTime:                     ;IN: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
 .VPrintSeconds:
         asl
         tay
-        lda .secondstable,y
+        lda .digitstable,y
         sta VERA_DATA0
         stx VERA_DATA0
-        lda .secondstable+1,y
+        lda .digitstable+1,y
         sta VERA_DATA0
         stx VERA_DATA0
         rts
@@ -438,7 +479,8 @@ VPrintTime:                     ;IN: ZP0 = minutes, ZP1 = seconds, ZP2 = jiffies
         rts
 
 ;tables for showing seconds and minutes, jiffies is converted to tenths of a second
-.secondstable   !scr "000102030405060708091011121314151617181920212223242526272829303132333435363738394041424344454647484950515253545556575859"
+.digittable     !scr "0123456789"
+.digitstable    !scr "00010203040506070809101112131415161718192021222324252627282930313233343536373839404142434445464748495051525354555657585960616263646566676869707172737475767778798081828384858687888990919293949596979899"
 .jiffiestable   !scr "000000000000101010101010202020202020303030303030404040404040505050505050606060606060707070707070808080808080909090909090"
 
 ;*** Conversion ************************************************************************************

@@ -146,25 +146,34 @@ PlayBCarEngineSound:
 .bengine_index          !byte 0
 .bengine_delay          !byte 0
 
-StopCarSounds:                  ;Stop all car sounds. When race is interrupted by outrun, collision or race over, cars should be immediately silent
+StopCarSounds:
+        jsr StopYCarSounds ;stop all car sounds. When race is interrupted by outdistancing, collision or race over, cars should be immediately silent
+        jsr StopBCarSounds
+        rts
+
+StopYCarSounds:            ;stop these sounds when yellow car has finished and slowed down
         lda #0
         ldy #PLAYING_YENGINE
-        sta _playingtable,y
-        ldy #PLAYING_BENGINE
         sta _playingtable,y
         ldy #PLAYING_YSKIDDING1
         sta _playingtable,y
         sta _playingtable+1,y
-        ldy #PLAYING_BSKIDDING1
-        sta _playingtable,y
-        sta _playingtable+1,y
-        lda #0
-        jsr StopSound           ;silence all voices that are used by cars
-        lda #1
-        jsr StopSound
+        lda #0                  ;silence all voices that are used by yellow car
+        jsr StopSound           
         lda #2
         jsr StopSound
         lda #3
+        jsr StopSound
+        rts
+
+StopBCarSounds:              
+        lda #0
+        ldy #PLAYING_BENGINE
+        sta _playingtable,y
+        ldy #PLAYING_BSKIDDING1
+        sta _playingtable,y
+        sta _playingtable+1,y
+        lda #1                  ;silence all voices that are used by blue car
         jsr StopSound
         lda #4
         jsr StopSound

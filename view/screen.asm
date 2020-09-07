@@ -3,19 +3,51 @@
 SCREEN_WIDTH = 320
 SCREEN_HEIGHT = 240
 
-;Sprite collisions
-COLLISION_MASK = %00010000
+EnableLayers:
+        jsr EnableLayer0
+        jsr EnableLayer1
+        rts
+
+DisableLayers:
+        jsr DisableLayer0
+        jsr DisableLayer1
+        rts
+
+EnableLayer0:
+        lda DC_VIDEO
+        ora #16
+        sta DC_VIDEO
+        rts
+
+EnableLayer1:
+        lda DC_VIDEO
+        ora #32
+        sta DC_VIDEO
+        rts
+
+DisableLayer0:
+        lda DC_VIDEO
+        and #255-16
+        sta DC_VIDEO
+        rts
+
+DisableLayer1:
+        lda DC_VIDEO
+        and #255-32
+        sta DC_VIDEO
+        rts
 
 InitScreenAndSprites:
+        jsr DisableLayers       ;Disable layers while setting up start screen
 
         stz VERA_CTRL           ;R-----DA (R=RESET, D=DCSEL, A=ADDRSEL)
 
         ;Display (DCSEL=0)
         lda DC_VIDEO
-        ora #%01110000
-        sta DC_VIDEO            ;enable sprites, layer 1 and layer 0
+        ora #64
+        sta DC_VIDEO            ;enable sprites
         lda #64
-        sta DC_HSCALE           ;set horizontal scale to 2:1
+        sta DC_HSCALE           ;set horizontal and vertical scale to 2:1
         sta DC_VSCALE
 
         lda #0
@@ -32,7 +64,7 @@ InitScreenAndSprites:
         lda #<SPR3_ADDR_L       ;low byte of address attribute for first text sprite
         sta ZP2
 
-        ldx #14                 ;number of sprites
+        ldx #15                 ;number of sprites
 -       jsr .VPokeSpriteAddr
         lda ZP0                 ;add 1024/32=32 to get address of next sprite
         clc
@@ -83,8 +115,42 @@ InitScreenAndSprites:
         sta ZP1
         jsr .VPokeSpriteAddr
 
-        +VPokeSpritesI SPR3_ATTR_0, 16, 0         ;disable all text sprites for now
-        +VPokeSpritesI SPR3_ATTR_1, 16, %11100000 ;set height to 64 pixels and width to 32
+        lda ZP2                 
+        clc
+        adc #8                  ;add 8 to get address attribute of next sprite
+        sta ZP2
+
+        ;Add an extra "O"-sprite due to the fact that "OFFROAD" is spelled with two O:s
+        lda #<TEXT_ADDR      
+        sta ZP0
+        lda #>TEXT_ADDR
+        sta ZP1
+        +DivideBy32 ZP0
+        inc ZP1                 ;add 32 * 8 (= index for sprite) = 256 to get address of "O" sprite, in other words add 1 to high byte
+        jsr .VPokeSpriteAddr
+
+        lda ZP2                 
+        clc
+        adc #8                  ;add 8 to get address attribute of next sprite
+        sta ZP2
+
+        ;Add an extra "F"-sprite due to the fact that "OFFROAD" is spelled with two F:s
+        lda #<TEXT_ADDR      
+        sta ZP0
+        lda #>TEXT_ADDR
+        sta ZP1
+        +DivideBy32 ZP0
+        lda ZP0                         
+        clc
+        adc #96                ;add 32 * 3 (= index for sprite) = 224 to get address of "N" sprite
+        sta ZP0
+        lda ZP1
+        adc #0
+        sta ZP1
+        jsr .VPokeSpriteAddr
+
+        +VPokeSpritesI SPR3_ATTR_0, TEXTSPRITE_COUNT, 0         ;disable all text sprites for now
+        +VPokeSpritesI SPR3_ATTR_1, TEXTSPRITE_COUNT, %11100000 ;set height to 64 pixels and width to 32
         rts
 
 .VPokeSpriteAddr:               ;set address attributes for sprites

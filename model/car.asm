@@ -37,7 +37,10 @@
 .checkpointdirection    !byte 0         ;current direction for checkpoint
 .block                  !byte 0         ;current type of block according to block map
 .routedirection         !byte 0         ;current direction of route according to route map
-.distance               !byte 0         ;distance since last checkpoint
+.distance_lo            !byte 0         ;distance in blocks left to go
+.distance_hi            !byte 0
+.distanceleft_lo        !byte 0         ;DECIMAL number!
+.distanceleft_hi        !byte 0         ;DECIMAL number!
 .penaltycount           !byte 0         ;how many times the car has got a time penalty
 .collisioncount         !byte 0         ;how many times the cas has collided/crashed
 .finishflag             !byte 0         ;flag for finished race
@@ -61,8 +64,7 @@
         lda .joy                ;DEBUG
         and #JOY_BUTTON_B                 
         bne +
-        lda #1
-        sta _debug              ;END DEBUG
+        +SetCondBreakpoint      ;END DEBUG
 
 +       lda .joy
         and #JOY_BUTTON_A       ;button A?
@@ -88,7 +90,9 @@
         stz .penaltycount
         stz .collisioncount
         stz .finishflag
-        stz .distance
+        stz .distance_lo
+        stz .distance_hi
+        jsr .SetDistanceLeft     ;distance left is counted in decimal mode
         lda _xstartblock
         sta .checkpoint_xpos
         lda _ystartblock
@@ -98,11 +102,30 @@
         jsr .InitRace
         rts
 
+.SetDistanceLeft:               ;convert route length hex number to a decimal number
+        stz .distanceleft_lo
+        stz .distanceleft_hi
+        lda _routelength_lo
+        sta ZP0
+        lda _routelength_hi
+        sta ZP1
+-       sed
+        +Add16 .distanceleft_lo,1,0
+        cld
+        +Dec16bit ZP0
+        lda ZP0
+        bne -
+        lda ZP1
+        bne -
+        rts
+
 .ResumeRace:
         lda .finishflag
-        bne +                    
-        jsr .InitRace           ;if car has finished race it is out of the race, just let it be
-+       rts
+        beq  +
+        stz .speed              ;if car has finished race it is out of the race, in case it hasn't stopped yet we set speed immediately to 0
+        rts               
++       jsr .InitRace           
+        rts
 
 .InitRace:                      ;initialization that both new and resumed races share
         stz .speed
@@ -130,11 +153,16 @@
         bne +
         ldx #64                 ;if one player center the only car
         bra ++        
++       lda _winner
+        beq +
+        ldx #64                 ;if two players and one has finished the race, center the other car
+        bra ++         
 +       lda #.ID                ;if two players position cars side by side
         beq +
         ldx #64+CAR_START_DISTANCE/2
         bra ++
 +       ldx #64-CAR_START_DISTANCE/2
+
 ++      lda .checkpointdirection
         bit #64                 ;start direction horizontal or vertical?
         beq +
@@ -184,22 +212,26 @@
         lda .finishflag
         beq +
         jsr .StopCar            ;if car has finished race, just slow down until it has stopped
+        lda .speed
+        bne ++
+        jsr StopCarSounds 
         bra ++
 +       jsr .TimeTick           ;add a jiffy to the timer
         jsr .ReactOnPlayerInput
-++      lda .speed              
-        lsr
-        lsr                     ;skip fraction, speed is fixed point 6.2
-        bne +
-        rts
-+       jsr .UpdateCarPosition
+++      jsr .UpdateCarPosition
         jsr .UpdateCarProperties
         jsr .UpdateTileInformation
         rts
 
 .UpdateCarPosition:
+        lda .speed              
+        lsr                     ;get rid of fraction
+        lsr                     
+        bne +                   
+        rts                     ;nothing to do if speed is 0
+
         ;Move car
-        tax                     ;speed in .X
++       tax                     ;speed in .X
         lda .angle              ;angle in .A       
         jsr .Move               ;move car in current direction
 
@@ -287,8 +319,12 @@
         rts
         
 .UpdateRouteInformation:
-        inc .distance           ;always update distance, it doesn't matter if car is driving offroad
-        lda .block_xpos         ;update block route history           
+        lda .finishflag                         ;don't update any route information when car has finished race
+        beq +
+        rts
++       +Inc16bit .distance_lo                  ;always increase distance for every new block, it doesn't matter if car is driving offroad
+        +Countdown16bitDec .distanceleft_lo
+        lda .block_xpos                         ;update block route history           
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
@@ -371,12 +407,16 @@
 
 +       cmp #TILE_FINISH
         bne +
-        jsr .CheckDirection             ;check if car has crossed the finish line from the right direction
-        sta .finishflag                 ;car has finished race!
+        lda .distanceleft_lo            ;race can only be finished if car has driven as long as the route distance!
+        bne +
+        lda .distanceleft_hi
+        bne +
+        jsr .CheckDirection            ;check if car has crossed the finish line from the right direction
+        sta .finishflag
         rts
 
-+       ;cmp #TILE_OBSTACLE
-        ;beq +
++       cmp #TILE_OBSTACLE
+        beq +
         rts
 +       lda .finishflag
         beq +

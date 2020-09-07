@@ -10,17 +10,7 @@ YCar_TimeSubSeconds             = .TimeSubSeconds
 
 YCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 1,0,$01
-        lda .block_xpos
-        jsr VPrintNumber
-        +SetPrintParams 2,0,$01
-        lda .block_ypos
-        jsr VPrintNumber
-        +SetPrintParams 3,0,$01
-        lda .block
-        jsr VPrintNumber
-        +SetPrintParams 4,0,$01
-        lda .routedirection
-        jsr VPrintNumber
+        +VPrintHex16Number .distance_lo
         rts
 
 _ycarxpos_lo = .xpos_lo_int                     ;world position (0-4095)
@@ -31,8 +21,10 @@ _ycarypos_hi = .ypos_hi_int
 _ycar_checkpoint_xpos = .checkpoint_xpos        ;block position (0-31)
 _ycar_checkpoint_ypos = .checkpoint_ypos
 _ycar_checkpoint_direction = .checkpointdirection
+_ycar_routedirection = .routedirection
 _ycarspeed = .speed
-_ycardistance = .distance
+_ycardistance_lo = .distance_lo
+_ycardistanceleft_lo = .distanceleft_lo 
 _ycarangle = .angle
 _ycardisplayangle = .displayangle
 _ycarclashpush = .clashpush
@@ -51,6 +43,7 @@ _ycartime = .minutes
 .PlayEngineSound        = PlayYCarEngineSound
 .PlaySkiddingSound      = PlayYCarSkiddingSound
 .StopSkiddingSound      = StopYCarSkiddingSound
+.StopCarSounds          = StopYCarSounds
 
 !src "model/car.asm"    ;add an instance of car class
 !src "libs/timer.asm"   ;add an instance of timer class 

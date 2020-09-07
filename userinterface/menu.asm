@@ -1,4 +1,4 @@
-;*** Menu.asm - Start screen, menu, annoncements ******************************* 
+;*** Menu.asm - Start screen, menu, annoncements *******************************
 
 ;Menu status
 M_SHOW_START_SCREEN 	= 0
@@ -9,23 +9,24 @@ M_CONFIRM_RESET 		= 4
 M_CONFIRM_QUIT			= 5
 
 ;Menu item mapping
-START_RACE	=  1
-ONE_PLAYER 	=  3
-TWO_PLAYERS =  4
-TRACK_1		=  6
-TRACK_2		=  7
-TRACK_3		=  8
-TRACK_4		=  9
-TRACK_5		= 10
-RESET_BEST  = 16
-QUIT_GAME	= 18
+START_RACE	= 0
+ONE_PLAYER 	= 1
+TWO_PLAYERS = 2
+TRACK_1		= 3
+TRACK_2		= 4
+TRACK_3		= 5
+TRACK_4		= 6
+TRACK_5		= 7
+RESET_BEST  = 8
+QUIT_GAME	= 9
+
+MENU_ITEMS_COUNT = 10
 
 ;Special characters used in menu
 END_LINE_DIV	= 34 	;"
 BLOCK			= 35	;#
 MIDDLE_LINE_DIV	= 37 	;%
 FIRST_LINE_DIV 	= 38	;&
-HAND    		= 60    ;hand is char 60-62 = <=>
 
 MenuHandler:
 	lda .menumode
@@ -43,21 +44,21 @@ MenuHandler:
 	jsr UpdateRandomBgColor
 	jsr UpdateRandomBgColor
 	lda _joy0
-	cmp #$ff				
+	cmp #$ff
 	beq +
-	inc .menumode           		;if anything at all is pressed, go to next mode - show menu 
+	inc .menumode           		;if anything at all is pressed, go to next mode - show menu
 +   rts
 
 	;show menu
 ++  cmp #M_SHOW_MAIN_MENU
 	bne +
-	jsr ShowMainMenu				
+	jsr ShowMainMenu
 	lda #M_HANDLE_INPUT				;next go to input menu mode
 	sta .menumode
 	lda #1
 	sta .inputwait					;wait for controller to be released before accepting input again
 	stz .inactivitytimer_lo			;reset timer that takes user back to start screen after 30 secs inactivity
-	stz .inactivitytimer_hi	
+	stz .inactivitytimer_hi
 	rts
 
 	;wait for confirmation
@@ -109,7 +110,7 @@ MenuHandler:
 	rts
 
 +	lda #M_SHOW_START_SCREEN
-	sta .menumode	
+	sta .menumode
 	rts
 
 .menumode				!byte 0
@@ -150,7 +151,7 @@ HandleUserInput:
 	jsr IncreaseHandrow
 
 	;handle button
-+	lda _joy0	
++	lda _joy0
 	bit #JOY_BUTTON_A			;button a?
 	beq +
 	jsr PrintHand
@@ -159,8 +160,8 @@ HandleUserInput:
 	rts
 
 +	lda .handrow
-	cmp #START_RACE			
-	bne +						
+	cmp #START_RACE
+	bne +
 	jsr CloseMainMenu
 	rts
 
@@ -260,6 +261,8 @@ HandleUserInput:
 	bne +
 	ldx #$81
 	stx _color
+	tay
+	lda .menuitems,y
 	jsr .PrintConfirmationQuestion
 	lda #M_CONFIRM_RESET
 	sta .menumode
@@ -269,6 +272,8 @@ HandleUserInput:
 	bne +
 	ldx #$41
 	stx _color
+	tay
+	lda .menuitems,y
 	jsr .PrintConfirmationQuestion
 	lda #M_CONFIRM_QUIT
 	sta .menumode
@@ -289,63 +294,58 @@ HandleUserInput:
 	rts
 
 IncreaseHandrow:
--	inc .handrow
-	lda .handrow
-	cmp #MENU_ROW_COUNT
+	inc .handrow
+	cmp #MENU_ITEMS_COUNT
 	bne +
-	lda #0
-	sta .handrow
-+	tay
-	lda .mainmenu,y
-	beq -
- 	rts
+	stz .handrow
++	rts
 
 DecreaseHandRow:
--	dec .handrow
-	lda .handrow
+	dec .handrow
 	bpl +
-	lda #MENU_ROW_COUNT-1
+	lda #MENU_ITEMS_COUNT-1
 	sta .handrow
-+	tay
-	lda .mainmenu,y
-	beq -
-	rts
-
-ClearHand:
-	lda #8					;print hand from col 4 to 6
-	sta	VERA_ADDR_L
-	lda	.handrow
-	sta	VERA_ADDR_M
-	lda	#$20				;increment 2, leave color
-	sta	VERA_ADDR_H
-	lda #S_SPACE
-	sta VERA_DATA0
-	sta VERA_DATA0
-	sta VERA_DATA0							
-	rts
-
-PrintHand:
-	lda #8					;print hand from col 4 to 6
-	sta	VERA_ADDR_L
-	lda	.handrow
-	sta	VERA_ADDR_M
-	lda	#$20				;increment 2, leave color
-	sta	VERA_ADDR_H
-	lda #HAND
-	sta VERA_DATA0
-	lda #HAND+1
-	sta VERA_DATA0
-	lda #HAND+2
-	sta VERA_DATA0							
-	rts
++	rts
 
 .handrow	!byte 0
 
+PrintHand:
+	lda #<.handtext
+	sta ZP0
+	lda #>.handtext
+	sta ZP1
+	bra +
+ClearHand:
+	lda #<.clearhandtext
+	sta ZP0
+	lda #>.clearhandtext
+	sta ZP1	
++	lda #4				;print hand from col 4 to 6
+	sta _col
+	ldy .handrow
+	lda .menuitems,y
+	sta _row
+	tay
+	lda .menurows,y
+	sta _color
+	jsr VPrintString
+	rts
+
+!macro PrintDivider {
+	ldx #40
+-	phx
+	pha
+	jsr VPrintChar
+	pla
+	plx
+	dex
+	bne -
+	inc _row
+	stz _col
+}
+
 ShowStartScreen:
 	jsr .InitScreen
-	;lda #0
-	; +VPoke PALETTE+22			;change dark grey to black, otherwise we cannot show black because orginal black is transparent
-	; +VPoke PALETTE+23
 
 	lda #<.startscreenbgblocks	;set block table pointer as in parameter
 	sta .blocktable_lo
@@ -353,131 +353,106 @@ ShowStartScreen:
 	sta .blocktable_hi
 	jsr FillLayer0WithColorBlocks
 
-	;Fill layer 1 with text and dividers
-	stz .currentrow
-	stz .textrow
+	+SetPrintParams 3,0,$01
 	lda #<.startscreentext
-	sta .text_lo
+	sta ZP0
 	lda #>.startscreentext
-	sta .text_hi
-	lda #<.startscreentextcolors
-	sta .textcolors_lo
-	lda #>.startscreentextcolors
-	sta .textcolors_hi
-
-	lda #FIRST_LINE_DIV
-	jsr PrintLineLayer1
-
-	lda #14						;print 14 rows of text including empty rows
+	sta ZP1
+	lda #STARTSCREEN_ROW_COUNT
 -	pha
-	jsr PrintTextLineLayer1
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1	
+	jsr VPrintString
+	inc _row
 	pla
 	dec
 	bne -
 
-	lda #S_SPACE
-	jsr PrintLineLayer1
-	lda #END_LINE_DIV
-	jsr PrintLineLayer1
-    rts
+	+SetPrintParams 0,0,$0b
+	lda #FIRST_LINE_DIV
+	+PrintDivider
+	inc _row
+	ldx #14
+-	phx
+	lda #MIDDLE_LINE_DIV
+	+PrintDivider
+	inc _row
+	plx
+	dex
+	bne -
+	rts
 
 ShowMainMenu:						;print complete menu including setting layers, clear layers and print all text
-	jsr .InitScreen	
+	jsr .InitScreen
 	lda #<.mainmenubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
 	lda #>.mainmenubgblocks
 	sta .blocktable_hi
 	jsr FillLayer0WithColorBlocks	;print color blocks on background layer
-	lda #1							;put selection hand on first row
-	sta .handrow
+	stz .handrow					;put selection hand on first row
 
-UpdateMainMenu:						;just print everything with current colors
-	stz .currentrow
-	stz .textrow
-	lda #<.mainmenutext
-	sta .text_lo
-	lda #>.mainmenutext
-	sta .text_hi
-	lda #<.mainmenu
-	sta .textcolors_lo
-	lda #>.mainmenu
-	sta .textcolors_hi
+UpdateMainMenu:
 
-	lda #FIRST_LINE_DIV
-	jsr PrintLineLayer1
+	;print menu items including dividers						;
+	lda #<.menutext
+	sta ZP0
+	lda #>.menutext
+	sta ZP1
+	stz _row
+	stz _col
+	ldx #0
+-	phx
+	lda .menurows,x
+	sta _color
+	jsr VPrintString
+	plx
+	inx
+	cpx #MENU_ROW_COUNT
+	bne -
+
+	;print track names
+	lda #<_tracknames
+	sta ZP0
+	lda #>_tracknames
+	sta ZP1
+	lda #6
+	sta _row
+	ldx #1
+-	lda #10
+	sta _col
+	cpx _track
+	beq +
+	lda #$0b
+	bra ++
++	lda #$01			;highlight selected track	
+++	sta _color
+	phx
+	jsr VPrintString
+	plx
+	inx
+	cpx #6
+	bne -
 	
-	jsr PrintTextLineLayer1 		;"start race"
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1
-
-	jsr PrintTextLineLayer1			;"one player"
-	jsr PrintTextLineLayer1			;"two players"
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1	
-
-	jsr PrintTextLineLayer1			;"track 1", "track 2"...
-	jsr PrintTextLineLayer1
-	jsr PrintTextLineLayer1
-	jsr PrintTextLineLayer1
-	jsr PrintTextLineLayer1
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1	
-
-	jsr PrintTextLineLayer1			;"load trax"
-	jsr PrintTextLineLayer1			;"make trax"
-	jsr PrintTextLineLayer1			;"save trax"
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1	
-
-	jsr PrintTextLineLayer1			;"Reset leaderboard"
-	lda #MIDDLE_LINE_DIV
-	jsr PrintLineLayer1	
-
-	jsr PrintTextLineLayer1			;"quit game"
-	lda #END_LINE_DIV
-	jsr PrintLineLayer1
-
-	jsr PrintTextLineLayer1			;(empty row)
-	jsr PrintTextLineLayer1			;"Leaderboard"
-	jsr PrintTextLineLayer1			;"Time Name"
-	jsr PrintTextLineLayer1			;"Track 1"
-	jsr PrintTextLineLayer1			;"Track 2"
-	jsr PrintTextLineLayer1			;"Track 3"
-	jsr PrintTextLineLayer1			;"Track 4"
-	jsr PrintTextLineLayer1			;"Track 5"
-	jsr PrintTextLineLayer1			;(empty row)
-
-	lda #BLOCK
-	jsr PrintLineLayer1
-	jsr PrintLeaderboard
-
 	jsr PrintHand
 	rts
 
 .InitScreen:
-    jsr SetLayer0ToTextMode
 	ldx #<L0_MAP_ADDR
 	ldy #>L0_MAP_ADDR
 	jsr ClearTextLayer
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
 	jsr ClearTextLayer
+    jsr SetLayer0ToTextMode
 	rts
 
 CloseMainMenu:
-	; lda #$33
-	; +VPoke PALETTE+22		;Restore black to dark grey
-	; lda #$03
-	; +VPoke PALETTE+23
-	jsr SetLayer0ToTileMode
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
 	jsr ClearTextLayer
+	jsr DisableLayer0		;temporary disable layer 0 while preparing racing track
+	jsr SetLayer0ToTileMode
 	lda #M_SHOW_MAIN_MENU
 	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
-	lda #START_RACE
+	lda #ST_SETUPRACE
 	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
 	rts
 
@@ -493,7 +468,7 @@ FillLayer0WithColorBlocks:
 	lda #>L0_MAP_ADDR
 	sta	VERA_ADDR_M
 
-	ldy #0					;color and block index	
+	ldy #0					;color and block index
 --- lda (ZP0),y				;get number of rows for current block
 	beq +					;if 0 then return, table with number of rows for each block is terminated with 0
 	tax
@@ -527,10 +502,10 @@ FillLayer0WithColorBlocks:
 .FillLayer0Row:
 	ldx #40					;40 columns in row
 -	lda #S_SPACE
-	sta VERA_DATA0			;write space character, only bg color is relevant							
+	sta VERA_DATA0			;write space character, only bg color is relevant
 	lda ZP2
 	sta VERA_DATA0			;write bg color that is read from table
-	dex	
+	dex
 	bne -
 	rts
 
@@ -547,7 +522,7 @@ UpdateRandomBgColor:		;update two following random rows with new random color
 	adc #>L0_MAP_ADDR
 	sta VERA_ADDR_M			;set random row
 	lda #<L0_MAP_ADDR
-	inc						
+	inc
 	sta VERA_ADDR_L			;set col 0 second byte which contains color information
 
 	jsr GetRandomNumber
@@ -584,85 +559,30 @@ GetRandomNumber:
 
 .randomnumber	!byte 0
 
-;*** methods on layer 1 ********************************************************
+; GetRandomNumber:			;Super Mario World version
+; 	lda .rndseed1
+; 	asl
+; 	asl
+; 	sec
+; 	adc .rndseed1
+; 	sta .rndseed1
+; 	asl .rndseed2
+; 	lda #$20
+; 	bit .rndseed2
+; 	bcc +
+; 	beq +++
+; 	bne ++
+; +	bne +++
+; ++	inc .rndseed2
+; +++	lda .rndseed2
+; 	eor .rndseed1
+; 	sta .randomnumber
+; 	rts
+; .rndseed1	!byte $12
+; .rndseed2	!byte $7b
 
-PrintLineLayer1:			;IN: .A = screen code of char
-	stz	VERA_ADDR_L
-	ldx	.currentrow
-	stx	VERA_ADDR_M
-	ldx	#$10				;increment 1
-	stx	VERA_ADDR_H
-	cmp #S_SPACE
-	bne +
-	ldy #$00				;transparent if empty row
-	bra ++
-+	ldy #$0b				;bg = transparent, fg = black
-++	ldx #40
--	sta VERA_DATA0			;.A = char						
-	sty VERA_DATA0			;color
-	dex
-	bne -
-	inc .currentrow
-	rts
-
-PrintTextLineLayer1:
-	stz	VERA_ADDR_L
-	lda	.currentrow
-	sta	VERA_ADDR_M
-	lda	#$10				;increment 1
-	sta	VERA_ADDR_H
-
-	;get start address for text
-	lda .text_lo
-	sta ZP0					
-	lda .text_hi
-	sta ZP1
-	ldx .textrow
-	beq +
--	lda #40					;add row * 40, 40 = length of each text row
-	clc
-	adc ZP0
-	sta ZP0
-	lda #0
-	adc ZP1
-	sta ZP1
-	dex
-	bne -
-
-	;get start address for text colors
-+	lda .textcolors_lo
-	sta ZP2
-	lda .textcolors_hi
-	sta ZP3
-	ldy .currentrow
-
-	;print line (= 40 characters)
-	ldx #40
-- 	lda (ZP0)			;read char
-	sta VERA_DATA0
-	lda (ZP2),y			;read color (same for whole line)
-	sta VERA_DATA0
-	lda	#1
-	clc
-	adc	ZP0
-	sta	ZP0
-	lda	#0
-	adc	ZP1
-	sta	ZP1
-	dex
-	bne -
-	inc .currentrow
-	inc .textrow
-	rts
-
-.textrow		!byte 0
-.currentrow		!byte 0
-.text_lo		!byte 0
-.text_hi		!byte 0
 .blocktable_lo	!byte 0
 .blocktable_hi	!byte 0
-.textcolors_lo	!byte 0
-.textcolors_hi	!byte 0
 
 ;*** Start screen and menu data ************************************************
 
@@ -674,82 +594,85 @@ PrintTextLineLayer1:
 		!byte    8 ;orange
 		!byte	 4 ;violet/purple
 		!byte	12 ;grey
-		!byte	10 ;light red 
+		!byte	10 ;light red
 
 .startscreentext:
-!scr "                                        "
-!scr "   john karlin's rally speedway v 0.1   "
-!scr "                                        "
-!scr "       a tribute to the original        "
-!scr "           atari and c64 game           "
-!scr "            by john anderson            "
-!scr "                                        "
-!scr "                                        "
-!scr "           a free gift to all           "
-!scr "       friends of retro computers       "
-!scr "                                        "
-!scr "      press button a for start menu     "
-!scr "                                        "
-!scr "                                        "
+!scr "   john karlin's rally speedway v 0.1",0
+!scr 0
+!scr "       a tribute to the original",0
+!scr "           atari and c64 game",0
+!scr "            by john anderson",0
+!scr 0
+!scr 0
+!scr "           a free gift to all",0
+!scr "       friends of retro computers",0
+!scr 0
+!scr "      press button a for start menu",0
+
+STARTSCREEN_ROW_COUNT = 11
 
 .startscreenbgblocks
 !byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
 
-.startscreentextcolors
-!byte 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1
-
-.mainmenutext
-!scr "          start the race                "
-!scr "          one player                    "
-!scr "          two players                   "
-!scr "          track 1                       "
-!scr "          track 2                       "
-!scr "          track 3                       "
-!scr "          track 4                       "
-!scr "          track 5                       "
-!scr "          load trax                     "
-!scr "          make trax                     "
-!scr "          save trax                     "
-!scr "          reset leaderboard             "
-!scr "          quit game                     "
-!scr "                                        "
-!scr "      leaderboard                       "
-!scr "              time     name             "
-!scr "      track 1                           "
-!scr "      track 2                           "
-!scr "      track 3                           "
-!scr "      track 4                           "
-!scr "      track 5                           "
-!scr "                                        "
-
-.reset_leaderboard		!scr "reset leaderboard  ",0
-.confirmation_question	!scr "are you sure (y/n)?",0
-
 .mainmenubgblocks
 !byte 2,3,6,4,2,2,10,0				;table for how many rows each block is, zero terminated
 
-MENU_ROW_COUNT = 20
+.menutext
+!fill 40, FIRST_LINE_DIV
+!scr 0
+!scr "          start the race",0
+!fill 40, MIDDLE_LINE_DIV
+!scr 0
+!scr "          one player",0
+!scr "          two players",0
+!fill 40, MIDDLE_LINE_DIV
+!scr 0
+!scr 0	;(track names)
+!scr 0
+!scr 0
+!scr 0
+!scr 0
+!fill 40, MIDDLE_LINE_DIV
+!scr 0
+!scr 0
+!scr 0
+!scr 0
+!fill 40, MIDDLE_LINE_DIV
+!scr 0
+!scr "          reset leaderboard  ",0	;add extra spaces to overwrite confirmation question if user says no
+!fill 40, MIDDLE_LINE_DIV
+!scr 0
+!scr "          quit game          ",0	;add extra spaces to overwrite confirmation question if user says no
+!fill 40, END_LINE_DIV
+!scr 0
 
-.mainmenu	 						;menu rows with colors, , 1 = white color, $b = non transparent 
-				!byte 0				;0 = divider row, not a menu item
-.startrace		!byte 1  			;1 = white color
-				!byte 0
+.confirmation_question	!scr "are you sure (y/n)?",0
+
+.handtext		!scr "<=>",0 ;byte 60,61,62,0	;char 60-62 = <=>
+.clearhandtext	!scr "   ",0
+
+.menuitems 		!byte 1,3,4,6,7,8,9,10,16,18	;which menu rows that represent menu items
+
+.menurows	 						;menu rows table that holds information about both color and selection.
+				!byte $b			; 1 = white color = selected (when relevant)
+.startrace		!byte 1  			;$b = nontransparent black = not selected
+				!byte $b
 .oneplayer		!byte 1
-.twoplayers		!byte $b			;$b = nontransparent black color representing that item not selected
-				!byte 0
+.twoplayers		!byte $b
+				!byte $b
 .track1			!byte 1
 .track2			!byte $b
 .track3			!byte $b
 .track4			!byte $b
 .track5			!byte $b
-				!byte 0
-.loadtrax		!byte 1
+				!byte $b
+.loadtrax		!byte 1				;TODO: implement track editor
 .maketrax		!byte 1
 .savetrax		!byte 1
-				!byte 0
+				!byte $b
 .resetbest		!byte 1
-				!byte 0
+				!byte $b
 .quitgame		!byte 1
-				!byte 0
-				!byte 1,1,1,1,1,1,1,1,1	;leaderboard rows (not part of the actual menu)
+				!byte $b
 
+MENU_ROW_COUNT = 20

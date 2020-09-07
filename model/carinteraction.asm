@@ -72,87 +72,129 @@ CheckForRecord:
 +       +SetParams _bcartime, _bcartime+1, _bcartime+2
         rts
 
-SetStartPosition:                       ;if two players, set new start position after collision or outdistancing
+SetStartPosition:                                       ;if two players, set new start position after collision or outdistancing
         lda _noofplayers
         cmp #1
         bne +
         rts
-+       lda _ycardistance               ;set startpoint to the last checkpoint for the car which has driven the longest distance
-        cmp _bcardistance
++       lda _winner
+        cmp #1
+        bne +
+        jsr .SetStartToYellowCarCheckpoint              ;if yellow car has won, its last checkpoint will be used. this will be just before the finish.
+        rts
++       cmp #2
+        bne +
+        jsr .SetStartPositionToBlueCarCheckpoint        ;if blue car has won, its last checkpoint will be used. this will be just before the finish.
+        rts
++       +Cmp16 _ycardistance_lo, _bcardistance_lo       ;set startpoint to the last checkpoint for the car which has driven the longest distance
         bcc +
-        lda _ycar_checkpoint_xpos       ;set startpoint to checkpoint of yellow car
+        jsr .SetStartToYellowCarCheckpoint
+        rts
++       jsr .SetStartPositionToBlueCarCheckpoint
+        rts
+
+.SetStartToYellowCarCheckpoint:
+        lda _ycar_checkpoint_xpos                       ;set startpoint to checkpoint of yellow car
         sta _bcar_checkpoint_xpos
         lda _ycar_checkpoint_ypos
-        sta _ycar_checkpoint_ypos
-        bra ++
-+       lda _bcar_checkpoint_xpos       ;set startpoint to checkpoint of blue car
+        sta _bcar_checkpoint_ypos
+        lda _ycar_checkpoint_direction
+        sta _bcar_checkpoint_direction
+        lda _ycardistance_lo                            ;also set same distance, it's get more competitive if distances do not differ too much :)
+        sta _bcardistance_lo
+        lda _ycardistance_lo+1
+        sta _bcardistance_lo+1
+        rts
+
+.SetStartPositionToBlueCarCheckpoint:
+        lda _bcar_checkpoint_xpos                       ;set startpoint to checkpoint of blue car
         sta _ycar_checkpoint_xpos
         lda _bcar_checkpoint_ypos
         sta _ycar_checkpoint_ypos
-++      stz _ycardistance
-        stz _bcardistance
+        lda _bcar_checkpoint_direction
+        sta _ycar_checkpoint_direction
+        lda _bcardistance_lo                            ;also set same distance, it's get more competitive if distances do not differ too much :)
+        sta _ycardistance_lo
+        lda _bcardistance_lo+1
+        sta _ycardistance_lo+1
         rts
 
-CheckInteraction:
-        ;calculate horizontal distance      
-        lda _bcarxpos_lo                ;bcar pos - ycar pos
-        sec
-        sbc _ycarxpos_lo
-        sta .xdist_lo
-        lda _bcarxpos_hi
-        sbc _ycarxpos_hi
-        sta .xdist_hi
+!macro CalculateDistance .ycarpos_lo, .bcarpos_lo, .dist_lo, .absdist_lo {
 
         ;calculate vertical distance
-        lda _bcarypos_lo                ;bcar pos - ycar pos
-        sec
-        sbc _ycarypos_lo
-        sta .ydist_lo
-        lda _bcarypos_hi
-        sbc _ycarypos_hi
-        sta .ydist_hi        
+        +Sub16 .bcarpos_lo, .ycarpos_lo       ;bcar pos - ycar pos
+        stx .dist_lo
+        sty .dist_lo+1
+        +Cmp16  .ycarpos_lo, .bcarpos_lo      
+        bcs +
 
-        ;calculate absolute horizontal distance
-        lda .xdist_lo
-        sta .absxdist_lo
-        lda .xdist_hi
-        sta .absxdist_hi                 ;assume value is positive from beginnning
-        bit #$80                
-        beq +
-        eor #$ff                        ;if not convert from minus to plus
-        sta .absxdist_hi
-        lda .xdist_lo
-        eor #$ff                        
-        inc
-        sta .absxdist_lo
+        ;bcar pos > ycar pos        
+        lda .dist_lo+1
+        bit #8                  ;if distance > 2048 cars are closer if we see them as positioned on different maps
+        beq ++
+        ora #240                ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
+        sta .dist_lo+1          
+        bra ++
 
-        ;calculate absolute vertical distance
-+       lda .ydist_lo
-        sta .absydist_lo
-        lda .ydist_hi
-        sta .absydist_hi                 ;assume value is positive from beginning
-        bit #$80
-        beq +
-        eor #$ff                        ;if not convert from minus to plus
-        sta .absydist_hi                        
-        lda .ydist_lo
-        eor #$ff
-        inc
-        sta .absydist_lo
+        ;ycar pos > bcar pos
++       lda .dist_lo+1
+        bit #8                  ;if distance < -2048 cars are closer if we see them as positioned on different maps
+        bne ++
+        and #15                 ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
+        sta .dist_lo+1
+
+++      lda .dist_lo
+        sta .absdist_lo
+        lda .dist_lo+1
+        sta .absdist_lo+1
+        +Abs16 .absdist_lo     ;get absolute values
+}
+
+CheckInteraction:
+        +CalculateDistance _ycarxpos_lo, _bcarxpos_lo, .xdist_lo, .absxdist_lo
+        +CalculateDistance _ycarypos_lo, _bcarypos_lo, .ydist_lo, .absydist_lo
+
+;         ;calculate vertical distance
+;         +Sub16 _bcarypos_lo, _ycarypos_lo       ;bcar pos - ycar pos
+;         stx .ydist_lo
+;         sty .ydist_hi
+;         +Cmp16  _ycarypos_lo, _bcarypos_lo      
+;         bcs +
+
+;         ;bcar pos > ycar pos        
+;         lda .ydist_hi
+;         bit #8                  ;if distance > 2048 cars are closer if we see them as positioned on different maps
+;         beq ++
+;         ora #240                ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
+;         sta .ydist_hi           
+;         bra ++
+
+;         ;ycar pos > bcar pos
+; +       lda .ydist_hi
+;         bit #8                  ;if distance < -2048 cars are closer if we see them as positioned on different maps
+;         bne ++
+;         and #15                 ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
+;         sta .ydist_hi
+
+; ++      lda .ydist_lo
+;         sta .absydist_lo
+;         lda .ydist_hi
+;         sta .absydist_hi
+;         +Abs16 .absydist_lo     ;get absolute values
 
         ;check for car clash - collison between cars
-+       lda .absxdist_lo
-        cmp #18                         ;low x byte must be 20 or less
-        bcs +
-        lda .absxdist_hi                         
-        bne +                           ;high x byte must be 0
-        lda .absydist_lo
-        cmp #18                         ;low y byte must be 20 or less 
-        bcs +
-        lda .absydist_hi
-        bne +                           ;high y byte must be 0
-        jsr SetClash
-        rts                             ;if clash, outdistancing calculations are unnecessary   
+; +       lda .absxdist_lo
+;         cmp #18                         ;low x byte must be less than 18
+;         bcs +
+;         lda .absxdist_hi                         
+;         bne +                           ;high x byte must be 0
+;         lda .absydist_lo
+;         cmp #18                         ;low y byte must be less than 18 
+;         bcs +
+;         lda .absydist_hi
+;         bne +                           ;high y byte must be 0
+;         ;jsr SetClash
+;         rts                             ;if clash, outdistancing calculations are unnecessary   
 
         ;check for horizontal outdistancing
 +       lda .absxdist_lo
@@ -168,36 +210,62 @@ CheckInteraction:
         bcs SetOutdistanced
         rts
 
-SetOutdistanced:                        ;if one car is outdistanced - decide which and set new game status
-        lda _ycarfinishflag             ;if any of the cars have finished the race just abort
-        beq +
-        rts
-+       lda _bcarfinishflag
-        beq +
-        rts
-+       jsr StopCarSounds
+SetOutdistanced:                        ;if one car is outdistanced - decide which and set new game status                                  
+        jsr StopCarSounds
         jsr PlayOutrunSound
         lda #ST_OUTDISTANCED
         sta _gamestatus
-        lda _ycardistance
-        cmp _bcardistance
-        bcc +
+        
+        lda _winner
+        bne +++                         ;if one car has won no outdistancing can occur, the other car will always be considered off road
+
+        ;set info about if cars are driving off road or not
+        stz .outdistancetemp
+        lda _ycar_routedirection
+        cmp #ROUTE_OFFROAD
+        bne +
         lda #1
-        sta _bcaroutdistanced
-        jsr ShowPenaltyText
-        lda #PENALTY_TIME
-        jsr BCar_TimeAddSeconds
-        inc _bcarpenaltycount           ;count number of penalties in decimal mode
-        rts
+        sta .outdistancetemp
++       lda _bcar_routedirection
+        cmp #ROUTE_OFFROAD
+        bne +
+        lda #2 
+        ora .outdistancetemp
+        sta .outdistancetemp
+
+        ;use info to decide which car is outdistanced of if both will have a penalty
++       lda .outdistancetemp
+        cmp #1
+        beq +                                   ;yellow car is off route while blue is on route which means yellow car is outdistanced 
+        cmp #2
+        beq ++                                  ;blue car is off route while blue is on route which means blue car is outdistanced
+        cmp #3
+        beq +++                                 ;both cars are off route, both cars will pay a penalty
+        +Cmp16 _ycardistance_lo, _bcardistance_lo
+        bcs ++                                  ;both cars are on route but yellow car has driven a longer (or equal) distance than the blue car
+
+        ;yellow car has been outdistanced
 +       lda #0
-        sta _bcaroutdistanced
         jsr ShowPenaltyText
         lda #PENALTY_TIME
         jsr YCar_TimeAddSeconds
-        inc _ycarpenaltycount           ;count number of penalties in decimal mode
+        inc _ycarpenaltycount
         rts        
 
-_bcaroutdistanced       !byte   0       ;1 = blue car outdistanced, 0 = yellow car outdistanced
+        ;blue car has been outdistanced
+++      lda #1
+        jsr ShowPenaltyText
+        lda #PENALTY_TIME
+        jsr BCar_TimeAddSeconds
+        inc _bcarpenaltycount
+        rts
+
++++     ;both cars are off route (no penalty)
+        jsr HideCars
+        jsr ShowOffroadText
+        rts
+
+.outdistancetemp         !byte 0
 
 SetClash:
         jsr PlayClashSound
@@ -205,17 +273,17 @@ SetClash:
         ;calculate collision angle
         jsr GetClashAngle
         lda .collisionangle        
-        sta _bcarclashangle ;set angle in which direction blue car is pushed by yellow car
+        sta _bcarclashangle     ;set angle in which direction blue car is pushed by yellow car
         clc
-        adc #128            ;add 180 deg
-        sta _ycarclashangle ;set angle in which direction yellow car is pushed by blue car (the opposite direction)
+        adc #128                ;add 180 deg
+        sta _ycarclashangle     ;set angle in which direction yellow car is pushed by blue car (the opposite direction)
 
         ;calculate how much blue car is pushed by yellow car
         lda _ycarspeed
         lsr
         lsr                     ;skip fraction
         tax                     ;yellow car speed in .X
-        lda .collisionangle
+        lda _bcarclashangle
         sec
         sbc _ycarangle          ;difference between collision angle and movement angle is needed to calculate in which speed yellow car is moving against blue car
         lsr
@@ -239,10 +307,8 @@ SetClash:
 ++      lda _bcarspeed
         lsr
         lsr                     ;skip fraction
-        tax                     ;blue car speed in .X
-        lda .collisionangle
-        clc
-        adc #128
+++      tax                     ;blue car speed in .X
+        lda _ycarclashangle
         sec
         sbc _bcarangle          ;difference between collision angle and movement angle is needed to calculate in which speed blue car is moving against yellow car
         lsr
@@ -260,7 +326,7 @@ SetClash:
         rts
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
         lsr
-        sta _ycarclashpush
++       sta _ycarclashpush
         rts      
 
 GetClashAngle:                  ;Get collision/clash angle. The yellow car is the reference point (for exemaple if blue car is exactly above yellow, the collision angle is 90 deg)

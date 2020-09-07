@@ -14,10 +14,10 @@ JOY_DOWN                = 4
 JOY_LEFT                = 2
 JOY_RIGHT               = 1
 
-_joy0type:	!byte 0
-_joy1type:	!byte 0
-_joy0:          !byte 0         ;used by GetJoys to store status of game controller 0 in NES style
-_joy1:          !byte 0         ;used by GetJoys to store status of game controller 1 in NES style
+_joy0type:	!byte 0 ;used by GetJoys to store status of game controller 0 in NES style
+_joy1type:	!byte 0 ;used by GetJoys to store status of game controller 1 in NES style
+_joy0:          !byte 0 ;status for game controller 0
+_joy1:          !byte 0 ;status for game controller 1
 
 ;*** Public functions **********************************************************
 
