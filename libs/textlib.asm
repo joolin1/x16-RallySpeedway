@@ -290,6 +290,7 @@ KPrintDigit:                     ;IN: .A = digit to print
 
 VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: ZP0, ZP1 = address of string termination + 1 (to make printing of a string array easier)
         lda _col
+        pha
         asl
         sta VERA_ADDR_L
         lda _row
@@ -304,10 +305,11 @@ VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated wi
         inc _col
         +Inc16bit ZP0
         bra -
-+       inc _row
-        stz _col
++       inc _row                ;increase row and...
+        pla 
+        sta _col                ;...set column where it was
         +Inc16bit ZP0
-        rts 
+        rts
 
 VPrintStringInArray:            ;IN: ZP0, ZP1 = address of string array. .A = string index. OUT: ZP0, ZP1 = address of string
         jsr GetStringInArray

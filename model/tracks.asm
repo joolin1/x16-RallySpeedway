@@ -464,7 +464,7 @@ _tracknames:
                         !scr "texas roadtrip",0
                         !scr "route mcfarling",0
                         !scr "tour veryhectic",0
-                        !scr "grandis prix circuit",0
+                        !scr "grandis prix race",0
 
 .track_startblocks:
                         !byte 0,1       ;row, col (zero-indexed)

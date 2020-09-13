@@ -1,23 +1,42 @@
 ;*** leaderboard.asm *******************************************************************************
 
-LEADERBOARD_ROW = 23
-LEADERBOARD_COL = 14
-LEADERBOARD_NAME_OFFSET = 9
+LEADERBOARD_COLORS = $c1
+LEADERBOARD_ROW = 21
+LEADERBOARD_COL = 1
+LEADERBOARD_TIME_COL = LEADERBOARD_COL + 18
+LEADERBOARD_NAME_COL = LEADERBOARD_COL + 27
 LEADERBOARD_NAME_LENGTH = 11
 LEADERBOARD_NUMBER_OF_TRACKS = 5
 
 ;*** Public ****************************************************************************************
 
 PrintLeaderboard:
+
+        ;print headings
+        +SetPrintParams LEADERBOARD_ROW, LEADERBOARD_COL, LEADERBOARD_COLORS
+        lda #<.heading
+        sta ZP0
+        lda #>.heading
+        sta ZP1
+        jsr VPrintString
+
+        ;print name of tracks
+        inc _row
+        lda #<_tracknames
+        sta ZP0
+        lda #>_tracknames
+        sta ZP1
+        lda #LEADERBOARD_NUMBER_OF_TRACKS
+-       pha
+        jsr VPrintString
+        pla
+        dec
+        bne -
+
 	;print record times
-	lda #BOARD_COLORS       ;bg = grey, fg = white
-	sta _color
-	lda #LEADERBOARD_ROW
-	sta _row
-	ldy #0
--	lda #LEADERBOARD_COL
-	sta _col
-	lda .leaderboard_records,y
+        +SetPrintParams LEADERBOARD_ROW+2, LEADERBOARD_TIME_COL, LEADERBOARD_COLORS
+        ldy #0
+-	lda .leaderboard_records,y
 	sta ZP0
 	lda .leaderboard_records+1,y
 	sta ZP1
@@ -33,14 +52,9 @@ PrintLeaderboard:
 	bne -
 
 	;print names of record holders
-	ldx #BOARD_COLORS
-	stx _color
-	ldx #LEADERBOARD_ROW
-	stx _row
-	lda #0
--	ldx #LEADERBOARD_COL + LEADERBOARD_NAME_OFFSET
-	stx _col
-	ldx #<.leaderboard_names
+        +SetPrintParams LEADERBOARD_ROW+2, LEADERBOARD_NAME_COL, LEADERBOARD_COLORS
+        lda #0
+-	ldx #<.leaderboard_names
 	stx ZP0
 	ldx #>.leaderboard_names
 	stx ZP1
@@ -182,12 +196,14 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         bra -
 +       rts
 
-.leaderboardname                !raw "LEADERBOARD.BIN",0
+.leaderboardname        !raw "LEADERBOARD.BIN",0
 
-.leaderboard                    ;data are read from file
-.leaderboard_names              !fill LEADERBOARD_NUMBER_OF_TRACKS*12,0 ;each name is max 11 chars long
-.leaderboard_records            !fill LEADERBOARD_NUMBER_OF_TRACKS*3 ,0 ;each time takes 3 bytes (minutes, seconds and jiffies)
+.heading                !scr "%%%%%%%%%%%% leaderboard %%%%%%%%%%%%%",0
+
+.leaderboard            ;data are read from file
+.leaderboard_names      !fill LEADERBOARD_NUMBER_OF_TRACKS*12,0 ;each name is max 11 chars long
+.leaderboard_records    !fill LEADERBOARD_NUMBER_OF_TRACKS*3 ,0 ;each time takes 3 bytes (minutes, seconds and jiffies)
 .leaderboard_end
 
-.default_leaderboard            !for i,1,LEADERBOARD_NUMBER_OF_TRACKS { !scr "-----      ",0 }
-                                !fill LEADERBOARD_NUMBER_OF_TRACKS*3,0
+.default_leaderboard    !for i,1,LEADERBOARD_NUMBER_OF_TRACKS { !scr "-----      ",0 }
+                        !fill LEADERBOARD_NUMBER_OF_TRACKS*3,0

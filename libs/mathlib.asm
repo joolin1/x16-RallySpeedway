@@ -247,6 +247,42 @@
 ++      cld
 }
 
+;*** Random Numbers ********************************************************************************
+
+GetRandomNumber:
+	lda .randomnumber
+	beq +
+	asl
+	beq ++		        ;if the input was $80, skip the EOR
+	bcc ++
++   eor #$1d
+++  sta .randomnumber
+	rts
+
+.randomnumber	!byte 0
+
+; GetRandomNumber:		;Super Mario World version
+; 	lda .rndseed1
+; 	asl
+; 	asl
+; 	sec
+; 	adc .rndseed1
+; 	sta .rndseed1
+; 	asl .rndseed2
+; 	lda #$20
+; 	bit .rndseed2
+; 	bcc +
+; 	beq +++
+; 	bne ++
+; +	bne +++
+; ++	inc .rndseed2
+; +++	lda .rndseed2
+; 	eor .rndseed1
+; 	sta .randomnumber
+; 	rts
+; .rndseed1	!byte $12
+; .rndseed2	!byte $7b
+
 ;*** Various ***************************************************************************************
 
 !macro IncAndWrap32 .pos {

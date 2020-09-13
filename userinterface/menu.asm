@@ -5,8 +5,6 @@ M_SHOW_START_SCREEN 	= 0
 M_UPDATE_START_SCREEN	= 1
 M_SHOW_MAIN_MENU 		= 2
 M_HANDLE_INPUT 			= 3
-M_CONFIRM_RESET 		= 4
-M_CONFIRM_QUIT			= 5
 
 ;Menu item mapping
 START_RACE	= 0
@@ -32,21 +30,23 @@ FIRST_LINE_DIV 	= 38	;&
 MENU_WHITE = $01
 MENU_BLACK = $0b
 
+;*** Public methods ********************************************************************************
+
 MenuHandler:
 	lda .menumode
 
 	;show start screen
 	cmp #M_SHOW_START_SCREEN
 	bne +
-	jsr ShowStartScreen
+	jsr .ShowStartScreen
 	inc .menumode					;go to next mode - update start screen (change bg colors)
 	rts
 
 	;update start screen
 +	cmp #M_UPDATE_START_SCREEN
 	bne ++
-	jsr UpdateRandomBgColor
-	jsr UpdateRandomBgColor
+	jsr .UpdateRandomBgColor
+	jsr .UpdateRandomBgColor
 	lda _joy0
 	cmp #$ff
 	beq +
@@ -56,54 +56,13 @@ MenuHandler:
 	;show menu
 ++  cmp #M_SHOW_MAIN_MENU
 	bne +
-	jsr ShowMainMenu
+	jsr .ShowMainMenu
 	lda #M_HANDLE_INPUT				;next go to input menu mode
 	sta .menumode
 	lda #1
 	sta .inputwait					;wait for controller to be released before accepting input again
 	stz .inactivitytimer_lo			;reset timer that takes user back to start screen after 30 secs inactivity
 	stz .inactivitytimer_hi
-	rts
-
-	;wait for confirmation
-+	cmp #M_CONFIRM_RESET
-	bne ++
-	jsr .PrintCurrentAnswer
-	lda _joy0
-	bit #JOY_BUTTON_A
-	beq +
-	rts
-+	lda .answer
-	beq +
-	jsr ResetLeaderboard
-	jsr UpdateMainMenu
-	lda #M_HANDLE_INPUT
-	sta .menumode
-	jsr SaveLeaderboard
-	rts
-+	jsr UpdateMainMenu
-	lda #M_HANDLE_INPUT
-	sta .menumode
-	rts
-
-++	cmp #M_CONFIRM_QUIT
-	bne ++
-	jsr .PrintCurrentAnswer
-	lda _joy0
-	bit #JOY_BUTTON_A
-	beq +
-	rts
-	lda .answer
-	beq +
-	jsr UpdateMainMenu
-	lda #M_SHOW_START_SCREEN
-	sta .menumode				;set menu mode to start screen in case user starts game again
-	lda #ST_QUITGAME
-	sta _gamestatus				;set game status to break main loop, clean up and exit
-	rts
-+ 	jsr UpdateMainMenu
-	lda #M_HANDLE_INPUT
-	sta .menumode
 	rts
 
 	;handle user input
@@ -114,7 +73,7 @@ MenuHandler:
 +   lda .inactivitytimer_hi
 	cmp #7
 	beq +
-	jsr HandleUserInput
+	jsr .HandleUserInput
 	rts
 
 +	lda #M_SHOW_START_SCREEN
@@ -125,9 +84,9 @@ MenuHandler:
 .inactivitytimer_lo		!byte 0		;timer to measure user inactivity
 .inactivitytimer_hi		!byte 0
 
-;*** Private methods ***********************************************************
+;*** Private methods *******************************************************************************
 
-HandleUserInput:
+.HandleUserInput:
 	lda _joy0
 	cmp #JOY_NOTHING_PRESSED	;prevent repeating
 	bne ++
@@ -149,30 +108,58 @@ HandleUserInput:
 	jsr .HandleUpDown
 	jsr .HandleLeftRight
 	jsr .HandleButton
-	rts
+	lda .resetconfirmationflag
+	bne +
+	lda .quitconfirmationflag
+	bne +
+	lda _gamestatus
+	cmp #ST_SETUPRACE
+	beq +
+	jsr .UpdateMainMenu
++	rts
 
 .HandleUpDown:					;up down moves hand up and down
 	lda _joy0
 	bit #JOY_UP					;up?
 	bne +
-	jsr .ClearHand
-	jsr DecreaseHandRow
-	jsr .PrintHand
+	jsr .DecreaseHandrow
+	stz .resetconfirmationflag	;cancel possibel confirmation questions if user moves away from question
+	stz .quitconfirmationflag
 	rts
 +	bit #JOY_DOWN				;down?
 	bne +
-	jsr .ClearHand
-	jsr IncreaseHandrow
-	jsr .PrintHand
-	rts
+	jsr .IncreaseHandrow
+	stz .resetconfirmationflag	;cancel possibel confirmation questions if user moves away from question
+	stz .quitconfirmationflag
++	rts
 
-.HandleLeftRight:				;left right toggles true/false for confirmation questions. (it doesn't matter if any question is currently asked...)
+.IncreaseHandrow:
+	jsr .ClearHand
+	inc .handrow
+	lda .handrow
+	cmp #MENU_ITEMS_COUNT
+	bne +
+	stz .handrow
++	rts
+
+.DecreaseHandrow:
+	jsr .ClearHand
+	dec .handrow
+	bpl +
+	lda #MENU_ITEMS_COUNT-1
+	sta .handrow
++	rts
+
+.handrow	!byte 0
+
+.HandleLeftRight:				;left right toggles true/false for confirmation questions. (don't bother if any question isn't currently asked...)
     lda _joy0
  	bit #JOY_LEFT				;left?
 	bne +
 	lda .answer					
 	bne +
-	inc .answer					;set answer to true if false
+	lda #1
+	sta .answer					;set answer to true if false
 	jsr .PrintCurrentAnswer
 	rts
 +	lda _joy0
@@ -180,9 +167,9 @@ HandleUserInput:
 	bne +
 	lda .answer
 	beq +
-	dec .answer					;set answer to false if true
+	stz .answer					;set answer to false if true
 	jsr .PrintCurrentAnswer
-	rts
++	rts
 
 .inputwait	!byte 0				;boolean, when true wait for user to release controller
 
@@ -208,7 +195,6 @@ HandleUserInput:
 	sta .twoplayers
 	lda #1
 	sta _noofplayers
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TWO_PLAYERS
@@ -219,7 +205,6 @@ HandleUserInput:
 	sta .oneplayer
 	lda #2
 	sta _noofplayers
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TRACK_1
@@ -233,7 +218,6 @@ HandleUserInput:
 	sta .track5
 	lda #1
 	sta _track
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TRACK_2
@@ -247,7 +231,6 @@ HandleUserInput:
 	sta .track5
 	lda #2
 	sta _track
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TRACK_3
@@ -261,7 +244,6 @@ HandleUserInput:
 	sta .track5
 	lda #3
 	sta _track
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TRACK_4
@@ -275,7 +257,6 @@ HandleUserInput:
 	sta .track5
 	lda #4
 	sta _track
-	jsr UpdateMainMenu
 	rts
 
 +	cmp #TRACK_5
@@ -289,30 +270,58 @@ HandleUserInput:
 	sta .track4
 	lda #5
 	sta _track
-	jsr UpdateMainMenu			;update menu to reflect new selection in text colors
     rts
 
 +	cmp #RESET_BEST
-	bne ++
-	ldx #$81
-	stx _color
-	jsr .PrintConfirmationQuestion
-	lda _joy0
-	bne +						;don't accept any answer before user has released button
-	lda #M_CONFIRM_RESET
-	sta .menumode
+	bne +
+	jsr .HandleResetLeaderboard
+
++	cmp #QUIT_GAME
+	bne +
+	jsr .HandleQuitGame
 +	rts
 
-++	cmp #QUIT_GAME
+.HandleResetLeaderboard:
+	lda .resetconfirmationflag
 	bne +
-	ldx #$41
-	stx _color
 	jsr .PrintConfirmationQuestion
-	lda _joy0
-	bne +
-	lda #M_CONFIRM_QUIT
+	lda #1
+	sta .resetconfirmationflag
+	rts
++	stz .resetconfirmationflag
+	lda .answer
+	beq +
+	jsr ResetLeaderboard
+	lda #M_HANDLE_INPUT
 	sta .menumode
-+	rts
+	jsr SaveLeaderboard
+	rts
++	lda #M_HANDLE_INPUT
+	sta .menumode
+	rts
+
+.resetconfirmationflag	!byte 0		;flag that confirmation question is waiting for an answer
+
+.HandleQuitGame:
+	lda .quitconfirmationflag
+	bne +
+	jsr .PrintConfirmationQuestion
+	lda #1
+	sta .quitconfirmationflag
+	rts
++	stz .quitconfirmationflag	
+	lda .answer
+	beq +
+	lda #M_SHOW_START_SCREEN
+	sta .menumode					;set menu mode to start screen in case user starts game again
+	lda #ST_QUITGAME
+	sta _gamestatus					;set game status to break main loop, clean up and exit
+	rts
++	lda #M_HANDLE_INPUT
+	sta .menumode
+	rts
+
+.quitconfirmationflag	!byte 0		;flag that confirmation question is waiting for an answer
 
 .PrintConfirmationQuestion:		;IN: .A = row to print question
 	stz .answer					;default answer is "no"
@@ -321,6 +330,8 @@ HandleUserInput:
 	sta _row
 	lda #10
 	sta _col
+	lda #MENU_BLACK
+	sta _color
 	lda #<.confirmation_question
 	sta ZP0
 	lda #>.confirmation_question
@@ -335,12 +346,12 @@ HandleUserInput:
 	lda .menuitems,y
 	sta _row				;IN: .A = row to print answer (a colored "Y/N")
 	lda .answer
-	beq +
-	ldx #MENU_BLACK			;answer is yes
-	ldy #MENU_WHITE 
+	bne +
+	ldx #MENU_WHITE			;answer is no
+	ldy #MENU_BLACK 
 	bra ++
-+	ldx #MENU_WHITE			;answer is no
-	ldy #MENU_BLACK
++	ldx #MENU_BLACK			;answer is yes
+	ldy #MENU_WHITE
 ++	lda #YES_POSITION		;print "Y" in right color
 	sta _col
 	sty _color
@@ -356,37 +367,20 @@ HandleUserInput:
 	rts
 
 .answer		!byte 0				;boolean, "yes" = true, "no" = false
-YES_POSITION = 24
-NO_POSITION  = 26
+YES_POSITION = 25
+NO_POSITION  = 27
 
-IncreaseHandrow:
-	inc .handrow
-	lda .handrow
-	cmp #MENU_ITEMS_COUNT
-	bne +
-	stz .handrow
-+	rts
-
-DecreaseHandRow:
-	dec .handrow
-	bpl +
-	lda #MENU_ITEMS_COUNT-1
-	sta .handrow
-+	rts
-
-.handrow	!byte 0
-
-.PrintHand:
-	lda #<.handtext
-	sta ZP0
-	lda #>.handtext
-	sta ZP1
-	bra +
 .ClearHand:
 	lda #<.clearhandtext
 	sta ZP0
 	lda #>.clearhandtext
 	sta ZP1	
+	bra +
+.PrintHand:
+	lda #<.handtext
+	sta ZP0
+	lda #>.handtext
+	sta ZP1
 +	lda #4				;print hand from col 4 to 6
 	sta _col
 	ldy .handrow
@@ -411,14 +405,14 @@ DecreaseHandRow:
 	stz _col
 }
 
-ShowStartScreen:
+.ShowStartScreen:
 	jsr .InitScreen
 
 	lda #<.startscreenbgblocks	;set block table pointer as in parameter
 	sta .blocktable_lo
 	lda #>.startscreenbgblocks
 	sta .blocktable_hi
-	jsr FillLayer0WithColorBlocks
+	jsr .FillLayer0WithColorBlocks
 
 	+SetPrintParams 3,0,$01
 	lda #<.startscreentext
@@ -447,18 +441,19 @@ ShowStartScreen:
 	bne -
 	rts
 
-ShowMainMenu:						;print complete menu including setting layers, clear layers and print all text
+.ShowMainMenu:						;print complete menu including setting layers, clear layers and print all text
 	jsr .InitScreen
 	lda #<.mainmenubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
 	lda #>.mainmenubgblocks
 	sta .blocktable_hi
-	jsr FillLayer0WithColorBlocks	;print color blocks on background layer
+	jsr .FillLayer0WithColorBlocks	;print color blocks on background layer
 	stz .handrow					;put selection hand on first row
 
-UpdateMainMenu:
+	jsr PrintLeaderboard
 
-	;print menu items including dividers						;
+.UpdateMainMenu:
+	;print menu items including dividers
 	lda #<.menutext
 	sta ZP0
 	lda #>.menutext
@@ -485,6 +480,7 @@ UpdateMainMenu:
 	ldx #1
 -	lda #10
 	sta _col
+	lda #10
 	cpx _track
 	beq +
 	lda #$0b
@@ -525,7 +521,7 @@ CloseMainMenu:
 
 ;*** Methods on layer 0 ********************************************************
 
-FillLayer0WithColorBlocks:
+.FillLayer0WithColorBlocks:
 	lda .blocktable_lo
 	sta ZP0
 	lda .blocktable_hi
@@ -576,7 +572,7 @@ FillLayer0WithColorBlocks:
 	bne -
 	rts
 
-UpdateRandomBgColor:		;update two following random rows with new random color
+.UpdateRandomBgColor:		;update two following random rows with new random color
 	lda #$20
 	sta VERA_ADDR_H
 	lda #>L0_MAP_ADDR
@@ -613,40 +609,6 @@ UpdateRandomBgColor:		;update two following random rows with new random color
 	dex
 	bne -
 	rts
-
-GetRandomNumber:
-	lda .randomnumber
-	beq +
-	asl
-	beq ++					;if the input was $80, skip the EOR
-	bcc ++
-+   eor #$1d
-++  sta .randomnumber
-	rts
-
-.randomnumber	!byte 0
-
-; GetRandomNumber:			;Super Mario World version
-; 	lda .rndseed1
-; 	asl
-; 	asl
-; 	sec
-; 	adc .rndseed1
-; 	sta .rndseed1
-; 	asl .rndseed2
-; 	lda #$20
-; 	bit .rndseed2
-; 	bcc +
-; 	beq +++
-; 	bne ++
-; +	bne +++
-; ++	inc .rndseed2
-; +++	lda .rndseed2
-; 	eor .rndseed1
-; 	sta .randomnumber
-; 	rts
-; .rndseed1	!byte $12
-; .rndseed2	!byte $7b
 
 .blocktable_lo	!byte 0
 .blocktable_hi	!byte 0
@@ -706,16 +668,16 @@ STARTSCREEN_ROW_COUNT = 11
 !scr 0
 !fill 40, MIDDLE_LINE_DIV
 !scr 0
-!scr "          reset leaderboard  ",0	;add extra spaces to overwrite confirmation question if user says no
+!scr "          reset leaderboard   ",0	;add extra spaces to overwrite confirmation question if user says no
 !fill 40, MIDDLE_LINE_DIV
 !scr 0
-!scr "          quit game          ",0	;add extra spaces to overwrite confirmation question if user says no
+!scr "          quit game           ",0	;add extra spaces to overwrite confirmation question if user says no
 !fill 40, END_LINE_DIV
 !scr 0
 
-.confirmation_question	!scr "are you sure (y/n)?",0
+.confirmation_question	!scr "are you sure? (y/n)?",0
 
-.handtext		!scr "<=>",0 ;byte 60,61,62,0	;char 60-62 = <=>
+.handtext		!scr "<=>",0 ;char 60-62 = characters that form a hand
 .clearhandtext	!scr "   ",0
 
 .menuitems 		!byte 1,3,4,6,7,8,9,10,16,18	;which menu rows that represent menu items
