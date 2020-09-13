@@ -1,5 +1,7 @@
 ;*** mathlib.asm - functions, macros and precalculated tables ***************************************************************
 
+;*** 16 bit arithmetics ****************************************************************************
+
 !macro Inc16bit .addr {
         inc .addr
         bne +
@@ -27,42 +29,6 @@
         stz .addr                       ;if reached $ffff set $0000
         stz .addr+1
 ++
-}
-
-!macro Countdown16bitDec .addr {        ;decrease decimal number to 0, then stop
-        sed
-        lda .addr
-        bne +
-        lda .addr+1
-        bne +
-        bra ++
-+       lda .addr
-        sec
-        sbc #1
-        sta .addr
-        bpl ++
-        lda .addr+1
-        sec
-        sbc #1
-        sta .addr+1        
-        bpl ++
-        stz .addr                       ;if reached $ffff set $0000
-        stz .addr+1
-++      cld
-}
-
-!macro IncAndWrap32 .pos {
-        lda .pos
-        inc
-        and #31
-        sta .pos
-}
-
-!macro DecAndWrap32 .pos {
-        lda .pos
-        dec
-        and #31
-        sta .pos
 }
 
 !macro Add16 .addr1_lo, .addr2_lo {     ;OUT: .X = result lo, .Y = result hi
@@ -210,7 +176,94 @@
         rol .address_lo+1  
 }
 
-;*** Time comparison. Time is represented by three bytes (minutes, seconds, jiffies)
+;*** Decimal arithmetics ***************************************************************************
+
+!macro ConvertBinToDec .binaddr, .decaddr_lo {
+        sed	
+	lda #0
+	sta .decaddr_lo
+	sta .decaddr_lo+1
+        lda .binaddr
+        sta ZP0
+	ldx #8  		;the number of source bits
+-	asl ZP0 	        ;shift out one bit
+	lda .decaddr_lo	        ;and add into result
+	adc .decaddr_lo
+	sta .decaddr_lo
+	lda .decaddr_lo+1       ;propagating any carry
+	adc .decaddr_lo+1
+	sta .decaddr_lo+1
+	dex		        ;and repeat for next bit
+	bne -
+        cld
+}
+
+!macro Convert16BinToDec .binaddr_lo, .decaddr_lo {
+        sed	
+        lda #0
+	sta .decaddr_lo
+	sta .decaddr_lo+1
+        sta .decaddr_lo+2
+        lda .binaddr_lo
+        sta ZP0
+        lda .binaddr_lo+1
+        sta ZP1
+        ldx #16                 ;the number of source bits    
+-	asl ZP0                 ;shift out one bit
+	rol ZP1
+	lda .decaddr_lo	        ;and add into result
+	adc .decaddr_lo
+	sta .decaddr_lo
+	lda .decaddr_lo+1	;propagating any carry
+	adc .decaddr_lo+1
+	sta .decaddr_lo+1
+	lda .decaddr_lo+2       ;...thru whole result
+	adc .decaddr_lo+2
+	sta .decaddr_lo+2
+	dex		        ;and repeat for next bit
+	bne -
+	cld
+}
+
+!macro Countdown16bitDec .addr {        ;decrease decimal number to 0, then stop
+        sed
+        lda .addr
+        bne +
+        lda .addr+1
+        bne +
+        bra ++
++       lda .addr
+        sec
+        sbc #1
+        sta .addr
+        bpl ++
+        lda .addr+1
+        sec
+        sbc #1
+        sta .addr+1        
+        bpl ++
+        stz .addr                       ;if reached $ffff set $0000
+        stz .addr+1
+++      cld
+}
+
+;*** Various ***************************************************************************************
+
+!macro IncAndWrap32 .pos {
+        lda .pos
+        inc
+        and #31
+        sta .pos
+}
+
+!macro DecAndWrap32 .pos {
+        lda .pos
+        dec
+        and #31
+        sta .pos
+}
+
+;*** Time comparison. Time is represented by three bytes (minutes, seconds, jiffies) ***************
 
 AreTimesEqual:                  ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2.
         lda ZP0
@@ -248,6 +301,8 @@ IsTimeLess:             ;IN: ZP0-ZP2 = time 1, ZP3-ZP5 = time 2. OUT: .C clear i
         cmp ZP2
         rts             ;(carry will be clear if less, otherwise set)
 
+;*** Precalculated Tables **************************************************************************
+
 ;Table for sine and cosine values. Fractions in fixed point numbers used are represented by 4 bits. For example sin(45) = 0.707 * 16 = 11.3.
 ;NOTE! words are used because of the negative values!
 _anglesin       !word   0,  2,  3,  5,  6,  8,  9, 10, 11, 12, 13, 14, 15, 15, 16, 16 ;sin angles 0-
@@ -255,16 +310,6 @@ _anglecos       !word  16, 16, 16, 15, 15, 14, 13, 12, 11, 10,  9,  8,  6,  5,  
                 !word   0, -2, -3, -5, -6, -8, -9,-10,-11,-12,-13,-14,-15,-15,-16,-16 ;sin angles 180-
                 !word -16,-16,-16,-15,-15,-14,-13,-12,-11,-10, -9, -8, -6, -5, -3, -2 ;sin angles 270-
                 !word   0,  2,  3,  5,  6,  8,  9, 10, 11, 12, 13, 14, 15, 15, 16, 16 ;cos angles 270-
-
-;Tables for which sprite (0-4) represents the current angle and how it is flipped (0 = no flip, 1 = horizontal flip, 2 vertical flip, 3 = flipped both ways)
-_anglespritetable       !byte   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15
-                        !byte  16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1                       
-                        !byte   0, 1, 2, 3, 4, 5, 6, 7, 8, 9,10,11,12,13,14,15
-                        !byte  16,15,14,13,12,11,10, 9, 8, 7, 6, 5, 4, 3, 2, 1
-_anglefliptable         !byte   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-                        !byte   0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
-                        !byte   1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
-                        !byte   3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
 
 ;Table for atan2 - which angle a vector (x,y) have relative to origo. Just for the first quadrant. 
 _atantable:     ;rows x = 0 to 31, columns y = 0 to 31

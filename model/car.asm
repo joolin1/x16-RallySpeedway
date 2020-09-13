@@ -39,8 +39,9 @@
 .routedirection         !byte 0         ;current direction of route according to route map
 .distance_lo            !byte 0         ;distance in blocks left to go
 .distance_hi            !byte 0
-.distanceleft_lo        !byte 0         ;DECIMAL number!
+.distanceleft_lo        !byte 0         ;DECIMAL number! (it takes 3 bytes to hold a 16 bit binary number)
 .distanceleft_hi        !byte 0         ;DECIMAL number!
+.distanceleft_top       !byte 0         ;DECIMAL number!
 .penaltycount           !byte 0         ;how many times the car has got a time penalty
 .collisioncount         !byte 0         ;how many times the cas has collided/crashed
 .finishflag             !byte 0         ;flag for finished race
@@ -92,7 +93,7 @@
         stz .finishflag
         stz .distance_lo
         stz .distance_hi
-        jsr .SetDistanceLeft     ;distance left is counted in decimal mode
+        +Convert16BinToDec _routelength_lo, .distanceleft_lo     ;.distanceleft is saved as a decimal number (makes it easier to display)
         lda _xstartblock
         sta .checkpoint_xpos
         lda _ystartblock
@@ -100,23 +101,6 @@
         lda _startdirection
         sta .checkpointdirection
         jsr .InitRace
-        rts
-
-.SetDistanceLeft:               ;convert route length hex number to a decimal number
-        stz .distanceleft_lo
-        stz .distanceleft_hi
-        lda _routelength_lo
-        sta ZP0
-        lda _routelength_hi
-        sta ZP1
--       sed
-        +Add16 .distanceleft_lo,1,0
-        cld
-        +Dec16bit ZP0
-        lda ZP0
-        bne -
-        lda ZP1
-        bne -
         rts
 
 .ResumeRace:

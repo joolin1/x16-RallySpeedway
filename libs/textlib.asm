@@ -289,9 +289,19 @@ KPrintDigit:                     ;IN: .A = digit to print
 ;*** Print to VERA directly ************************************************************************
 
 VPrintString:                    ;IN: ZP0, ZP1 = address of string terminated with 0. OUT: ZP0, ZP1 = address of string termination + 1 (to make printing of a string array easier)
+        lda _col
+        asl
+        sta VERA_ADDR_L
+        lda _row
+        sta VERA_ADDR_M
+        lda #$10
+        sta VERA_ADDR_H      
+        ldy _color
 -       lda (ZP0)
-        beq +
-        jsr VPrintChar
+        beq +    
+        sta VERA_DATA0
+        sty VERA_DATA0
+        inc _col
         +Inc16bit ZP0
         bra -
 +       inc _row

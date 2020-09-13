@@ -28,6 +28,10 @@ BLOCK			= 35	;#
 MIDDLE_LINE_DIV	= 37 	;%
 FIRST_LINE_DIV 	= 38	;&
 
+;Colors
+MENU_WHITE = $01
+MENU_BLACK = $0b
+
 MenuHandler:
 	lda .menumode
 
@@ -64,39 +68,43 @@ MenuHandler:
 	;wait for confirmation
 +	cmp #M_CONFIRM_RESET
 	bne ++
-	jsr GETIN
-	cmp #A_Y
-	bne +
+	jsr .PrintCurrentAnswer
+	lda _joy0
+	bit #JOY_BUTTON_A
+	beq +
+	rts
++	lda .answer
+	beq +
 	jsr ResetLeaderboard
 	jsr UpdateMainMenu
 	lda #M_HANDLE_INPUT
 	sta .menumode
 	jsr SaveLeaderboard
 	rts
-+	cmp #A_N
-	bne +
-	jsr UpdateMainMenu
++	jsr UpdateMainMenu
 	lda #M_HANDLE_INPUT
 	sta .menumode
-+	rts
+	rts
 
 ++	cmp #M_CONFIRM_QUIT
 	bne ++
-	jsr GETIN
-	cmp #A_Y
-	bne +
+	jsr .PrintCurrentAnswer
+	lda _joy0
+	bit #JOY_BUTTON_A
+	beq +
+	rts
+	lda .answer
+	beq +
 	jsr UpdateMainMenu
 	lda #M_SHOW_START_SCREEN
 	sta .menumode				;set menu mode to start screen in case user starts game again
 	lda #ST_QUITGAME
 	sta _gamestatus				;set game status to break main loop, clean up and exit
 	rts
-+	cmp #A_N
-	bne +
-	jsr UpdateMainMenu
++ 	jsr UpdateMainMenu
 	lda #M_HANDLE_INPUT
 	sta .menumode
-+	rts
+	rts
 
 	;handle user input
 ++	cmp #M_HANDLE_INPUT
@@ -138,27 +146,54 @@ HandleUserInput:
 	stz .inactivitytimer_lo		;reset timer user's inactivity
 	stz .inactivitytimer_hi
 
-	;handle up/down
-	jsr ClearHand
+	jsr .HandleUpDown
+	jsr .HandleLeftRight
+	jsr .HandleButton
+	rts
+
+.HandleUpDown:					;up down moves hand up and down
 	lda _joy0
 	bit #JOY_UP					;up?
 	bne +
+	jsr .ClearHand
 	jsr DecreaseHandRow
-
-+	lda _joy0
-	bit #JOY_DOWN				;down?
+	jsr .PrintHand
+	rts
++	bit #JOY_DOWN				;down?
 	bne +
+	jsr .ClearHand
 	jsr IncreaseHandrow
-
-	;handle button
-+	lda _joy0
-	bit #JOY_BUTTON_A			;button a?
-	beq +
-	jsr PrintHand
-	lda #1
-	sta .inputwait
+	jsr .PrintHand
 	rts
 
+.HandleLeftRight:				;left right toggles true/false for confirmation questions. (it doesn't matter if any question is currently asked...)
+    lda _joy0
+ 	bit #JOY_LEFT				;left?
+	bne +
+	lda .answer					
+	bne +
+	inc .answer					;set answer to true if false
+	jsr .PrintCurrentAnswer
+	rts
++	lda _joy0
+	bit #JOY_RIGHT				;right?
+	bne +
+	lda .answer
+	beq +
+	dec .answer					;set answer to false if true
+	jsr .PrintCurrentAnswer
+	rts
+
+.inputwait	!byte 0				;boolean, when true wait for user to release controller
+
+.HandleButton:
+	;button a pressed?
+	lda _joy0
+	bit #JOY_BUTTON_A
+	beq +
+	rts
+
+	;take action depending on current menu item
 +	lda .handrow
 	cmp #START_RACE
 	bne +
@@ -258,30 +293,31 @@ HandleUserInput:
     rts
 
 +	cmp #RESET_BEST
-	bne +
+	bne ++
 	ldx #$81
 	stx _color
-	tay
-	lda .menuitems,y
 	jsr .PrintConfirmationQuestion
+	lda _joy0
+	bne +						;don't accept any answer before user has released button
 	lda #M_CONFIRM_RESET
 	sta .menumode
-	rts
++	rts
 
-+	cmp #QUIT_GAME
+++	cmp #QUIT_GAME
 	bne +
 	ldx #$41
 	stx _color
-	tay
-	lda .menuitems,y
 	jsr .PrintConfirmationQuestion
+	lda _joy0
+	bne +
 	lda #M_CONFIRM_QUIT
 	sta .menumode
 +	rts
 
-.inputwait	!byte 0			;boolean, when true wait for user to release controller
-
 .PrintConfirmationQuestion:		;IN: .A = row to print question
+	stz .answer					;default answer is "no"
+	ldy .handrow
+	lda .menuitems,y
 	sta _row
 	lda #10
 	sta _col
@@ -290,11 +326,42 @@ HandleUserInput:
 	lda #>.confirmation_question
 	sta ZP1
 	jsr VPrintString
-	jsr PrintHand
+	jsr .PrintCurrentAnswer
+	jsr .PrintHand
 	rts
+
+.PrintCurrentAnswer:
+	ldy .handrow
+	lda .menuitems,y
+	sta _row				;IN: .A = row to print answer (a colored "Y/N")
+	lda .answer
+	beq +
+	ldx #MENU_BLACK			;answer is yes
+	ldy #MENU_WHITE 
+	bra ++
++	ldx #MENU_WHITE			;answer is no
+	ldy #MENU_BLACK
+++	lda #YES_POSITION		;print "Y" in right color
+	sta _col
+	sty _color
+	lda #S_Y
+	phx
+	jsr VPrintChar
+	plx
+	lda #NO_POSITION		;print "N" in right color
+	sta _col
+	stx _color
+	lda #S_N
+	jsr VPrintChar
+	rts
+
+.answer		!byte 0				;boolean, "yes" = true, "no" = false
+YES_POSITION = 24
+NO_POSITION  = 26
 
 IncreaseHandrow:
 	inc .handrow
+	lda .handrow
 	cmp #MENU_ITEMS_COUNT
 	bne +
 	stz .handrow
@@ -309,13 +376,13 @@ DecreaseHandRow:
 
 .handrow	!byte 0
 
-PrintHand:
+.PrintHand:
 	lda #<.handtext
 	sta ZP0
 	lda #>.handtext
 	sta ZP1
 	bra +
-ClearHand:
+.ClearHand:
 	lda #<.clearhandtext
 	sta ZP0
 	lda #>.clearhandtext
@@ -431,7 +498,7 @@ UpdateMainMenu:
 	cpx #6
 	bne -
 	
-	jsr PrintHand
+	jsr .PrintHand
 	rts
 
 .InitScreen:
