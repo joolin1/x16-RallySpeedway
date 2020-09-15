@@ -184,7 +184,7 @@ MenuHandler:
 +	lda .handrow
 	cmp #START_RACE
 	bne +
-	jsr CloseMainMenu
+	jsr .CloseMainMenu
 	rts
 
 +	cmp #ONE_PLAYER
@@ -281,6 +281,18 @@ MenuHandler:
 	jsr .HandleQuitGame
 +	rts
 
+.CloseMainMenu:
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
+	jsr DisableLayer0		;temporary disable layer 0 while preparing racing track
+	jsr SetLayer0ToTileMode
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
+	lda #ST_SETUPRACE
+	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
+	rts
+
 .HandleResetLeaderboard:
 	lda .resetconfirmationflag
 	bne +
@@ -292,6 +304,7 @@ MenuHandler:
 	lda .answer
 	beq +
 	jsr ResetLeaderboard
+	jsr PrintLeaderboard
 	lda #M_HANDLE_INPUT
 	sta .menumode
 	jsr SaveLeaderboard
@@ -392,18 +405,45 @@ NO_POSITION  = 27
 	jsr VPrintString
 	rts
 
-!macro PrintDivider {
-	ldx #40
--	phx
-	pha
-	jsr VPrintChar
-	pla
+;*** Draw start screen and menu ********************************************************************
+
+!macro	PrintLineBreaks .blocktable {
+	stz _row
+	ldx #0
+-	lda .blocktable,x
+	beq +
+	clc
+	adc _row
+	sta _row
+	lda #MIDDLE_LINE_DIV
+	phx
+	jsr VPrintLineBreak
+	dec _row				;(subroutine increases row)
 	plx
-	dex
-	bne -
-	inc _row
-	stz _col
+	inx
+	bra -
++
 }
+
+.PrintFirstAndLastDividers:
+	+SetPrintParams 0,0,$0b
+	lda #FIRST_LINE_DIV
+	jsr VPrintLineBreak
+
+	+SetPrintParams 29,0,$0b
+	lda #END_LINE_DIV
+	jsr VPrintLineBreak
+	rts
+	
+.InitScreen:
+	ldx #<L0_MAP_ADDR
+	ldy #>L0_MAP_ADDR
+	jsr ClearTextLayer
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
+    jsr SetLayer0ToTextMode
+	rts
 
 .ShowStartScreen:
 	jsr .InitScreen
@@ -413,6 +453,8 @@ NO_POSITION  = 27
 	lda #>.startscreenbgblocks
 	sta .blocktable_hi
 	jsr .FillLayer0WithColorBlocks
+	jsr .PrintFirstAndLastDividers
+	+PrintLineBreaks .startscreenbgblocks
 
 	+SetPrintParams 3,0,$01
 	lda #<.startscreentext
@@ -426,40 +468,29 @@ NO_POSITION  = 27
 	pla
 	dec
 	bne -
-
-	+SetPrintParams 0,0,$0b
-	lda #FIRST_LINE_DIV
-	+PrintDivider
-	inc _row
-	ldx #14
--	phx
-	lda #MIDDLE_LINE_DIV
-	+PrintDivider
-	inc _row
-	plx
-	dex
-	bne -
 	rts
 
 .ShowMainMenu:						;print complete menu including setting layers, clear layers and print all text
 	jsr .InitScreen
-	lda #<.mainmenubgblocks			;set block table pointer as in parameter
+	lda #<.menubgblocks			;set block table pointer as in parameter
 	sta .blocktable_lo
-	lda #>.mainmenubgblocks
+	lda #>.menubgblocks
 	sta .blocktable_hi
 	jsr .FillLayer0WithColorBlocks	;print color blocks on background layer
 	stz .handrow					;put selection hand on first row
-
 	jsr PrintLeaderboard
+	jsr .PrintFirstAndLastDividers
+	+PrintLineBreaks .menubgblocks
 
 .UpdateMainMenu:
-	;print menu items including dividers
+	;print menu items
 	lda #<.menutext
 	sta ZP0
 	lda #>.menutext
 	sta ZP1
 	stz _row
-	stz _col
+	lda #10
+	sta _col
 	ldx #0
 -	phx
 	lda .menurows,x
@@ -495,28 +526,6 @@ NO_POSITION  = 27
 	bne -
 	
 	jsr .PrintHand
-	rts
-
-.InitScreen:
-	ldx #<L0_MAP_ADDR
-	ldy #>L0_MAP_ADDR
-	jsr ClearTextLayer
-	ldx #<L1_MAP_ADDR
-	ldy #>L1_MAP_ADDR
-	jsr ClearTextLayer
-    jsr SetLayer0ToTextMode
-	rts
-
-CloseMainMenu:
-	ldx #<L1_MAP_ADDR
-	ldy #>L1_MAP_ADDR
-	jsr ClearTextLayer
-	jsr DisableLayer0		;temporary disable layer 0 while preparing racing track
-	jsr SetLayer0ToTileMode
-	lda #M_SHOW_MAIN_MENU
-	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
-	lda #ST_SETUPRACE
-	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
 	rts
 
 ;*** Methods on layer 0 ********************************************************
@@ -625,12 +634,15 @@ CloseMainMenu:
 		!byte	12 ;grey
 		!byte	10 ;light red
 
+.startscreenbgblocks
+!byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
+
 .startscreentext:
-!scr "   john karlin's rally speedway v 0.1",0
+!scr "   john karlin's rally speedway v 0.5",0
 !scr 0
 !scr "       a tribute to the original",0
-!scr "           atari and c64 game",0
-!scr "            by john anderson",0
+!scr "        game for atari and c64",0
+!scr "           by john anderson",0
 !scr 0
 !scr 0
 !scr "           a free gift to all",0
@@ -640,39 +652,29 @@ CloseMainMenu:
 
 STARTSCREEN_ROW_COUNT = 11
 
-.startscreenbgblocks
-!byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
-
-.mainmenubgblocks
+.menubgblocks
 !byte 2,3,6,4,2,2,10,0				;table for how many rows each block is, zero terminated
 
 .menutext
-!fill 40, FIRST_LINE_DIV
 !scr 0
-!scr "          start the race",0
-!fill 40, MIDDLE_LINE_DIV
+!scr "start the race",0
 !scr 0
-!scr "          one player",0
-!scr "          two players",0
-!fill 40, MIDDLE_LINE_DIV
+!scr "one player",0
+!scr "two players",0
 !scr 0
 !scr 0	;(track names)
 !scr 0
 !scr 0
 !scr 0
 !scr 0
-!fill 40, MIDDLE_LINE_DIV
 !scr 0
 !scr 0
 !scr 0
 !scr 0
-!fill 40, MIDDLE_LINE_DIV
 !scr 0
-!scr "          reset leaderboard   ",0	;add extra spaces to overwrite confirmation question if user says no
-!fill 40, MIDDLE_LINE_DIV
+!scr "reset leaderboard   ",0	;add extra spaces to overwrite confirmation question if user says no
 !scr 0
-!scr "          quit game           ",0	;add extra spaces to overwrite confirmation question if user says no
-!fill 40, END_LINE_DIV
+!scr "quit game           ",0	;add extra spaces to overwrite confirmation question if user says no
 !scr 0
 
 .confirmation_question	!scr "are you sure? (y/n)?",0

@@ -7,6 +7,13 @@
         sta ZP1
 }
 
+!macro SetParamsI .p0, .p1 {
+        lda #.p0
+        sta ZP0
+        lda #.p1
+        sta ZP1
+}
+
 !macro SetParams .p0, .p1, .p2 {
         lda .p0
         sta ZP0

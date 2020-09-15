@@ -197,7 +197,7 @@ UpdatePauseMenu:
         bne -        
         rts
 
-;*** Finish boardd **********************************************************************************
+;*** Finish board **********************************************************************************
 
 PrintBoard:
         lda _noofplayers
@@ -240,8 +240,11 @@ PrintBoard:
         lda _ycarcollisioncount
         clc
         adc _ycarpenaltycount
+        pha
         jsr YCar_TimeSubSeconds
         +PrintCarTime 12, 21, _ycartime                 ;print race time
+        pla
+        jsr YCar_TimeAddSeconds
         rts
 
 .PrintTwoPlayerBoard:
@@ -291,15 +294,21 @@ PrintBoard:
         lda _ycarcollisioncount
         clc
         adc _ycarpenaltycount
+        pha
         jsr YCar_TimeSubSeconds
         +PrintCarTime 13, 17, _ycartime ;print actual race time (without added penalty time)
-
+        pla
+        jsr YCar_TimeAddSeconds
+        
         +PrintCarTime 16, 28, _bcartime ;print blue car finish time
         lda _bcarcollisioncount
         clc
         adc _bcarpenaltycount
+        pha
         jsr BCar_TimeSubSeconds
         +PrintCarTime 13, 28, _bcartime ;print actual race time (without added penalty time)
+        pla
+        jsr BCar_TimeAddSeconds
         rts
 
 ;*** board data ************************************************************************************

@@ -37,8 +37,11 @@ LoadGraphics:
         beq +
         sec                             ;set carry to flag error
         rts
-+       jsr .CopySpritePalettesToVRAM
-        jsr .SetCharset
++       jsr .CopyPalettesToVRAM
+        lda #0
+        ldx #<.charset
+        ldy #>.charset
+        jsr screen_set_charset
         clc                             ;clear carry to flag everything is ok
         rts
 
@@ -98,28 +101,21 @@ LoadGraphics:
         sta .errorflag
 +       rts
 
-.CopySpritePalettesToVRAM:
-        lda #<CAR_PALETTES
+.CopyPalettesToVRAM:
+        lda #<PALETTE
         sta VERA_ADDR_L
-        lda #>CAR_PALETTES                       
+        lda #>PALETTE                       
         sta VERA_ADDR_M
         lda #$11                
         sta VERA_ADDR_H                 ;increment = 1
 
         ldy #0           
--       lda .carspritepalettes,y        ;loop through 2 * 16 colors * 2 bytes = 64
+-       lda .palettes,y        ;loop through 4 * 16 colors * 2 bytes = 128
         sta VERA_DATA0     
         iny
-        cpy #64             
+        cpy #128             
         bne -
         rts
-
-.SetCharset:
-    lda #0
-    ldx #<.charset
-    ldy #>.charset
-    jsr screen_set_charset
-rts
 
 .charset
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de
@@ -155,9 +151,10 @@ rts
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
         !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
 
+.palettes
+        !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 11 = black instead of dark grey)
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
         !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
-
 .trackpalette
-        !word $e4a672, $b86f50, $743f39, $3f2832, $9e2835, $e53b44, $fb922b, $ffe762, $63c64d, $327345, $193d3f, $4f6781, $afbfd2, $ffffff, $2ce8f4, $0484d1
+        !word $0ea7, $0b75, $0744, $0423, $0a33, $0e44, $0f93, $0fe6, $06c5, $0374, $0244, $0568, $0bcd, $0fff, $03ef, $008d

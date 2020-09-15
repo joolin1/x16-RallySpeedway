@@ -11,7 +11,7 @@
 .collisionangle = ZP8   ;angle of collision with yellow car as reference point (= center in coordinate system)
 .tableadr       = ZP9   ;(and ZPA) where to read from in atan table
 
-_winner         !byte   0       ;winner of race
+_winner         !byte   0       ;winner of race (0 = no winner yet, 1 = yellow car has won, 2 = blue car has won, 3 = race ended in a draw)
 _isrecord       !byte   0       ;whether winner time is a new record
 
 InitCarInteraction:
@@ -19,35 +19,57 @@ InitCarInteraction:
         stz _winner
         rts
 
-CheckForWinner:                 ;OUT: _winner = 0-3 (0 = no winner yet, 1 = yellow car has won, 2 = blue car has won, 3 = race ended in a draw)
-        ;set winner if any
-        lda _winner
-        bne ++                  ;if winner is set continue to check if race is over
-        lda _ycarfinishflag
-        ora _winner
-        sta _winner             ;set bit 0 if yellow car has finished
-        lda _bcarfinishflag
-        beq +
-        lda #2
-        ora _winner
-        sta _winner             ;set bit 1 if blue car has finished
-+       rts                     ;(race is not over when winner is set, it takes a short wile before cars have stopped)
+; CheckForWinner:                 ;OUT: _winner = 0-3 
+;         ;set winner if any
+;         lda _winner
+;         bne ++                  ;if winner is set continue to check if race is over
+;         lda _ycarfinishflag
+;         ora _winner
+;         sta _winner             ;set bit 0 if yellow car has finished
+;         lda _bcarfinishflag
+;         beq +
+;         lda #2
+;         ora _winner
+;         sta _winner             ;set bit 1 if blue car has finished
+; +       rts                     ;(race is not over when winner is set, it takes a short wile before cars have stopped)
 
-        ;check if race over (= cars have crossed finish line and stopped)
-++      lda _ycarfinishflag
+CheckIfRaceOver:                       ;check if race over (= cars have crossed finish line and stopped)
+        lda _ycarfinishflag
         beq ++
         lda _ycarspeed
         bne ++
         lda _noofplayers
         cmp #1
-        beq +
-        lda _bcarfinishflag
+        bne +
+        lda #1
+        sta _winner             ;yellow car always wins when one player...
+        lda #ST_FINISH
+        sta _gamestatus
+        rts
++       lda _bcarfinishflag
         beq ++
         lda _bcarspeed
         bne ++
-+       lda #ST_FINISH
+        jsr .SetWinner
+        lda #ST_FINISH
         sta _gamestatus
 ++      rts   
+
+.SetWinner:
+        +SetParams _ycartime, _ycartime+1, _ycartime+2, _bcartime, _bcartime+1, _bcartime+2
+        jsr AreTimesEqual
+        bne +
+        lda #3
+        sta _winner     ;race ended in a draw
+        rts
++       jsr IsTimeLess
+        bcc +
+        lda #1
+        sta _winner
+        rts
++       lda #2
+        sta _winner
+        rts
 
 CheckForRecord:
         jsr .SetWinnerParams
@@ -152,49 +174,7 @@ SetStartPosition:                                       ;if two players, set new
 
 CheckInteraction:
         +CalculateDistance _ycarxpos_lo, _bcarxpos_lo, .xdist_lo, .absxdist_lo
-        +CalculateDistance _ycarypos_lo, _bcarypos_lo, .ydist_lo, .absydist_lo
-
-;         ;calculate vertical distance
-;         +Sub16 _bcarypos_lo, _ycarypos_lo       ;bcar pos - ycar pos
-;         stx .ydist_lo
-;         sty .ydist_hi
-;         +Cmp16  _ycarypos_lo, _bcarypos_lo      
-;         bcs +
-
-;         ;bcar pos > ycar pos        
-;         lda .ydist_hi
-;         bit #8                  ;if distance > 2048 cars are closer if we see them as positioned on different maps
-;         beq ++
-;         ora #240                ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
-;         sta .ydist_hi           
-;         bra ++
-
-;         ;ycar pos > bcar pos
-; +       lda .ydist_hi
-;         bit #8                  ;if distance < -2048 cars are closer if we see them as positioned on different maps
-;         bne ++
-;         and #15                 ;result has wrapped correctly if we look att 12 bits, now simply extend negative value to 16 bit
-;         sta .ydist_hi
-
-; ++      lda .ydist_lo
-;         sta .absydist_lo
-;         lda .ydist_hi
-;         sta .absydist_hi
-;         +Abs16 .absydist_lo     ;get absolute values
-
-        ;check for car clash - collison between cars
-; +       lda .absxdist_lo
-;         cmp #18                         ;low x byte must be less than 18
-;         bcs +
-;         lda .absxdist_hi                         
-;         bne +                           ;high x byte must be 0
-;         lda .absydist_lo
-;         cmp #18                         ;low y byte must be less than 18 
-;         bcs +
-;         lda .absydist_hi
-;         bne +                           ;high y byte must be 0
-;         ;jsr SetClash
-;         rts                             ;if clash, outdistancing calculations are unnecessary   
+        +CalculateDistance _ycarypos_lo, _bcarypos_lo, .ydist_lo, .absydist_lo  
 
         ;check for horizontal outdistancing
 +       lda .absxdist_lo
@@ -268,8 +248,8 @@ SetOutdistanced:                        ;if one car is outdistanced - decide whi
 .outdistancetemp         !byte 0
 
 SetClash:
-        jsr PlayClashSound
-
+        jsr PlayClashSound      
+        ;!byte $db
         ;calculate collision angle
         jsr GetClashAngle
         lda .collisionangle        
@@ -301,13 +281,15 @@ SetClash:
         bra ++
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
         lsr
-        sta _bcarclashpush
+        bne +
+        lda #8                  ;set minimum push to avoid that cars can overlap if driving slowly towards each other
++       sta _bcarclashpush
 
         ;calculate how much yellow car is pushed by blue car
 ++      lda _bcarspeed
         lsr
         lsr                     ;skip fraction
-++      tax                     ;blue car speed in .X
+        tax                     ;blue car speed in .X
         lda _ycarclashangle
         sec
         sbc _bcarangle          ;difference between collision angle and movement angle is needed to calculate in which speed blue car is moving against yellow car
@@ -326,6 +308,8 @@ SetClash:
         rts
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
         lsr
+        bne +
+        lda #8                  ;set minimum push to avoid that cars can overlap if driving slowly towards each other
 +       sta _ycarclashpush
         rts      
 

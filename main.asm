@@ -175,7 +175,7 @@ _noofplayers	        !byte 1         ;number of players
         beq +
         jsr SetClash                    ;make clash calculations if sprite collision interrupt has been triggered
         stz .sprcoltrigger
-+       jsr CheckForWinner              ;check for winner and if race is completely over (= cars have stopped)
++       jsr CheckIfRaceOver             ;check for winner and if race is completely over (= cars have stopped)
         jsr UpdateMap                   ;update all tilemap information
         rts
 
