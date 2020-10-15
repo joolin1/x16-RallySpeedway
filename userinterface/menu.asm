@@ -7,18 +7,21 @@ M_SHOW_MAIN_MENU 		= 2
 M_HANDLE_INPUT 			= 3
 
 ;Menu item mapping
-START_RACE	= 0
-ONE_PLAYER 	= 1
-TWO_PLAYERS = 2
-TRACK_1		= 3
-TRACK_2		= 4
-TRACK_3		= 5
-TRACK_4		= 6
-TRACK_5		= 7
-RESET_BEST  = 8
-QUIT_GAME	= 9
+START_RACE		= 0
+ONE_PLAYER 		= 1
+TWO_PLAYERS 	= 2
+TRACK_1			= 3
+TRACK_2			= 4
+TRACK_3			= 5
+TRACK_4			= 6
+TRACK_5			= 7
+LOW_SPEED   	= 8
+NORMAL_SPEED 	= 9
+HIGH_SPEED	 	= 10
+RESET_BEST  	= 11
+QUIT_GAME		= 12
 
-MENU_ITEMS_COUNT = 10
+MENU_ITEMS_COUNT = 13
 
 ;Special characters used in menu
 END_LINE_DIV	= 34 	;"
@@ -152,8 +155,13 @@ MenuHandler:
 
 .handrow	!byte 0
 
-.HandleLeftRight:				;left right toggles true/false for confirmation questions. (don't bother if any question isn't currently asked...)
-    lda _joy0
+.HandleLeftRight:				;left right toggles true/false for confirmation questions.
+	lda .resetconfirmationflag
+	bne +
+	lda .quitconfirmationflag
+	bne +
+	rts
++   lda _joy0
  	bit #JOY_LEFT				;left?
 	bne +
 	lda .answer					
@@ -271,6 +279,39 @@ MenuHandler:
 	lda #5
 	sta _track
     rts
+
++ 	cmp #LOW_SPEED
+	bne +
+	lda #1
+	sta .lowspeed
+	lda #$0b
+	sta .normalspeed
+	sta .highspeed
+	lda #19
+	sta _max_speed
+	rts
+
++ 	cmp #NORMAL_SPEED
+	bne +
+	lda #1
+	sta .normalspeed
+	lda #$0b
+	sta .lowspeed
+	sta .highspeed
+	lda #22
+	sta _max_speed
+	rts
+
++ 	cmp #HIGH_SPEED
+	bne +
+	lda #1
+	sta .highspeed
+	lda #$0b
+	sta .lowspeed
+	sta .normalspeed
+	lda #25
+	sta _max_speed
+	rts
 
 +	cmp #RESET_BEST
 	bne +
@@ -668,9 +709,9 @@ STARTSCREEN_ROW_COUNT = 11
 !scr 0
 !scr 0
 !scr 0
-!scr 0
-!scr 0
-!scr 0
+!scr "low speed",0
+!scr "normal speed",0
+!scr "high speed",0
 !scr 0
 !scr "reset leaderboard   ",0	;add extra spaces to overwrite confirmation question if user says no
 !scr 0
@@ -682,7 +723,7 @@ STARTSCREEN_ROW_COUNT = 11
 .handtext		!scr "<=>",0 ;char 60-62 = characters that form a hand
 .clearhandtext	!scr "   ",0
 
-.menuitems 		!byte 1,3,4,6,7,8,9,10,16,18	;which menu rows that represent menu items
+.menuitems 		!byte 1,3,4,6,7,8,9,10,12,13,14,16,18	;which menu rows that represent menu items
 
 .menurows	 						;menu rows table that holds information about both color and selection.
 				!byte $b			; 1 = white color = selected (when relevant)
@@ -697,9 +738,9 @@ STARTSCREEN_ROW_COUNT = 11
 .track4			!byte $b
 .track5			!byte $b
 				!byte $b
-.loadtrax		!byte 1				;TODO: implement track editor
-.maketrax		!byte 1
-.savetrax		!byte 1
+.lowspeed		!byte 1
+.normalspeed	!byte $b
+.highspeed		!byte $b
 				!byte $b
 .resetbest		!byte 1
 				!byte $b

@@ -520,7 +520,7 @@
         cpx #MIN_SPEED
         bcc ++
         rts
-+       cpx #MAX_SPEED
++       cpx _max_speed
         bcc ++
         rts
 ++      inc .speeddelay

@@ -27,8 +27,7 @@ ST_QUITGAME     = 10    ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
-MAX_SPEED = 25;22;19          ;maximum speed that car accelerates to by itself when on road
-MIN_SPEED = 10;8           ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
+MIN_SPEED = 10          ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
 MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
@@ -71,6 +70,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 
 _gamestatus             !byte 0       
 _noofplayers	        !byte 1         ;number of players
+_max_speed              !byte 19        ;max speed
 .defaulthandler_lo 	!byte 0
 .defaulthandler_hi	!byte 0
 .vsynctrigger           !byte 0
