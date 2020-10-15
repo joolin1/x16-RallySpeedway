@@ -241,7 +241,6 @@ SetOutdistanced:                        ;if one car is outdistanced - decide whi
         rts
 
 +++     ;both cars are off route (no penalty)
-        jsr HideCars
         jsr ShowOffroadText
         rts
 

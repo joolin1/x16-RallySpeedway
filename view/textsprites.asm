@@ -68,12 +68,8 @@ ShowPenaltyText:                ;.A = text color. 0 = yellow, 1 = blue
         rts
 
 ShowOffroadText:
-        ;change yellow color to grey in palette 1
-       	+VPokeI PALETTE+32+4, $66
-	+VPokeI PALETTE+32+5, $06    
-
-        ;set palette 1
-        lda #224 + 1
+        ;set palette 3 = sprite text palette
+        lda #224 + 3
         +VPokeSprites SPR_ATTR_1, TEXTSPRITE_COUNT
 
         ;enable letters
@@ -196,6 +192,4 @@ ShowRaceOverText:
 
 HideText:
         +VPokeSpritesI SPR_ATTR_0, TEXTSPRITE_COUNT, 0  ;disable all text sprites
-       	+VPokeI PALETTE+32+4, $E7                       ;restore sprite color in case it has been changed
-	+VPokeI PALETTE+32+5, $0E
         rts

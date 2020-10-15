@@ -11,7 +11,7 @@ LoadFile:
         sta ZP4
         jsr .Load
 
-.Load:                          ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = ;0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
+.Load:                          ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = 0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
         jsr GetStringLength     ;will return length of filename in .A
         ldx ZP0
         ldy ZP1

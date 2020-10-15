@@ -24,6 +24,8 @@
 .carsname               !raw "CARS.BIN",0
 .explosionname          !raw "EXPLOSION.BIN",0
 .textname               !raw "TEXT.BIN",0
+.blocksname             !raw "BLOCKS.BIN",0
+.tracksname             !raw "TRACKS.BIN",0
 
 .errorflag      !byte   0   ;at least one i/o error has occurred if set
 
@@ -33,6 +35,8 @@ LoadGraphics:
         jsr .LoadCars
         jsr .LoadExplosion
         jsr .LoadText
+        jsr .LoadBlocks
+        jsr .LoadTracks
         lda .errorflag
         beq +
         sec                             ;set carry to flag error
@@ -93,6 +97,38 @@ LoadGraphics:
         jsr .VLoad
         rts
 
+.LoadBlocks:
+        lda #<.blocksname
+        sta ZP0
+        lda #>.blocksname
+        sta ZP1
+        lda #<_blocks
+        sta ZP2
+        lda #>_blocks
+        sta ZP3
+        jsr .Load       ;blocks are located in RAM (tiles in VRAM)
+        rts
+
+.LoadTracks:
+        lda #<.tracksname
+        sta ZP0
+        lda #>.tracksname
+        sta ZP1
+        lda #<_trackdata
+        sta ZP2
+        lda #>_trackdata
+        sta ZP3
+        jsr .Load       ;tracks are located in RAM
+        rts
+
+.Load:
+        jsr LoadFile                   ;call filehandler
+        bcc +
+        jsr PrintIOErrorMessage
+        lda #1
+        sta .errorflag
++       rts
+
 .VLoad:
         jsr VLoadFile                   ;call filehandler
         bcc +
@@ -110,10 +146,10 @@ LoadGraphics:
         sta VERA_ADDR_H                 ;increment = 1
 
         ldy #0           
--       lda .palettes,y        ;loop through 4 * 16 colors * 2 bytes = 128
+-       lda .palettes,y        ;loop through 5 palettes * 16 colors * 2 bytes = 160
         sta VERA_DATA0     
         iny
-        cpy #128             
+        cpy #160             
         bne -
         rts
 
@@ -156,5 +192,10 @@ LoadGraphics:
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
         !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
+.spritetextpalette
+        !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = grey)
 .trackpalette
-        !word $0ea7, $0b75, $0744, $0423, $0a33, $0e44, $0f93, $0fe6, $06c5, $0374, $0244, $0568, $0bcd, $0fff, $03ef, $008d
+        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000
+
+        ;!word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $0399, $0C75, $06B5, $0EA7, $0BBB, $06E6, $0CF0, $0FFF
+        ;!word $0ea7, $0b75, $0744, $0423, $0a33, $0e44, $0f93, $0fe6, $06c5, $0374, $0244, $0568, $0bcd, $0fff, $03ef, $008d
