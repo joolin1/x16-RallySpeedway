@@ -62,10 +62,10 @@
 +       stz .turncount          ;car is not turning anymore
 
 ++
-        lda .joy                ;DEBUG
-        and #JOY_BUTTON_B                 
-        bne +
-        +SetCondBreakpoint      ;END DEBUG
+        ; lda .joy                ;DEBUG
+        ; and #JOY_BUTTON_B                 
+        ; bne +
+        ; +ActivateCondBreakpoint      ;END DEBUG
 
 +       lda .joy
         and #JOY_BUTTON_A       ;button A?

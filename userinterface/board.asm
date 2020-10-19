@@ -322,7 +322,7 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr "     crashes    +        ",0
                         !scr "  total time             ",0
                         !scr "                         ",0
-                        !scr " press start to continue ",0
+                        !scr "   press b to continue   ",0
                         !scr "                         ",0          ;one player, no record: print no further than this
 
                         !scr " enter name:             ",0
@@ -339,7 +339,7 @@ _boardinputflag         !byte 0 ;flag set when waiting for player to enter new n
                         !scr " outdistanced    +          +       ",0
                         !scr "   total time                       ",0
                         !scr "                                    ",0
-                        !scr "      press start to continue       ",0
+                        !scr "        press b to continue         ",0
                         !scr "                                    ",0       ;two players, no record: print no further than this and then add "press start to continue" above
                         
                         !scr "      enter name:                   ",0

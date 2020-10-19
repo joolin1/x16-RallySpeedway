@@ -9,21 +9,25 @@
 !addr L0_MAP_ADDR_2     = $2800                   ;              | Layer 0 - The lower half of the tilemap can be used as a second buffer because only the upper half (the first 16 rows) are displayed.
                                                   ;Total   16 Kb of screen memory
                                                   
-!addr TILE_ADDR         = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes
+!addr TILES_ADDR        = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8 = $4000 bytes
 !addr CARS_ADDR         = $8000                   ;       8.5 Kb | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16 = $2200 bytes 
 !addr EXPLOSION_ADDR    = CARS_ADDR + $2200       ;         6 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16 = $1800 bytes
 !addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        15 Kb | 15 text sprites      (64 rows x 16 bytes/row) ->  15 x 64 x 16 = $3C00 bytes
-                                                  ;Total 45.5 Kb of graphical resources
+!addr BADGES_ADDR       = TEXT_ADDR + $3C00       ;       0.5 Kb | 2 badge sprites      (16 rows x 16 bytes/row) ->   2 x 16 x 16 =  $200 bytes
+                                                  ;  Total 46 Kb of graphical resources
 
-!addr CAR_PALETTES      = PALETTE + $20
-!addr YCAR_PALETTE      = PALETTE + $20
-!addr BCAR_PALETTE      = PALETTE + $40
+!addr CAR_PALETTES       = PALETTE + $20
+!addr YCAR_PALETTE       = PALETTE + $20
+!addr BCAR_PALETTE       = PALETTE + $40
+!addr SPRITETEXT_PALETTE = PALETTE + $60
+!addr TRACKS_PALETTE     = PALETTE + $80
 
 ;Graphic resources to load
 .tilesname              !raw "TILES.BIN",0
 .carsname               !raw "CARS.BIN",0
 .explosionname          !raw "EXPLOSION.BIN",0
 .textname               !raw "TEXT.BIN",0
+.badgesname             !raw "BADGES.BIN",0
 .blocksname             !raw "BLOCKS.BIN",0
 .tracksname             !raw "TRACKS.BIN",0
 
@@ -35,6 +39,7 @@ LoadGraphics:
         jsr .LoadCars
         jsr .LoadExplosion
         jsr .LoadText
+        jsr .LoadBadges
         jsr .LoadBlocks
         jsr .LoadTracks
         lda .errorflag
@@ -54,9 +59,9 @@ LoadGraphics:
         sta ZP0
         lda #>.tilesname
         sta ZP1
-        lda #<TILE_ADDR
+        lda #<TILES_ADDR
         sta ZP2
-        lda #>TILE_ADDR
+        lda #>TILES_ADDR
         sta ZP3
         jsr .VLoad
         rts
@@ -93,6 +98,18 @@ LoadGraphics:
         lda #<TEXT_ADDR
         sta ZP2
         lda #>TEXT_ADDR
+        sta ZP3
+        jsr .VLoad
+        rts
+
+.LoadBadges:
+        lda #<.badgesname
+        sta ZP0
+        lda #>.badgesname
+        sta ZP1
+        lda #<BADGES_ADDR
+        sta ZP2
+        lda #>BADGES_ADDR
         sta ZP3
         jsr .VLoad
         rts
@@ -187,15 +204,12 @@ LoadGraphics:
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
         !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
 
-.palettes
-        !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 11 = black instead of dark grey)
+.palettes                                       ;$00c5
+        !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $000a, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 11 = black instead of dark grey)
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
         !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
 .spritetextpalette
-        !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = grey)
+        !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
 .trackpalette
-        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000
-
-        ;!word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $0399, $0C75, $06B5, $0EA7, $0BBB, $06E6, $0CF0, $0FFF
-        ;!word $0ea7, $0b75, $0744, $0423, $0a33, $0e44, $0f93, $0fe6, $06c5, $0374, $0244, $0568, $0bcd, $0fff, $03ef, $008d
+        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000    ;tiles

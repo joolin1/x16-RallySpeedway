@@ -50,9 +50,8 @@ InitScreenAndSprites:
         sta DC_HSCALE           ;set horizontal and vertical scale to 2:1
         sta DC_VSCALE
 
-        lda #0
-       	+VPoke PALETTE+22	;change dark grey to black in first palette, otherwise we cannot show black because orginal black is transparent
-	+VPoke PALETTE+23
+        ;init badge sprites
+        jsr InitBadgeSprites
 
         ;Init text sprites
         lda #<TEXT_ADDR 
@@ -171,7 +170,7 @@ SetLayer0ToTileMode:
         sta L0_CONFIG 
         lda #L0_MAP_ADDR>>9             ;set map base address
         sta L0_MAPBASE
-        lda #TILE_ADDR>>9               ;set tile address and tile size to 16x16
+        lda #TILES_ADDR>>9               ;set tile address and tile size to 16x16
         ora #%00000011
         sta L0_TILEBASE
         rts

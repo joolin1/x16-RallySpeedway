@@ -28,7 +28,10 @@ ST_QUITGAME     = 10    ;quit game
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
 MIN_SPEED = 10          ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
-MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
+LOW_MAX_SPEED = 19      ;definition of max speeds
+NORMAL_MAX_SPEED = 22
+HIGH_MAX_SPEED = 25
+MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
@@ -69,8 +72,8 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         rts
 
 _gamestatus             !byte 0       
-_noofplayers	        !byte 1         ;number of players
-_max_speed              !byte 19        ;max speed
+_noofplayers	        !byte 1      
+_max_speed              !byte NORMAL_MAX_SPEED
 .defaulthandler_lo 	!byte 0
 .defaulthandler_hi	!byte 0
 .vsynctrigger           !byte 0
@@ -189,11 +192,13 @@ _max_speed              !byte 19        ;max speed
         jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
+        jsr DisplayYCarBadge
         lda _noofplayers
         cmp #1
         beq +
         jsr BCar_StartRace
         jsr BCar_Show
+        jsr DisplayBCarBadge
 +	jsr InitMap                     ;update all tilemap information
         jsr UpdateRaceView
         jsr EnableLayer0
@@ -249,6 +254,7 @@ _max_speed              !byte 19        ;max speed
 +       cmp #0
         beq +
         jsr HideCars
+        jsr HideBadges
         lda #ST_MENU
         sta _gamestatus         ;quit race
         rts
@@ -299,11 +305,12 @@ _max_speed              !byte 19        ;max speed
         rts
 +       lda _joy0
         and _joy1
-        and #JOY_START          ;start button pressed on any game control?
+        and #JOY_BUTTON_B       ;B button pressed on any game control?
         beq +
         rts
 +       jsr HideText
         jsr HideCars
+        jsr HideBadges
         jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
         lda #ST_MENU
         sta _gamestatus
@@ -319,6 +326,7 @@ _max_speed              !byte 19        ;max speed
         jsr SaveLeaderboard
         jsr HideText
         jsr HideCars
+        jsr HideBadges
         lda #ST_MENU
         sta _gamestatus
         rts
@@ -343,6 +351,7 @@ _max_speed              !byte 19        ;max speed
 !src "view/soundfx.asm"
 !src "view/carsprites.asm"
 !src "view/textsprites.asm"
+!src "view/badgesprites.asm"
 
 ;*** User interface *******************
 !zone

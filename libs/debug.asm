@@ -9,25 +9,25 @@ _debug                  !byte 0         ;DEBUG - flag for breaking into debugger
 +
 }
 
-!macro SetCondBreakpoint {
+!macro ActivateCondBreakpoint {
         lda #1
         sta _debug
 }
 
 ChangeDebugColor:
         jsr VPoke                
-        !word PALETTE+10        
+        !word TRACKS_PALETTE + 8 * 2        
         !byte $00               
         jsr VPoke               
-        !word PALETTE+11        
+        !word TRACKS_PALETTE + 8 * 2 + 1        
         !byte $00               
         rts
 
 RestoreDebugColor:
         jsr VPoke               
-        !word PALETTE+10        
+        !word TRACKS_PALETTE + 8 * 2        
         !byte $c5               
         jsr VPoke               
-        !word PALETTE+11        
+        !word TRACKS_PALETTE + 8 * 2 + 1        
         !byte $00               
         rts

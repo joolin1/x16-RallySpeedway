@@ -48,7 +48,6 @@ _camypos_hi             !byte 0
         lsr
         lsr
         lsr
-        sta _color
 }
 
 UpdateRaceView:                         ;this subroutine is called at vertical blank to update track, text and sprites. Track is already prepared, all we have to do is to switch buffer.
@@ -76,15 +75,18 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
         jsr YCar_UpdateSprite
 
         ;print time for yellow car                           
-        +SetPrintParams 28,1,$01        
+        +SetPrintParams 28,5,$01        
         +SetParams _ycartime,_ycartime+1,_ycartime+2
         jsr VPrintTime
         
         ;print distance for yellow car
-        +SetPrintParams 28,10,$01        
+        +SetPrintParams 28,1,$01        
         +IsEqual16 _ycardistanceleft_lo                 ;blink text if distance left = 0
         bne +
+        jsr SetYCarBadgeToGreen
         +SetBlinkColor .blinkcolor
+        ora _ycarfinishflag                           ;stop blinking when crossed the finish line
+        sta _color
 +       +SetParams _ycardistanceleft_lo, _ycardistanceleft_lo+1
         jsr VPrintLargeDecimalNumber                    ;print distance left
 
@@ -97,15 +99,18 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
 +       jsr BCar_UpdateSprite
 
         ;print time for blue car                          
-        +SetPrintParams 28,31,$01       
+        +SetPrintParams 28,27,$01       
         +SetParams _bcartime,_bcartime+1,_bcartime+2
         jsr VPrintTime                                  ;print racetime
 
-        ;print distance for yellow car
-        +SetPrintParams 28,27,$01
+        ;print distance for blue car
+        +SetPrintParams 28,36,$01
         +IsEqual16 _bcardistanceleft_lo                 ;blink text if distance left = 0
         bne +
+        jsr SetBCarBadgeToGreen
         +SetBlinkColor .blinkcolor
+        ora _bcarfinishflag
+        sta _color
 +       +SetParams _bcardistanceleft_lo, _bcardistanceleft_lo+1
         jsr VPrintLargeDecimalNumber                    ;print distance left
         rts

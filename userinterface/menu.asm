@@ -287,7 +287,7 @@ MenuHandler:
 	lda #$0b
 	sta .normalspeed
 	sta .highspeed
-	lda #19
+	lda #LOW_MAX_SPEED
 	sta _max_speed
 	rts
 
@@ -298,7 +298,7 @@ MenuHandler:
 	lda #$0b
 	sta .lowspeed
 	sta .highspeed
-	lda #22
+	lda #NORMAL_MAX_SPEED
 	sta _max_speed
 	rts
 
@@ -309,7 +309,7 @@ MenuHandler:
 	lda #$0b
 	sta .lowspeed
 	sta .normalspeed
-	lda #25
+	lda #HIGH_MAX_SPEED
 	sta _max_speed
 	rts
 
@@ -669,7 +669,7 @@ NO_POSITION  = 27
 		!byte	14 ;light blue
 		!byte	 9 ;brown
 		!byte	 7 ;yellow
-		!byte	15 ;light grey 12 ;grey
+		!byte	15 ;light grey
 		!byte    8 ;orange
 		!byte	 4 ;violet/purple
 		!byte	12 ;grey
@@ -685,13 +685,14 @@ NO_POSITION  = 27
 !scr "        game for atari and c64",0
 !scr "           by john anderson",0
 !scr 0
+!scr "     copyright 2020 by: john karlin",0
+!scr "                  and",0
+!scr "        clergy game productions",0
+!scr "          all rights reserved",0
 !scr 0
-!scr "           a free gift to all",0
-!scr "       friends of retro computers",0
-!scr 0
-!scr "      press button a for start menu",0
+!scr "        press a button for menu",0
 
-STARTSCREEN_ROW_COUNT = 11
+STARTSCREEN_ROW_COUNT = 12
 
 .menubgblocks
 !byte 2,3,6,4,2,2,10,0				;table for how many rows each block is, zero terminated
@@ -738,8 +739,8 @@ STARTSCREEN_ROW_COUNT = 11
 .track4			!byte $b
 .track5			!byte $b
 				!byte $b
-.lowspeed		!byte 1
-.normalspeed	!byte $b
+.lowspeed		!byte $b
+.normalspeed	!byte 1
 .highspeed		!byte $b
 				!byte $b
 .resetbest		!byte 1
