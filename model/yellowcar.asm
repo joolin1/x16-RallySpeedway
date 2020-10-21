@@ -11,6 +11,8 @@ YCar_TimeSubSeconds             = .TimeSubSeconds
 YCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 1,0,$01
         +VPrintHex16Number .distance_lo
+        +SetPrintParams 2,0,$01
+        +VPrintHex16Number _routelength_lo       
         rts
 
 _ycarxpos_lo = .xpos_lo_int                     ;world position (0-4095)

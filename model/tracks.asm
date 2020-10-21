@@ -18,8 +18,8 @@ _tilecollisionstatus:   !byte 0,0,0,0,1,0,0,1   ;road tiles come first. those wi
                         !byte 1,0,0,1,0,0,0,1
                         !byte 0,0,0,1,1,0,3,3   ;6 finish tiles (type 3)
                         !byte 3,3,3,3,0,1,0,0
-                        !byte 0,0,2,2,2,2,2,2   ;the rest are obstacles (trees, houses, walls etc) and terrain
-                        !byte 2,2,2,2,2,2,1,1   ;here we have 7 grass tiles (type 1)
+                        !byte 0,0,2,2,0,0,0,0   ;the rest are obstacles (trees, houses, walls etc) and terrain
+                        !byte 0,2,2,2,2,2,1,1   ;here we have 7 grass tiles (type 1)
                         !byte 1,1,1,1,1,2,2,2
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
@@ -41,15 +41,17 @@ BLOCK_NS_STARTFINISH  = 9    ;road from north to south which marks start and fin
 
 ;Table for character of blocks
 _blockroadstatus:
-                        !byte  8,1,1,1,1,1,1,1,1,1,1,1                           ;12 horizontal blocks
-                        !byte  9,2,2,2,2,2,2,2,2,2                               ;10 vertical blocks
-                        !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2                       ;14 narrow road blocks
-                        !byte  3,4,5,6,1,1,1,1,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0   ;24 curve blocks
-                        !byte  7,1,1,2,2                                         ; 5 crossings
-                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0                     ;15 terrain blocks
+                        !byte  8,1,1,1,1,1,1,1,1,1,1,1                  ;12 horizontal blocks
+                        !byte  9,2,2,2,2,2,2,2,2,2                      ;10 vertical blocks
+                        !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2              ;14 narrow road blocks 
+                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2  ;40 curve blocks
+                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,1,2,1,2,0,0,0,0
+                        !byte  7,7,7,1,1,2,2                            ;7 crossings
+                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0      ;18 terrain blocks
+                                                                        ;Total 101 blocks
 
 ;Global infor about current track
-_track		        !byte 1	        ;selected track - track one is preselected
+_track		        !byte 1	        ;selected track - track one is preselected (NOTE not zero-indexed!)
 _xstartblock            !byte 0         ;start position
 _ystartblock            !byte 0
 _startdirection         !byte 0         ;start direction
@@ -74,7 +76,12 @@ _routelength_lo:        !byte 0
 _routelength_hi:        !byte 0
 _route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
 
-SetTrack:
+_trackdata         = $A000             ;locate tracks in 8 KB memory bank            
+_tracknames        = _trackdata        ;5 track names * (17 characters + null) = 90
+.track_startblocks = _trackdata + 90   ;5 zero-indexed start positions (row, col)
+.tracks            = _trackdata + 100  ;5 tracks 32x32 blocks = 1024 bytes each
+
+SetTrack:                       ;IN: _track = track number (1-5)
         ;set address for selected track
         lda #<.tracks           
         sta _blockmap_lo
@@ -101,6 +108,8 @@ SetTrack:
         rts
 
 VerifyTracks:                   ;Verify that all tracks have a coherent route
+        lda _track
+        sta .temptrack          ;save current track
         lda #1
 -       pha
         sta _track
@@ -114,10 +123,12 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         inc
         cmp #6
         bne -
-        lda #1
+        lda .temptrack          ;restore current track
         sta _track
         clc                     ;no error
         rts
+
+.temptrack      !byte 0
 
 .PrintTrackError:               ;IN: .A = track, ZP0-ZP1 = error message, ZP2-ZP3 = row and col where error was found
         ldx ZP0                 
@@ -439,12 +450,7 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         +Inc16bit _routelength_lo       ;add 1 to route length
         rts
 
-;*** Tracks data ***********************************************************************************
+;*** block data ***********************************************************************************
 
-_blocks:                !fill 10240,0   ;80 blocks * 128 bytes each = 10240 bytes     
-_trackdata:            
-_tracknames:            !fill 90,0      ;5 track names * (17 characters + null) = 90
-.track_startblocks:     !fill 10,0      ;5 zero-indexed start positions (row, col) 
-.tracks:                !fill 5120,0    ;5 tracks 32x32 blocks = 1024 bytes each
-
-
+_blocks:                               ;NOTE! 101 blocks * 128 bytes each = 12928 bytes will be loaded here!
+                                       ;make sure there is space!

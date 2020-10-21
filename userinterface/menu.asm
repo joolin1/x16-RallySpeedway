@@ -679,7 +679,7 @@ NO_POSITION  = 27
 !byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
 
 .startscreentext:
-!scr "   john karlin's rally speedway v 0.5",0
+!scr "   john karlin's rally speedway v 0.8",0
 !scr 0
 !scr "       a tribute to the original",0
 !scr "        game for atari and c64",0

@@ -236,14 +236,9 @@
         sec
         sbc #1
         sta .addr
-        bpl ++
         lda .addr+1
-        sec
-        sbc #1
+        sbc #0
         sta .addr+1        
-        bpl ++
-        stz .addr                       ;if reached $ffff set $0000
-        stz .addr+1
 ++      cld
 }
 

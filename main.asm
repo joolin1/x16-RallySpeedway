@@ -31,7 +31,7 @@ MIN_SPEED = 10          ;minimum speed,the user can brake down to, when car is o
 LOW_MAX_SPEED = 19      ;definition of max speeds
 NORMAL_MAX_SPEED = 22
 HIGH_MAX_SPEED = 25
-MAX_EXTRA_ROTATION = 16 ;how much extra the car is rotated when skidding
+MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
@@ -44,13 +44,13 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 
 .StartGame:
         ;init everything
-        jsr VerifyTracks                ;make sure there are coherent routes on all tracks
-        bcc +
-        rts
-+       jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
+        jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
         jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
         bcc +
         rts                             ;exit if some resource failed to load
++       jsr VerifyTracks                ;make sure there are coherent routes on all tracks
+        bcc +
+        rts
 +       lda #ST_MENU
         sta _gamestatus
         jsr InitScreenAndSprites

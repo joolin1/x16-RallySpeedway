@@ -497,23 +497,18 @@
 ++      rts
 
 .DecreaseExtraRotation:
-        lda .turndirection
-        beq +
-
         lda .plusangle
         beq ++
-        dec .plusangle          ;decrease rotation to the left when turning left and not skidding
+        cmp #MAX_EXTRA_ROTATION+1
+        bcs +
+        dec .plusangle          ;if angle <= max rotation then decrease angle
         dec .plusangle
         rts
-
-+       lda .plusangle
-        beq ++
-        inc .plusangle          ;decrease rotation to the right when turning right and not skidding
++       inc .plusangle          ;if angle > max rotation then increase angle
         inc .plusangle
 ++      rts
 
 .IncreaseSpeed:
-
         ldx .speed
         lda .offroadflag
         beq +

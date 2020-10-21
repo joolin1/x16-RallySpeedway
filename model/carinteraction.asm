@@ -248,7 +248,6 @@ SetOutdistanced:                        ;if one car is outdistanced - decide whi
 
 SetClash:
         jsr PlayClashSound      
-        ;!byte $db
         ;calculate collision angle
         jsr GetClashAngle
         lda .collisionangle        
