@@ -18,8 +18,8 @@ _tilecollisionstatus:   !byte 0,0,0,0,1,0,0,1   ;road tiles come first. those wi
                         !byte 1,0,0,1,0,0,0,1
                         !byte 0,0,0,1,1,0,3,3   ;6 finish tiles (type 3)
                         !byte 3,3,3,3,0,1,0,0
-                        !byte 0,0,2,2,0,0,0,0   ;the rest are obstacles (trees, houses, walls etc) and terrain
-                        !byte 0,2,2,2,2,2,1,1   ;here we have 7 grass tiles (type 1)
+                        !byte 1,0,0,0,0,0,0,2   ;the rest are obstacles (trees, houses, walls etc) and terrain
+                        !byte 2,2,1,1,1,1,1,1   ;here we have 7 grass tiles (type 1)
                         !byte 1,1,1,1,1,2,2,2
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
@@ -41,14 +41,14 @@ BLOCK_NS_STARTFINISH  = 9    ;road from north to south which marks start and fin
 
 ;Table for character of blocks
 _blockroadstatus:
-                        !byte  8,1,1,1,1,1,1,1,1,1,1,1                  ;12 horizontal blocks
-                        !byte  9,2,2,2,2,2,2,2,2,2                      ;10 vertical blocks
+                        !byte  8,1,1,1,1,1,1,1,1,1,1,1,1,1              ;14 horizontal blocks
+                        !byte  9,2,2,2,2,2,2,2,2,2,2,2,2,2              ;14 vertical blocks
                         !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2              ;14 narrow road blocks 
-                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2  ;40 curve blocks
-                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,1,2,1,2,0,0,0,0
-                        !byte  7,7,7,1,1,2,2                            ;7 crossings
+                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2  ;44 curve blocks
+                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,1,2,1,2,0,0,0,0
+                        !byte  7,3,3,4,4,5,5,6,6,7,7,7,1,1,2,2          ;16 crossings
                         !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0      ;18 terrain blocks
-                                                                        ;Total 101 blocks
+                                                                        ;Total 120 blocks
 
 ;Global infor about current track
 _track		        !byte 1	        ;selected track - track one is preselected (NOTE not zero-indexed!)
@@ -72,6 +72,7 @@ _route_hi               !byte 0
 .errorstartmissing      !scr ". ROUTE MUST START WITH A START BLOCK.",0
 .errorfinishmissing     !scr ". ROUTE MUST END WITH A FINISH BLOCK.",0
 .errorroutebroken       !scr ". ROUTE IS BROKEN.",0
+.errorinfo              !scr " (ROWS AND COLS ARE ZERO-INDEXED.)",0
 _routelength_lo:        !byte 0
 _routelength_hi:        !byte 0
 _route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
@@ -152,7 +153,6 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         jsr KPrintString        ;print " row "
 
         pla                     ;pull row
-        inc                     ;increase because for user rows are not zero-indexed
         jsr KPrintNumber        ;print row number
 
         ldx #<.errormessage3
@@ -160,12 +160,15 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         jsr KPrintString        ;print " col "
 
         pla                     ;pull col
-        inc                     ;increase becauser for user columns are not zero-indexed
         jsr KPrintNumber        ;print col number
 
         ply                     ;pull error message
         plx
         jsr KPrintString        ;print error message
+
+        ldx #<.errorinfo        ;print that rows and cols are zero-indexed
+        ldy #>.errorinfo
+        jsr KPrintString
         rts
 
 .CalculateRoute:                        ;calculate route data for current track.
@@ -452,5 +455,5 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
 
 ;*** block data ***********************************************************************************
 
-_blocks:                               ;NOTE! 101 blocks * 128 bytes each = 12928 bytes will be loaded here!
+_blocks:                               ;NOTE! 120 blocks * 128 bytes each = 15360 bytes will be loaded here!
                                        ;make sure there is space!

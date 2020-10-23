@@ -27,13 +27,13 @@ ST_QUITGAME     = 10    ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
-MIN_SPEED = 10          ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
-LOW_MAX_SPEED = 19      ;definition of max speeds
-NORMAL_MAX_SPEED = 22
-HIGH_MAX_SPEED = 25
+MIN_SPEED = 13;12       ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
+LOW_MAX_SPEED = 20;19      ;definition of max speeds
+NORMAL_MAX_SPEED = 23;22
+HIGH_MAX_SPEED = 27;25
 MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
-BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road
+BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road or skidding
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
 CAR_START_DISTANCE = 24 ;space between cars when two players
 
@@ -247,6 +247,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
  
 .HandlePause:                   ;pause is made by just cutting sound and stop car movement
+        jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr UpdatePauseMenu     ;OUT: .A = seleced menu item. -1 = nothing selected
         cmp #-1
         bne +
@@ -271,6 +272,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .HandleCollision:
+        jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr BlowUpCars          ;cars will blow upp if their collision flags are set
         lda _ycarcollisionflag
         bne +
@@ -281,6 +283,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       rts
 
 .HandleOutdistancing:
+        jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr TextDelay
         beq +
         rts
@@ -289,6 +292,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .HandleFinishedRace:
+        jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr CheckForRecord
         jsr ShowRaceOverText
         jsr PrintBoard

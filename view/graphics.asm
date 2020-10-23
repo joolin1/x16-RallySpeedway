@@ -47,10 +47,6 @@ LoadGraphics:
         sec                             ;set carry to flag error
         rts
 +       jsr .CopyPalettesToVRAM
-        lda #0
-        ldx #<.charset
-        ldy #>.charset
-        jsr screen_set_charset
         clc                             ;clear carry to flag everything is ok
         rts
 
@@ -170,7 +166,7 @@ LoadGraphics:
         bne -
         rts
 
-.charset
+_charset
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de
         !byte $00,$f8,$cc,$f8,$cc,$fe,$fe,$fc,$00,$7c,$e6,$c0,$e6,$fe,$fe,$7c
         !byte $00,$f8,$ec,$e6,$ee,$fe,$fe,$fc,$00,$f0,$c0,$f8,$c0,$fe,$fe,$fe

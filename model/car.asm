@@ -395,7 +395,8 @@
         bne +
         lda .distanceleft_hi
         bne +
-        jsr .CheckDirection            ;check if car has crossed the finish line from the right direction
+        ;jsr .CheckDirection            ;check if car has crossed the finish line from the right direction
+        lda #1
         sta .finishflag
         rts
 
@@ -417,43 +418,43 @@
 
 ;Private functions *************************************************************
                           
-.CheckDirection:                        ;OUT: .A = true (1) if car has crossed the finish line in the right direction, false otherwise
-        lda .angle
-        ldx .routedirection
+; .CheckDirection:                        ;OUT: .A = true (1) if car has crossed the finish line in the right direction, false otherwise
+;         lda .angle
+;         ldx .routedirection
 
-        cpx #ROUTE_OFFROAD
-        bne +
-        lda #0          ;return false if there against all odds is another finish line that is not part of the route that the car has crossed. 
-        rts
+;         cpx #ROUTE_OFFROAD
+;         bne +
+;         lda #0          ;return false if there against all odds is another finish line that is not part of the route that the car has crossed. 
+;         rts
 
-        ;adjust angle depending on route direction. If route goes east, car should cross finish line with 192 < angle < 64.
-        ;if this case we add 64 so we then can check if 0 < result < 128    
-+       cpx #ROUTE_EAST
-        bne +
-        clc
-        adc #64
-        bra ++       
-+       cmp #ROUTE_WEST
-        bne +
-        sec
-        sbc #64
-        bra ++
-+       cmp #ROUTE_SOUTH
-        bne +
-        clc
-        adc #128
-+       ;(if north, do nothing)
+;         ;adjust angle depending on route direction. If route goes east, car should cross finish line with 192 < angle < 64.
+;         ;if this case we add 64 so we then can check if 0 < result < 128    
+; +       cpx #ROUTE_EAST
+;         bne +
+;         clc
+;         adc #64
+;         bra ++       
+; +       cmp #ROUTE_WEST
+;         bne +
+;         sec
+;         sbc #64
+;         bra ++
+; +       cmp #ROUTE_SOUTH
+;         bne +
+;         clc
+;         adc #128
+; +       ;(if north, do nothing)
 
-++      cmp #128
-        bcc +
-        lda #0
-        rts
-+       cmp #1
-        bcs +
-        lda #0
-        rts
-+       lda #1          ;return true because angle 0 < angle < 128
-        rts
+; ++      cmp #128
+;         bcc +
+;         lda #0
+;         rts
+; +       cmp #1
+;         bcs +
+;         lda #0
+;         rts
+; +       lda #1          ;return true because angle 0 < angle < 128
+;         rts
 
 .Move:                          ;IN: .A = angle, .X = speed. Move car in given direction.
         lsr

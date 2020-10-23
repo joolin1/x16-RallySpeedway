@@ -50,6 +50,11 @@ InitScreenAndSprites:
         sta DC_HSCALE           ;set horizontal and vertical scale to 2:1
         sta DC_VSCALE
 
+        lda #0                  ;init char set
+        ldx #<_charset
+        ldy #>_charset
+        jsr screen_set_charset
+
         ;init badge sprites
         jsr InitBadgeSprites
 

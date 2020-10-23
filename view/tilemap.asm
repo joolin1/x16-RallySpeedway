@@ -28,6 +28,7 @@ _camypos_hi             !byte 0
 
 .displayedBuffer:       !byte 0         ;buffer (part of tilemap) that currently is displayed
 .blinkcolor             !byte 0         ;color for blinking text
+.colorcounter           !byte 0         ;help variable for blinking text
 
 .blockchangedflag       = ZP4           ;flag block change (when looping through map, the block will only change every 8th tile)
 .currentxtile           = ZP7           ;current tile when looping through map      
@@ -42,15 +43,7 @@ _camypos_hi             !byte 0
 
 ;*** Public subroutines ****************************************************************************
 
-!macro SetBlinkColor .blinkcolor {
-        lda .blinkcolor 
-        and #8
-        lsr
-        lsr
-        lsr
-}
-
-UpdateRaceView:                         ;this subroutine is called at vertical blank to update track, text and sprites. Track is already prepared, all we have to do is to switch buffer.
+UpdateRaceView:                 ;this subroutine is called at vertical blank to update track, text and sprites. Track is already prepared, all we have to do is to switch buffer.
 
         ;display the buffer (part of tilemap) that is not currently displayed
         lda .displayedBuffer         
@@ -71,9 +64,41 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
 
         inc .blinkcolor
 
-        ;update sprite position and sprite selection for yellow car
-        jsr YCar_UpdateSprite
+        jsr YCar_UpdateSprite   ;update sprite position and sprite selection for yellow car 
+        jsr .YCar_PrintInfo      ;print time and remaining distance
+;         ;print time for yellow car                           
+;         +SetPrintParams 28,5,$01        
+;         +SetParams _ycartime,_ycartime+1,_ycartime+2
+;         jsr VPrintTime
+        
+;         ;print distance for yellow car
+;         +SetPrintParams 28,1,$01        
+;         +IsEqual16 _ycardistanceleft_lo                 ;blink text if distance left = 0
+;         bne +
+;         jsr SetYCarBadgeToGreen
+;         lda .blinkcolor
+;         sta _color
+; +       +SetParams _ycardistanceleft_lo, _ycardistanceleft_lo+1
+;         jsr VPrintLargeDecimalNumber                    ;print distance left
 
+        lda _noofplayers
+        cmp #1
+        beq +
+        jsr BCar_UpdateSprite
+        jsr .BCar_PrintInfo
++       rts
+
+PrintCarInfo:                   ;this routine always print visible text and make sure this will last for 8 frames
+        lda #8
+        sta .blinkcolor
+        jsr .YCar_PrintInfo
+        lda _noofplayers
+        cmp #1
+        beq +
+        jsr .BCar_PrintInfo
++       rts
+
+.YCar_PrintInfo:
         ;print time for yellow car                           
         +SetPrintParams 28,5,$01        
         +SetParams _ycartime,_ycartime+1,_ycartime+2
@@ -84,20 +109,17 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
         +IsEqual16 _ycardistanceleft_lo                 ;blink text if distance left = 0
         bne +
         jsr SetYCarBadgeToGreen
-        +SetBlinkColor .blinkcolor
-        ora _ycarfinishflag                           ;stop blinking when crossed the finish line
+        lda .blinkcolor                                 ;toggle color between transparent and white every 8th frame
+        and #8
+        lsr
+        lsr
+        lsr
         sta _color
 +       +SetParams _ycardistanceleft_lo, _ycardistanceleft_lo+1
         jsr VPrintLargeDecimalNumber                    ;print distance left
-
-        lda _noofplayers
-        cmp #1
-        bne +
         rts
 
-        ;update sprite position and sprite selection for blue car
-+       jsr BCar_UpdateSprite
-
+.BCar_PrintInfo:
         ;print time for blue car                          
         +SetPrintParams 28,27,$01       
         +SetParams _bcartime,_bcartime+1,_bcartime+2
@@ -108,8 +130,11 @@ UpdateRaceView:                         ;this subroutine is called at vertical b
         +IsEqual16 _bcardistanceleft_lo                 ;blink text if distance left = 0
         bne +
         jsr SetBCarBadgeToGreen
-        +SetBlinkColor .blinkcolor
-        ora _bcarfinishflag
+        lda .blinkcolor                                 ;toggle color between transparent and white every 8th frame
+        and #8
+        lsr
+        lsr
+        lsr
         sta _color
 +       +SetParams _bcardistanceleft_lo, _bcardistanceleft_lo+1
         jsr VPrintLargeDecimalNumber                    ;print distance left
