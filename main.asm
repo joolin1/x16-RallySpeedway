@@ -27,10 +27,10 @@ ST_QUITGAME     = 10    ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
-MIN_SPEED = 13;12       ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
-LOW_MAX_SPEED = 20;19      ;definition of max speeds
-NORMAL_MAX_SPEED = 23;22
-HIGH_MAX_SPEED = 27;25
+MIN_SPEED = 12          ;minimum speed,the user can brake down to, when car is offroad the car will also slow down to this speed
+LOW_MAX_SPEED = 19      ;definition of max speeds
+NORMAL_MAX_SPEED = 22
+HIGH_MAX_SPEED = 25
 MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road or skidding
