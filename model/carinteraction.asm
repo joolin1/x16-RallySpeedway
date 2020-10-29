@@ -278,9 +278,14 @@ SetClash:
         stz _bcarclashpush      ;if yellow car actually is moving away it is of course not pushing
         bra ++
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
+        lsr                    
+        sta ZP0
         lsr
-        bne +
-        lda #8                  ;set minimum push to avoid that cars can overlap if driving slowly towards each other
+        clc
+        adc ZP0                 ;add 50% extra push just to make a better game and make sure cars are not left above each other
+        cmp #4
+        bcs +
+        lda #4
 +       sta _bcarclashpush
 
         ;calculate how much yellow car is pushed by blue car
@@ -305,9 +310,14 @@ SetClash:
         stz _ycarclashpush      ;if blue car actually is moving away it is of course not pushing
         rts
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
-        lsr
-        bne +
-        lda #8                  ;set minimum push to avoid that cars can overlap if driving slowly towards each other
+        lsr                     
+        sta ZP0
+        lsr 
+        clc
+        adc ZP0                 ;add 50% extra push just to make a better game and make sure cars are not left above each other
+        cmp #4
+        bcs +
+        lda #4        
 +       sta _ycarclashpush
         rts      
 

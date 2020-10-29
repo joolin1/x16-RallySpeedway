@@ -35,7 +35,7 @@
 .checkpoint_xpos        !byte 0         ;current checkpoint in block map (used when resuming race after collision and outdistancing)
 .checkpoint_ypos        !byte 0
 .checkpointdirection    !byte 0         ;current direction for checkpoint
-.block                  !byte 0         ;current type of block according to block map
+.block                  !byte 0         ;current block according to block map
 .routedirection         !byte 0         ;current direction of route according to route map
 .distance_lo            !byte 0         ;distance in blocks left to go
 .distance_hi            !byte 0
@@ -228,6 +228,7 @@
         lda .clashangle         ;angle in .A
         jsr .Move
         dec .clashpush
+        dec .clashpush
 
         ;Skid car
 +       lda .turncount
@@ -301,29 +302,34 @@
         cmp .old_block_ypos
         bne .UpdateRouteInformation
         rts
-        
+
 .UpdateRouteInformation:
-        lda .finishflag                         ;don't update any route information when car has finished race
+        lda .finishflag                                                 ;don't update any route information when car has finished race
         beq +
         rts
-+       +Inc16bit .distance_lo                  ;always increase distance for every new block, it doesn't matter if car is driving offroad
-        +Countdown16bitDec .distanceleft_lo
-        lda .block_xpos                         ;update block route history           
++       lda .block_xpos                                                 ;update block route history           
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
-        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block type
+        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block
         lda (ZP0)
         sta .block
+        tay
+        lda _blockroadstatus,y
+        cmp #BLOCK_TERRAIN
+        beq +        
+        pha
+        +Inc16bit .distance_lo                                          ;only increase distance if driving on a road (if it is on or off route does not matter)
+        +Countdown16bitDec .distanceleft_lo
+        pla
++       cmp #BLOCK_EW_STARTFINISH
+        beq +
+        cmp #BLOCK_NS_STARTFINISH
+        beq +
         +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction that current block is leading to
         lda (ZP0)
         sta .routedirection
         cmp #ROUTE_OFFROAD
-        beq +
-        lda .block
-        cmp #BLOCK_EW_STARTFINISH
-        beq +
-        cmp #BLOCK_NS_STARTFINISH
         beq +
         lda .routedirection
         sta .checkpointdirection        ;if car is on road AND road is part of route AND not finish block, then update checkpoint information
@@ -385,7 +391,7 @@
 
 +       cmp #TILE_TERRAIN
         bne +
-        lda #1                          
+        lda #1                        
         sta .offroadflag                ;car is off road
         rts
 
@@ -395,7 +401,7 @@
         bne +
         lda .distanceleft_hi
         bne +
-        ;jsr .CheckDirection            ;check if car has crossed the finish line from the right direction
+        ;jsr .CheckDirection            ;DON'T (!) check if car has crossed the finish line from the right direction
         lda #1
         sta .finishflag
         rts

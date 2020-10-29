@@ -10,9 +10,14 @@ YCar_TimeSubSeconds             = .TimeSubSeconds
 
 YCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 1,0,$01
-        +VPrintHex16Number .distance_lo
+        lda _ycarclashangle
+        jsr VPrintNumber
         +SetPrintParams 2,0,$01
-        +VPrintHex16Number _routelength_lo       
+        lda _ycarclashpush
+        jsr VPrintNumber       
+        +SetPrintParams 3,0,$01
+        lda _ycarspeed
+        jsr VPrintNumber       
         rts
 
 _ycarxpos_lo = .xpos_lo_int                     ;world position (0-4095)

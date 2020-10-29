@@ -1,17 +1,9 @@
 ;*** filelib.asm ***********************************************************************************
 
-VLoadFile:                      ;load to VRAM bank 0                       
-        lda #2
-        sta ZP4
-        jsr .Load
-        rts
+LOAD_TO_RAM = 0
+LOAD_TO_VRAM_BANK0 = 2
 
-LoadFile:
-        lda #0                  ;load to RAM
-        sta ZP4
-        jsr .Load
-
-.Load:                          ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = 0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
+LoadFile:                       ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = 0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
         jsr GetStringLength     ;will return length of filename in .A
         ldx ZP0
         ldy ZP1

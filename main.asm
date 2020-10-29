@@ -176,7 +176,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
         lda .sprcoltrigger
         beq +
-        jsr SetClash                    ;make clash calculations if sprite collision interrupt has been triggered
+        jsr SetClash                    ;make clash calculations if sprite collision interrupt has been triggered    
         stz .sprcoltrigger
 +       jsr CheckIfRaceOver             ;check for winner and if race is completely over (= cars have stopped)
         jsr UpdateMap                   ;update all tilemap information

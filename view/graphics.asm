@@ -23,132 +23,51 @@
 !addr TRACKS_PALETTE     = PALETTE + $80
 
 ;Graphic resources to load
-.tilesname              !raw "TILES.BIN",0
-.carsname               !raw "CARS.BIN",0
-.explosionname          !raw "EXPLOSION.BIN",0
-.textname               !raw "TEXT.BIN",0
-.badgesname             !raw "BADGES.BIN",0
-.blocksname             !raw "BLOCKS.BIN",0
-.tracksname             !raw "TRACKS.BIN",0
+.tilesname              !text "TILES.BIN",0
+.carsname               !text "CARS.BIN",0
+.explosionname          !text "EXPLOSION.BIN",0
+.textname               !text "TEXT.BIN",0
+.badgesname             !text "BADGES.BIN",0
+.blocksname             !text "BLOCKS.BIN",0
+.tracksname             !text "TRACKS.BIN",0
 
-.errorflag      !byte   0   ;at least one i/o error has occurred if set
+_fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
+
+!macro LoadResource .filename, .addr, .details {
+        lda #<.filename
+        sta ZP0
+        lda #>.filename
+        sta ZP1
+        lda #<.addr
+        sta ZP2
+        lda #>.addr
+        sta ZP3
+        lda #.details
+        sta ZP4
+        jsr LoadFile                   ;call filehandler
+        bcc +
+        jsr PrintIOErrorMessage
+        lda #1
+        sta _fileerrorflag
++
+}
 
 LoadGraphics:
-        stz .errorflag
-        jsr .LoadTiles
-        jsr .LoadCars
-        jsr .LoadExplosion
-        jsr .LoadText
-        jsr .LoadBadges
-        jsr .LoadBlocks
-        jsr .LoadTracks
-        lda .errorflag
+        stz _fileerrorflag
+        +LoadResource .tilesname    , TILES_ADDR    , LOAD_TO_VRAM_BANK0
+        +LoadResource .carsname     , CARS_ADDR     , LOAD_TO_VRAM_BANK0
+        +LoadResource .explosionname, EXPLOSION_ADDR, LOAD_TO_VRAM_BANK0
+        +LoadResource .textname     , TEXT_ADDR     , LOAD_TO_VRAM_BANK0
+        +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0
+        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM
+        +LoadResource .tracksname   , _trackdata    , LOAD_TO_RAM
+        lda _fileerrorflag
         beq +
         sec                             ;set carry to flag error
         rts
 +       jsr .CopyPalettesToVRAM
         clc                             ;clear carry to flag everything is ok
         rts
-
-.LoadTiles:
-        lda #<.tilesname
-        sta ZP0
-        lda #>.tilesname
-        sta ZP1
-        lda #<TILES_ADDR
-        sta ZP2
-        lda #>TILES_ADDR
-        sta ZP3
-        jsr .VLoad
-        rts
-
-.LoadCars:
-        lda #<.carsname
-        sta ZP0
-        lda #>.carsname
-        sta ZP1
-        lda #<CARS_ADDR
-        sta ZP2
-        lda #>CARS_ADDR
-        sta ZP3
-        jsr .VLoad
-        rts
-
-.LoadExplosion:
-        lda #<.explosionname
-        sta ZP0
-        lda #>.explosionname
-        sta ZP1
-        lda #<EXPLOSION_ADDR
-        sta ZP2
-        lda #>EXPLOSION_ADDR
-        sta ZP3
-        jsr .VLoad
-        rts
-
-.LoadText:
-        lda #<.textname
-        sta ZP0
-        lda #>.textname
-        sta ZP1
-        lda #<TEXT_ADDR
-        sta ZP2
-        lda #>TEXT_ADDR
-        sta ZP3
-        jsr .VLoad
-        rts
-
-.LoadBadges:
-        lda #<.badgesname
-        sta ZP0
-        lda #>.badgesname
-        sta ZP1
-        lda #<BADGES_ADDR
-        sta ZP2
-        lda #>BADGES_ADDR
-        sta ZP3
-        jsr .VLoad
-        rts
-
-.LoadBlocks:
-        lda #<.blocksname
-        sta ZP0
-        lda #>.blocksname
-        sta ZP1
-        lda #<_blocks
-        sta ZP2
-        lda #>_blocks
-        sta ZP3
-        jsr .Load       ;blocks are located in RAM (tiles in VRAM)
-        rts
-
-.LoadTracks:
-        lda #<.tracksname
-        sta ZP0
-        lda #>.tracksname
-        sta ZP1
-        lda #<_trackdata
-        sta ZP2
-        lda #>_trackdata
-        sta ZP3
-        jsr .Load       ;tracks are located in RAM
-        rts
-
-.Load:
-        jsr LoadFile                   ;call filehandler
-        bcc +
-        jsr PrintIOErrorMessage
-        lda #1
-        sta .errorflag
-+       rts
-
-.VLoad:
-        jsr VLoadFile                   ;call filehandler
-        bcc +
-        jsr PrintIOErrorMessage
-        lda #1
-        sta .errorflag
-+       rts
 
 .CopyPalettesToVRAM:
         lda #<PALETTE
@@ -166,7 +85,7 @@ LoadGraphics:
         bne -
         rts
 
-_charset
+_charset:
         !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de
         !byte $00,$f8,$cc,$f8,$cc,$fe,$fe,$fc,$00,$7c,$e6,$c0,$e6,$fe,$fe,$7c
         !byte $00,$f8,$ec,$e6,$ee,$fe,$fe,$fc,$00,$f0,$c0,$f8,$c0,$fe,$fe,$fe
@@ -196,11 +115,44 @@ _charset
         !byte $00,$1c,$3c,$7c,$dc,$fe,$fe,$1c,$00,$fe,$e0,$fc,$06,$e6,$fe,$7c
         !byte $00,$7c,$e0,$fc,$e6,$fe,$fe,$7c,$00,$fe,$0e,$1e,$3c,$7c,$f8,$f8
         !byte $00,$7c,$ee,$7c,$ee,$fe,$fe,$7c,$00,$7c,$e6,$7e,$0e,$fe,$fc,$f8
-        !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$fe,$fe
+        !byte $00,$38,$38,$38,$00,$38,$38,$38,$38,$28,$7c,$6c,$c6,$de,$de,$de
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
         !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
 
-.palettes                                       ;$00c5
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$38,$7c,$6c,$c6,$de,$de,$de
+        ; !byte $00,$f8,$cc,$f8,$cc,$fe,$fe,$fc,$00,$7c,$e6,$c0,$e6,$fe,$fe,$7c
+        ; !byte $00,$f8,$ec,$e6,$ee,$fe,$fe,$fc,$00,$f0,$c0,$f8,$c0,$fe,$fe,$fe
+        ; !byte $00,$fe,$f0,$fc,$f0,$f0,$f0,$f0,$00,$7c,$e0,$ec,$e6,$fe,$fe,$7c
+        ; !byte $00,$e6,$e6,$e6,$fe,$e6,$e6,$e6,$00,$fe,$38,$38,$38,$fe,$fe,$fe
+        ; !byte $00,$06,$06,$e6,$e6,$fe,$fe,$7c,$00,$e4,$ec,$f8,$f8,$fc,$ee,$ee
+        ; !byte $00,$c0,$c0,$c0,$c0,$fe,$fe,$fe,$00,$c6,$ee,$fe,$fe,$fe,$e6,$e6
+        ; !byte $00,$e6,$e6,$f6,$fe,$fe,$ee,$e6,$00,$7c,$e6,$e6,$e6,$fe,$fe,$7c
+        ; !byte $00,$fc,$e6,$e6,$fe,$fc,$f0,$f0,$00,$7c,$e6,$e6,$ee,$fc,$fe,$7e
+        ; !byte $00,$fc,$e6,$e6,$fe,$fc,$ee,$ee,$00,$7c,$e0,$7c,$0e,$fe,$fe,$fc
+        ; !byte $00,$fe,$fe,$fe,$38,$38,$38,$38,$00,$e6,$e6,$e6,$e6,$fe,$fe,$fe
+        ; !byte $00,$e6,$e6,$e6,$e6,$7c,$7c,$38,$00,$e6,$e6,$e6,$fe,$fe,$ee,$c6
+        ; !byte $00,$e6,$e6,$3c,$3c,$fe,$e6,$e6,$00,$e6,$e6,$fe,$7c,$38,$38,$38
+        ; !byte $00,$7e,$1c,$38,$70,$fe,$fe,$fe,$f0,$f0,$f0,$f0,$00,$00,$00,$00
+        ; !byte $0f,$0f,$0f,$0f,$00,$00,$00,$00,$00,$00,$00,$00,$f0,$f0,$f0,$f0
+        ; !byte $00,$00,$00,$00,$0f,$0f,$0f,$0f,$f0,$f0,$f0,$f0,$f0,$f0,$f0,$f0
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$38,$38,$38,$38,$38,$00,$38,$38
+        ; !byte $00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
+        ; !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
+        ; !byte $ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$38,$38,$38,$18,$30,$00,$00
+        ; !byte $00,$1c,$38,$70,$70,$70,$38,$1c,$00,$70,$38,$1c,$1c,$1c,$38,$70
+        ; !byte $00,$c6,$38,$fe,$38,$c6,$00,$00,$00,$30,$30,$fc,$fc,$30,$30,$00
+        ; !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$7c,$7c,$00,$00,$00
+        ; !byte $00,$00,$00,$00,$00,$38,$38,$38,$00,$06,$0e,$1c,$38,$70,$e0,$c0
+        ; !byte $00,$7c,$e6,$ee,$f6,$fe,$fe,$7c,$00,$38,$78,$38,$38,$fe,$fe,$fe
+        ; !byte $00,$7c,$ce,$1c,$78,$fe,$fe,$fe,$00,$7e,$06,$1c,$c6,$fe,$fe,$7c
+        ; !byte $00,$1c,$3c,$7c,$dc,$fe,$fe,$1c,$00,$fe,$e0,$fc,$06,$e6,$fe,$7c
+        ; !byte $00,$7c,$e0,$fc,$e6,$fe,$fe,$7c,$00,$fe,$0e,$1e,$3c,$7c,$f8,$f8
+        ; !byte $00,$7c,$ee,$7c,$ee,$fe,$fe,$7c,$00,$7c,$e6,$7e,$0e,$fe,$fc,$f8
+        ; !byte $00,$38,$38,$38,$00,$38,$38,$38,$00,$00,$00,$00,$00,$00,$fe,$fe
+        ; !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
+        ; !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
+
+.palettes                                       
         !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $000a, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 11 = black instead of dark grey)
 .carspritepalettes
         !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)

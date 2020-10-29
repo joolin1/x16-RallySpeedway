@@ -10,7 +10,14 @@ BCar_TimeSubSeconds             = .TimeSubSeconds
 
 BCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 4,0,$01
-        +VPrintHex16Number .distance_lo
+        lda _bcarclashangle
+        jsr VPrintNumber
+        +SetPrintParams 5,0,$01
+        lda _bcarclashpush
+        jsr VPrintNumber
+        +SetPrintParams 6,0,$01
+        lda _bcarspeed
+        jsr VPrintNumber    
         rts
 
 _bcarxpos_lo = .xpos_lo_int                     ;world position (0-4095)

@@ -685,7 +685,7 @@ NO_POSITION  = 27
 !scr "        game for atari and c64",0
 !scr "           by john anderson",0
 !scr 0
-!scr "     copyright 2020 by: john karlin",0
+!scr "     copyright 2020 by johan k;rlin",0
 !scr "                  and",0
 !scr "        clergy game productions",0
 !scr "          all rights reserved",0
