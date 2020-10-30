@@ -146,12 +146,13 @@ BlowUpCars:                             ;Blow up one car or both depending on th
 
 +++     stz .animationindex
         stz .animationdelay
+        lda _ycarcollisionflag
+        beq +
         lda #COLLISION_TIME             
-        ldx _ycarcollisionflag
-        beq +
         jsr YCar_TimeAddSeconds         ;add extra time for yellow car if just blown up
-+       ldx _bcarcollisionflag
++       lda _bcarcollisionflag
         beq +
+        lda #COLLISION_TIME
         jsr BCar_TimeAddSeconds         ;add extra time for blue car if just blown up
 +       stz _ycarcollisionflag
         stz _bcarcollisionflag

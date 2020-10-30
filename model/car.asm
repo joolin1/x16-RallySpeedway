@@ -119,6 +119,7 @@
         stz .skidangle
         stz .plusangle
         stz .turncount
+        stz .turndirection
         stz .clashpush
         stz .clashangle
         stz .offroadflag
@@ -198,7 +199,7 @@
         jsr .StopCar            ;if car has finished race, just slow down until it has stopped
         lda .speed
         bne ++
-        jsr StopCarSounds 
+        jsr .StopCarSounds 
         bra ++
 +       jsr .TimeTick           ;add a jiffy to the timer
         jsr .ReactOnPlayerInput
@@ -413,13 +414,11 @@
         beq +
         stz .speed                      ;car has collided but also finished the race, in this case ignore collision and just abruptly set speed to 0
         rts
-+       lda #ST_COLLISION               ;car has collided
++       lda #ST_SETUPCOLLISION          ;car has collided
         sta _gamestatus
         lda #1
         sta .collisionflag
         inc .collisioncount             ;count number of collisions
-        jsr StopCarSounds
-        jsr PlayExplosionSound
         rts
 
 ;Private functions *************************************************************

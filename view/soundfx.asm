@@ -293,7 +293,8 @@ PlayFinishedSound:
 .winner2_index           !byte 0
 .winner2_delay           !byte 0
 
-SfxTick:        ;sound fx            voice length           repeat? data          
+SfxTick:
+                ;sound fx            voice length           repeat? data          
         +SfxPlay PLAYING_YENGINE,      0,  ENGINE_LENGTH,      1,      .enginefx,    .yengine_index,    .yengine_delay
         +SfxPlay PLAYING_BENGINE,      1,  ENGINE_LENGTH,      1,      .enginefx,    .bengine_index,    .bengine_delay
         +SfxPlay PLAYING_YSKIDDING1,   2,  SKIDDING_LENGTH,    1,   .skidding1fx, .yskidding1_index, .yskidding1_delay

@@ -66,20 +66,6 @@ UpdateRaceView:                 ;this subroutine is called at vertical blank to 
 
         jsr YCar_UpdateSprite   ;update sprite position and sprite selection for yellow car 
         jsr .YCar_PrintInfo      ;print time and remaining distance
-;         ;print time for yellow car                           
-;         +SetPrintParams 28,5,$01        
-;         +SetParams _ycartime,_ycartime+1,_ycartime+2
-;         jsr VPrintTime
-        
-;         ;print distance for yellow car
-;         +SetPrintParams 28,1,$01        
-;         +IsEqual16 _ycardistanceleft_lo                 ;blink text if distance left = 0
-;         bne +
-;         jsr SetYCarBadgeToGreen
-;         lda .blinkcolor
-;         sta _color
-; +       +SetParams _ycardistanceleft_lo, _ycardistanceleft_lo+1
-;         jsr VPrintLargeDecimalNumber                    ;print distance left
 
         lda _noofplayers
         cmp #1

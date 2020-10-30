@@ -13,17 +13,18 @@
 ;*** Game globals **********************************************************************************
 
 ;Status for game
-ST_MENU         = 0     ;show start screen or menu
-ST_SETUPRACE    = 1     ;init track and cars, reset time
-ST_RESUMERACE   = 2     ;resume at last checkpoint, 
-ST_READYTORACE  = 3     ;wait for player/s to start race
-ST_RACING       = 4     ;race on
-ST_PAUSED       = 5     ;game paused, quit/resume menu displayed
-ST_COLLISION    = 6     ;one car (or possibly both) has/have crashed
-ST_OUTDISTANCED = 7     ;one car has outdistanced the other (if two players)
-ST_FINISH       = 8     ;race is finished, announce winner
-ST_RACEOVER     = 9     ;wait for player/s to continue game
-ST_QUITGAME     = 10    ;quit game
+ST_MENU           = 0   ;show start screen or menu
+ST_SETUPRACE      = 1   ;init track and cars, reset time
+ST_RESUMERACE     = 2   ;resume at last checkpoint, 
+ST_READYTORACE    = 3   ;wait for player/s to start race
+ST_RACING         = 4   ;race on
+ST_PAUSED         = 5   ;game paused, quit/resume menu displayed
+ST_SETUPCOLLISION = 6   ;init collision
+ST_COLLISION      = 7   ;one car (or possibly both) has/have crashed
+ST_OUTDISTANCED   = 8   ;one car has outdistanced the other (if two players)
+ST_FINISH         = 9   ;race is finished, announce winner
+ST_RACEOVER       = 10  ;wait for player/s to continue game
+ST_QUITGAME       = 11  ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
@@ -148,6 +149,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       cmp #ST_READYTORACE             ;ready to race, cars in position, waiting for user input to start/continue race
         bne +
         jmp .ReadyToRace
++       cmp #ST_SETUPCOLLISION
+        bne +
+        jmp .SetUpCollision
 +       cmp #ST_COLLISION               ;one car has collided, stop movement and animate explosion (in theory both cars can collide and explode at the same time)
         bne +
         jmp .HandleCollision
@@ -271,9 +275,17 @@ _max_speed              !byte NORMAL_MAX_SPEED
         sta _gamestatus
         rts
 
-.HandleCollision:
+.SetUpCollision:
+        jsr StopCarSounds
+        jsr PlayExplosionSound
         jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
-        jsr BlowUpCars          ;cars will blow upp if their collision flags are set
+        jsr BlowUpCars          ;start explosion, one or in rare cases both cars will blow up
+        lda #ST_COLLISION
+        sta _gamestatus
+        rts
+
+.HandleCollision:
+        jsr BlowUpCars          ;continue explosion
         lda _ycarcollisionflag
         bne +
         lda _bcarcollisionflag

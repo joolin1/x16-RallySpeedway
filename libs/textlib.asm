@@ -1,6 +1,6 @@
 ;*** textlib.asm *******************************************************************************
 
-S_CURSOR                = 59    ;char for cursor
+S_CURSOR                = 0     ;char for cursor
 TEXTBOX_COLORS          = $b1   ;bg and fg (= text) color
 CURSOR_REVERSE_COLOR    = $bb   ;color for invisible cursor
 MAX_STRING_INPUT        = 20
