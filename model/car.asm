@@ -61,13 +61,7 @@
 
 +       stz .turncount          ;car is not turning anymore
 
-++
-        ; lda .joy                ;DEBUG
-        ; and #JOY_BUTTON_B                 
-        ; bne +
-        ; +ActivateCondBreakpoint      ;END DEBUG
-
-+       lda .joy
+++      lda .joy
         and #JOY_BUTTON_A       ;button A?
         bne +
         jsr .DecreaseSpeed      ;car is braking - slow down
@@ -93,7 +87,10 @@
         stz .finishflag
         stz .distance_lo
         stz .distance_hi
-        +Convert16BinToDec _routelength_lo, .distanceleft_lo     ;.distanceleft is saved as a decimal number (makes it easier to display)
+        +Convert16BinToDec _routelength_lo, .distanceleft_lo    ;.distanceleft is saved as a decimal number (makes it easier to display)
+        +Countdown16bitDec .distanceleft_lo
+        +Countdown16bitDec .distanceleft_lo
+        +Countdown16bitDec .distanceleft_lo                     ;Subtract 3 from distance left to allow player to take a small short cut                              
         lda _xstartblock
         sta .checkpoint_xpos
         lda _ystartblock
@@ -305,17 +302,17 @@
         rts
 
 .UpdateRouteInformation:
-        lda .finishflag                                                 ;don't update any route information when car has finished race
-        beq +
-        rts
-+       lda .block_xpos                                                 ;update block route history           
+        lda .block_xpos                                                 ;update block route history           
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
         +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block
         lda (ZP0)
         sta .block
-        tay
+        ldx .finishflag                                                 ;nothing more to do if car has finished race
+        beq +
+        rts
++       tay
         lda _blockroadstatus,y
         cmp #BLOCK_TERRAIN
         beq +        
@@ -341,7 +338,6 @@
 +       rts
 
 .UpdateTileInformation:
-
         ;1 - get address of current block
         lda .block              ;load block index from block map
         stz ZP0
@@ -402,7 +398,7 @@
         bne +
         lda .distanceleft_hi
         bne +
-        ;jsr .CheckDirection            ;DON'T (!) check if car has crossed the finish line from the right direction
+        ;jsr .CheckDirection            ;DON'T (at least for now...) check if car has crossed the finish line from the right direction
         lda #1
         sta .finishflag
         rts

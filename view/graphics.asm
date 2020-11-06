@@ -65,24 +65,7 @@ LoadGraphics:
         beq +
         sec                             ;set carry to flag error
         rts
-+       jsr .CopyPalettesToVRAM
-        clc                             ;clear carry to flag everything is ok
-        rts
-
-.CopyPalettesToVRAM:
-        lda #<PALETTE
-        sta VERA_ADDR_L
-        lda #>PALETTE                       
-        sta VERA_ADDR_M
-        lda #$11                
-        sta VERA_ADDR_H                 ;increment = 1
-
-        ldy #0           
--       lda .palettes,y        ;loop through 5 palettes * 16 colors * 2 bytes = 160
-        sta VERA_DATA0     
-        iny
-        cpy #160             
-        bne -
++       clc                             ;clear carry to flag everything is ok
         rts
 
 _charset:
@@ -118,13 +101,3 @@ _charset:
         !byte $00,$38,$38,$38,$00,$38,$38,$38,$38,$28,$7c,$6c,$c6,$de,$de,$de
         !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
         !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38
-
-.palettes                                       
-        !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $000a, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 11 = black instead of dark grey)
-.carspritepalettes
-        !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
-        !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
-.spritetextpalette
-        !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
-.trackpalette
-        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000    ;tiles

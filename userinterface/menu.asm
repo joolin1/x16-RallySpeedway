@@ -679,7 +679,7 @@ NO_POSITION  = 27
 !byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
 
 .startscreentext:
-!scr "   john karlin's rally speedway v 0.8",0
+!scr "   john karlin's rally speedway 2020",0
 !scr 0
 !scr "       a tribute to the original",0
 !scr "        game for atari and c64",0
@@ -687,10 +687,10 @@ NO_POSITION  = 27
 !scr 0
 !scr "     copyright 2020 by johan k;rlin",0
 !scr "                  and",0
-!scr "        clergy game productions",0
+!scr "        clergy games productions",0
 !scr "          all rights reserved",0
 !scr 0
-!scr "        press a button for menu",0
+!scr "              version 0.9",0
 
 STARTSCREEN_ROW_COUNT = 12
 

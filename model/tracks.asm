@@ -15,13 +15,11 @@ TILE_FINISH = 3                 ;car has finished race
 
 ;Table for character of tiles
 _tilecollisionstatus:   !byte 0,0,0,0,1,0,0,1   ;road tiles come first. those with mostly grass will be considered as terrain
-                        !byte 1,0,0,1,0,0,0,1
-                        !byte 0,0,0,1,1,0,3,3   ;6 finish tiles (type 3)
-                        !byte 3,3,3,3,0,1,0,0
-                        !byte 1,0,0,0,0,0,0,2   ;the rest are obstacles (trees, houses, walls etc) and terrain
-                        !byte 2,2,1,1,1,1,1,1   ;here we have 7 grass tiles (type 1)
-                        !byte 1,1,1,1,1,2,2,2
-                        !byte 2,2,2,2,2,2,2,2
+                        !byte 1,0,0,1,0,1,0,3
+                        !byte 3,3,3,3,3,0,1,0   
+                        !byte 0,1,0,0,0,0,0,0
+                        !byte 2,2,2,1,1,1,1,1   ;the rest are obstacles (trees, houses, walls etc) and terrain
+                        !byte 1,1,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
@@ -44,11 +42,12 @@ _blockroadstatus:
                         !byte  8,1,1,1,1,1,1,1,1,1,1,1,1,1              ;14 horizontal blocks
                         !byte  9,2,2,2,2,2,2,2,2,2,2,2,2,2              ;14 vertical blocks
                         !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2              ;14 narrow road blocks 
-                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2,2,2,2,2,2,2  ;44 curve blocks
-                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,2,1,2,1,2,0,0,0,0
-                        !byte  7,3,3,4,4,5,5,6,6,7,7,7,1,1,2,2          ;16 crossings
+                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2              ;28 curve blocks
+                        !byte  2,2,2,2,2,2,1,1,2,2,1,2,1,2
+                        !byte  7,3,3,4,4,5,5,6,6,7,7,7                  ;12 crossings
+                        !byte  1,1,2,2,1,1,2,2                          ; 8 t-junctions
                         !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0      ;18 terrain blocks
-                                                                        ;Total 120 blocks
+                                                                        ;Total 108 blocks
 
 ;Global infor about current track
 _track		        !byte 1	        ;selected track - track one is preselected (NOTE not zero-indexed!)
@@ -455,5 +454,5 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
 
 ;*** block data ***********************************************************************************
 
-_blocks:                               ;NOTE! 120 blocks * 128 bytes each = 15360 bytes will be loaded here!
-                                       ;make sure there is space!
+_blocks:                               ;NOTE! Blocks of 128 bytes each will be loaded here!
+                                       ;Make sure there is space!

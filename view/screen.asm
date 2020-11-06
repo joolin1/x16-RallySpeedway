@@ -3,6 +3,22 @@
 SCREEN_WIDTH = 320
 SCREEN_HEIGHT = 240
 
+!macro CopyPalettesToVRAM .source,.deststart, .count {      ;IN .deststart = first palette index to copy to, .count = number of palettes (max 8!)
+        lda #<PALETTE+.deststart*32
+        sta VERA_ADDR_L
+        lda #>PALETTE+.deststart*32           
+        sta VERA_ADDR_M
+        lda #$11                
+        sta VERA_ADDR_H                 ;increment = 1
+
+        ldy #0           
+-       lda .source,y        ;loop through 5 palettes * 16 colors * 2 bytes = 160
+        sta VERA_DATA0     
+        iny
+        cpy #.count*32             
+        bne -
+}
+
 EnableLayers:
         jsr EnableLayer0
         jsr EnableLayer1
@@ -54,6 +70,8 @@ InitScreenAndSprites:
         ldx #<_charset
         ldy #>_charset
         jsr screen_set_charset
+
+        +CopyPalettesToVRAM .palettes, 0, 5
 
         ;init badge sprites
         jsr InitBadgeSprites
@@ -229,10 +247,7 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         sta DC_HSCALE           ;set horizontal scale to 1:1
         sta DC_VSCALE           ;set vertical scale to 1:1
 
-       	lda #$33
-	+VPoke PALETTE+22	;restore black to dark grey
-	lda #$03
-	+VPoke PALETTE+23
+        +CopyPalettesToVRAM .originalpalette, 0, 1
 
         lda #%01100000
         sta L1_CONFIG           ;enable layer 1 in 16 color text mode 
@@ -244,3 +259,16 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         jsr BSOUT               ;clear screen
 
         rts
+
+.palettes                                       
+        !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $005f, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 6 = lighter blue and 11 = black instead of dark grey)
+.carspritepalettes
+        !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
+        !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
+.spritetextpalette
+        !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
+.trackpalette
+        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000    ;tiles
+
+.originalpalette
+        !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;original colors, used for restoring colors when quitting game
