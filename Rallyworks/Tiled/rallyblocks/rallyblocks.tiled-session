@@ -1,0 +1,76 @@
+{
+    "activeFile": "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/tracks.tmx",
+    "console.history": [
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"width:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"height:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"layer\" + i + \":\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t\";\n                    for (x = 0; x < layer.width; ++x) {\n                        row = row + layer.cellAt(x, y).tileId + \",\";\n                    }\n\t\t\t\t\trow.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"layer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!byte \";\n                    for (x = 0; x < layer.width; ++x) {\n                        row = row + layer.cellAt(x, y).tileId + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!byte \";\n                    for (x = 0; x < layer.width; ++x) {\n                        row = row + layer.cellAt(x, y).tileId + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n\t\tfile.write(JSON.stringify(map.layerAt(0).cellAt(0,5)));\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!byte \";\n                    for (x = 0; x < layer.width; ++x) {\n                        row = row + layer.cellAt(x, y).tileId + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n\t\tfile.write(JSON.stringify(map.layerAt(0).cellAt(0,5)));\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\tvar paletteOffset = 2;\n\t\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    for (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + cell.tileId;\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\t\t\n                        row += \"$\" + (\"0\" + val.toString(16).slice(-4)) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\tvar paletteOffset = 2;\n\t\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    for (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + cell.tileId;\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\t\t\n                        row += \"$\" + (\"0\" + val.toString(16)).slice(-4) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\tvar paletteOffset = 2;\n\t\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    for (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + (cell.tileId & 255);\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\t\t\n                        row += \"$\" + (\"0\" + val.toString(16)).slice(-4) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\tvar paletteOffset = parseInt(tiled.prompt(\"Palette Offset:\", \"0\"));\n\t\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    for (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + (cell.tileId & 255);\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\t\t\n                        row += \"$\" + (\"0\" + val.toString(16)).slice(-4) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\tvar paletteOffset = parseInt(tiled.prompt(\"Palette Offset:\", \"0\"));\n\t\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n                for (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    for (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + (cell.tileId & 255);\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\t\t\n                        row += \"$\" + (\"000\" + val.toString(16)).slice(-4) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)",
+        "var acmeMapFormat = {\n    name: \"ACME Assembler\",\n    extension: \"asm\",\n\n    write: function(map, fileName) {\n\t\t// Ask user for palette offset\n\t\tvar paletteOffset = parseInt(tiled.prompt(\"Palette Offset:\", \"0\"));\n\t\n\t\t// Create file and write width and height\n        var file = new TextFile(fileName, TextFile.WriteOnly);\n\t\tfile.write(\"mapWidth:\\t!byte \" + map.width + \"\\n\");\n\t\tfile.write(\"mapHeight:\\t!byte \" + map.height + \"\\n\\n\");\n\n\t\t// Write each tile layer in map\n        for (var i = 0; i < map.layerCount; ++i) {\n\t\t\tfile.write(\"mapLayer\" + i + \":\\n\");\n            var layer = map.layerAt(i);\n            if (layer.isTileLayer) {\n\t\t\t\t\n                // Write each row in current layer\n\t\t\t\tfor (y = 0; y < layer.height; ++y) {\n                    var row = \"\\t!word \";\n                    \n\t\t\t\t\t// Write each column in current layer\n\t\t\t\t\tfor (x = 0; x < layer.width; ++x) {\n\t\t\t\t\t\tvar cell = layer.cellAt(x, y);\n\t\t\t\t\t\t// Build a 16 bit hex value for each tile\n\t\t\t\t\t\tvar val = (paletteOffset << 12) + (cell.tileId & 1023);\n\t\t\t\t\t\tif (cell.flippedVertically) {\n\t\t\t\t\t\t\tval += 0x0800; \n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (cell.flippedHorizontally) {\n\t\t\t\t\t\t\tval += 0x0400;\n\t\t\t\t\t\t}\n\t\t\t\t\t\t// let each value be in the format \"$xxxx\"\n                        row += \"$\" + (\"000\" + val.toString(16)).slice(-4) + \",\";\n                    }\n\t\t\t\t\trow = row.slice(0,-1) + \"\\n\";\n\t\t\t\t\tfile.write(row);\n                }\n\t\t\t\tfile.write(\"\\n\");\n            }\n        }\n\t\tfile.write(\"\\n\");\n        file.commit();\n    },\n}\n\ntiled.registerMapFormat(\"ACME Assembler\", acmeMapFormat)"
+    ],
+    "expandedProjectPaths": [
+    ],
+    "exportAsImage.drawTileGrid": false,
+    "exportAsImage.includeBackgroundColor": false,
+    "exportAsImage.useCurrentScale": false,
+    "exportAsImage.visibleLayersOnly": true,
+    "file.lastUsedOpenFilter": "All Files (*)",
+    "fileStates": {
+        "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/blocks.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/tracks.tmx": {
+            "scale": 0.25,
+            "selectedLayer": 3,
+            "viewCenter": {
+                "x": 1516,
+                "y": 1658
+            }
+        },
+        "rallyblocks.tmx": {
+            "scale": 3,
+            "selectedLayer": 16,
+            "viewCenter": {
+                "x": 63.83333333333333,
+                "y": 63.99999999999999
+            }
+        },
+        "rallytiles.tsx": {
+            "dynamicWrapping": false,
+            "scaleInDock": 3
+        }
+    },
+    "map.fixedSize": true,
+    "map.height": 8,
+    "map.lastUsedExportFilter": "Rally Speedway Tracks (*.bin)",
+    "map.orientation": 1,
+    "map.tileHeight": 16,
+    "map.tileWidth": 16,
+    "map.width": 8,
+    "openFiles": [
+        "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/tracks.tmx",
+        "rallyblocks.tmx"
+    ],
+    "project": "",
+    "recentFiles": [
+        "rallyblocks.tmx",
+        "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/tracks.tmx",
+        "C:/Users/johkarli/OneDrive/CommanderX16/Rallyworks/Tiled/Rallytracks/blocks.tsx"
+    ],
+    "tileset.embedInMap": false,
+    "tileset.margin": 0,
+    "tileset.spacing": 0,
+    "tileset.tileSize": {
+        "height": 16,
+        "width": 16
+    },
+    "tileset.transparentColor": "#ff00ff",
+    "tileset.type": 0,
+    "tileset.useTransparentColor": false
+}
