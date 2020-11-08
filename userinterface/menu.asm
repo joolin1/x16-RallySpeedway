@@ -681,16 +681,16 @@ NO_POSITION  = 27
 .startscreentext:
 !scr "   john karlin's rally speedway 2020",0
 !scr 0
-!scr "       a tribute to the original",0
-!scr "        game for atari and c64",0
+!scr "     a tribute to the original game",0
+!scr "       for atari and commodore 64",0
 !scr "           by john anderson",0
 !scr 0
-!scr "     copyright 2020 by johan k;rlin",0
-!scr "                  and",0
+!scr "             copyright 2020",0
+!scr "          by johan k;rlin and",0
 !scr "        clergy games productions",0
 !scr "          all rights reserved",0
 !scr 0
-!scr "              version 0.9",0
+!scr "              version 1.0",0
 
 STARTSCREEN_ROW_COUNT = 12
 
