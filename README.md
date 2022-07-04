@@ -9,12 +9,12 @@ No controllers:
 Just start the emulator and use the following keys: Ctrl - Button A, Alt - Button B, Enter - START, Cursor Keys - UP, DOWN, LEFT, RIGHT. Naturally, you can just play in one-player-mode.
 
 One controller:
-Start the emulator with -joy2 SNES (or "NES", depending on you controller type). Player 1 will use the keyboard and player 2 the game controller.
+Start the emulator with -joy2. Player 1 will use the keyboard and player 2 the game controller.
 
 Two controllers:
-Start the emulator with -joy1 SNES/NES -joy2 SNES/NES.
+Start the emulator with -joy1 -joy2
 
-For example if you have two SNES controllers and want to load and run the game immediately: "x16emu -joy1 SNES -joy2 SNES -prg rallyspeedway.prg -run" 
+For example if you have two controllers and want to load and run the game immediately: "x16emu -joy1 -joy2 -prg rallyspeedway.prg -run" 
 
 Controls:
 
