@@ -1,7 +1,7 @@
 ;*** main.asm - Entry point for game, setup and main game loop *************************************
 
 !cpu 65c02
-!to "rallyspeedway.prg", cbm
+!to ".\\works\\prg\\rallyspeedway.prg", cbm
 !src "includes/x16.asm"
 
 ;*** Basic program ("10 SYS 2064") *****************************************************************
