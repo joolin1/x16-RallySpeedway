@@ -3,6 +3,7 @@
 !cpu 65c02
 !to ".\\works\\prg\\rallyspeedway.prg", cbm
 !src "includes/x16.asm"
+!src "includes/zsound.asm"
 
 ;*** Basic program ("10 SYS 2064") *****************************************************************
 
@@ -46,7 +47,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 .StartGame:
         ;init everything
         jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
-        jsr LoadGraphics                ;load tiles and sprites from disk to VRAM
+        jsr LoadResources               ;load graphic and sound resources
         bcc +
         rts                             ;exit if some resource failed to load
 +       jsr VerifyTracks                ;make sure there are coherent routes on all tracks
@@ -56,6 +57,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         sta _gamestatus
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
+       	jsr Z_init_player               ;init ZSound
         jsr .SetupIrqHandler
 
         ;main loop
@@ -311,12 +313,17 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr ShowRaceOverText
         jsr PrintBoard
         jsr StopCarSounds
-        jsr PlayFinishedSound
+        ;jsr PlayFinishedSound
+        lda #ZSM_NAMEENTRY_BANK 
+        jsr StartMusic
         lda #ST_RACEOVER
         sta _gamestatus
         rts
 
 .RaceOver:
+        jsr Z_playmusic
+       	lda #TRACK_BANK
+	sta RAM_BANK
         lda _boardinputflag     ;check if we should wait for player to enter name because of new record
         beq +
         jsr .WaitForPlayerName
@@ -364,7 +371,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 ;*** View *****************************
 !zone
 !src "view/screen.asm"
-!src "view/graphics.asm"
+!src "view/resources.asm"
 !src "view/tilemap.asm"
 !src "view/soundfx.asm"
 !src "view/carsprites.asm"

@@ -2,6 +2,9 @@
 
 ;*** RAM **************************************************
 
+!addr RAM_BANK = $00
+!addr ROM_BANK = $01
+
 ;*** Zeropage *************************
 !addr ZP0   = $02
 !addr ZP1   = $03
@@ -73,7 +76,7 @@
 !addr SPI_CTRL          = $9F3F
 
 ;*** Kernal routines ******************
-!addr SCNKEY    = $FF9F
+;!addr SCNKEY    = $FF9F
 !addr SETLFS    = $FFBA
 !addr SETNAM    = $FFBD
 !addr BSOUT     = $FFD2
@@ -82,8 +85,9 @@
 !addr RDTIM     = $FFDE
 !addr GETIN     = $FFE4
 !addr PLOT      = $FFF0
-!addr MOUSE     = $FF09
-!addr CINT      = $FF81
+; !addr MOUSE     = $FF09
+; !addr CINT      = $FF81
+!addr 
 
 !addr joystick_scan         = $FF53
 !addr joystick_get          = $FF56

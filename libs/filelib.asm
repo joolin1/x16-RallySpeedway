@@ -1,20 +1,27 @@
 ;*** filelib.asm ***********************************************************************************
 
-LOAD_TO_RAM = 0
-LOAD_TO_VRAM_BANK0 = 2
+LOAD_TO_RAM             = 0
+LOAD_TO_VRAM_BANK0      = 2
+LOAD_TO_VRAM_BANK1      = 3
 
-LoadFile:                       ;IN: ZP0, ZP1 = filename, ZP2, ZP3 = load address, ZP4 = 0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1...
+FILE_HAS_HEADER         = 0
+FILE_HAS_NO_HEADER      = 2
+
+LoadFile:                       ;IN: ZP0, ZP1 = filename
+                                ;    ZP2, ZP3 = load address,
+                                ;    ZP4      = RAM or VRAM (0 = load, 1 = verify, 2 = VRAM bank 0, 3 = VRAM bank 1)
+                                ;    ZP5      = header or not (0 = file contains header, 2 = no header)
         jsr GetStringLength     ;will return length of filename in .A
         ldx ZP0
         ldy ZP1
         jsr SETNAM
         lda #$02
         ldx #$08                ;device
-        ldy #$00  
+        ldy ZP5                 ;header or not
         jsr SETLFS
         ldx ZP2                 ;load address  
         ldy ZP3  
-        lda ZP4                 ;load details
+        lda ZP4                 ;RAM or VRAM
         jsr LOAD
         rts
 

@@ -1,6 +1,6 @@
-;*** Load graphic resources to VRAM ****************************************************************
+;*** Load resources ********************************************************************************
 
-;Memory layout for screen and graphic resources
+;VRAM Memory layout for screen and graphic resources
 !addr L1_MAP_ADDR       = $0000                   ;         8 Kb | Layer 1 - the original text layer is by default located at $0000 an in front of layer 0
                                                   ;              | 80 cols (each 256 bytes) x 60 rows = 256 x 60 = $3c00 bytes but we only use 30 rows and 256 x 30 = 7680 bytes
 !addr L0_MAP_ADDR       = $2000                   ;         8 Kb | Layer 0 - game graphics layer. Both used in tile mode and text mode.
@@ -31,9 +31,35 @@
 .blocksname             !text "BLOCKS.BIN",0
 .tracksname             !text "TRACKS.BIN",0
 
+;RAM Memory layout for graphic and music resources
+;              $0810: game code
+;Directly after code: graphic blocks of 128 bytes each
+;              $9766: ZSound
+;              $A000: Tracks in bank 0
+;              $A000: ZSM from bank 1
+
+TRACK_BANK              = 1
+!addr TRACK_ADDR        = $A000
+
+;Sound resources to load
+.zsoundname     !text "ZSOUND.BIN",0
+.zsmtitle       !text "TITLE.ZSM",0
+.zsmmenu        !text "MENU.ZSM",0
+.zsmnameentry   !text "NAMEENTRY.ZSM",0
+
+ZSM_TITLE_BANK = 2
+ZSM_MENU_BANK = 3
+ZSM_NAMEENTRY_BANK = 4
+
+StartMusic:              ;IN: .A = ram bank
+	ldx #<ZSM_ADDR
+	ldy #>ZSM_ADDR
+	jsr Z_startmusic
+        rts
+
 _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
 
-!macro LoadResource .filename, .addr, .details {
+!macro LoadResource .filename, .addr, .ramtype, .header {
         lda #<.filename
         sta ZP0
         lda #>.filename
@@ -42,8 +68,10 @@ _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
         sta ZP2
         lda #>.addr
         sta ZP3
-        lda #.details
+        lda #.ramtype
         sta ZP4
+        lda #.header
+        sta ZP5
         jsr LoadFile                   ;call filehandler
         bcc +
         jsr PrintIOErrorMessage
@@ -52,15 +80,29 @@ _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
 +
 }
 
-LoadGraphics:
+LoadResources:
         stz _fileerrorflag
-        +LoadResource .tilesname    , TILES_ADDR    , LOAD_TO_VRAM_BANK0
-        +LoadResource .carsname     , CARS_ADDR     , LOAD_TO_VRAM_BANK0
-        +LoadResource .explosionname, EXPLOSION_ADDR, LOAD_TO_VRAM_BANK0
-        +LoadResource .textname     , TEXT_ADDR     , LOAD_TO_VRAM_BANK0
-        +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0
-        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM
-        +LoadResource .tracksname   , _trackdata    , LOAD_TO_RAM
+        +LoadResource .tilesname    , TILES_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .carsname     , CARS_ADDR     , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .explosionname, EXPLOSION_ADDR, LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .textname     , TEXT_ADDR     , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM       , FILE_HAS_HEADER
+        +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
+        lda #TRACK_BANK
+        sta RAM_BANK
+        +LoadResource .tracksname   , TRACK_ADDR    , LOAD_TO_RAM       , FILE_HAS_HEADER       
+        lda #ZSM_TITLE_BANK
+        sta RAM_BANK
+        +LoadResource .zsmtitle     , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        lda #ZSM_MENU_BANK
+        sta RAM_BANK
+        +LoadResource .zsmmenu      , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        lda #ZSM_NAMEENTRY_BANK
+        sta RAM_BANK
+        +LoadResource .zsmnameentry , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        lda #TRACK_BANK
+        sta RAM_BANK
         lda _fileerrorflag
         beq +
         sec                             ;set carry to flag error

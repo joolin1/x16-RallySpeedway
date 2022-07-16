@@ -143,8 +143,10 @@ LoadLeaderboard:
         sta ZP2
         lda #>.leaderboard
         sta ZP3
-        lda #0
+        lda #LOAD_TO_RAM
         sta ZP4
+        lda #FILE_HAS_HEADER
+        sta ZP5
         jsr LoadFile            ;call filehandler
         bcc +
         jsr SaveLeaderboard     ;if load fails, create a new file

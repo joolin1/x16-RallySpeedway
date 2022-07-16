@@ -42,6 +42,8 @@ MenuHandler:
 	cmp #M_SHOW_START_SCREEN
 	bne +
 	jsr .ShowStartScreen
+	lda #ZSM_TITLE_BANK
+	jsr StartMusic
 	inc .menumode					;go to next mode - update start screen (change bg colors)
 	rts
 
@@ -50,6 +52,9 @@ MenuHandler:
 	bne ++
 	jsr .UpdateRandomBgColor
 	jsr .UpdateRandomBgColor
+	jsr Z_playmusic
+	lda #TRACK_BANK
+	sta RAM_BANK
 	lda _joy0
 	cmp #$ff
 	beq +
@@ -60,6 +65,8 @@ MenuHandler:
 ++  cmp #M_SHOW_MAIN_MENU
 	bne +
 	jsr .ShowMainMenu
+	lda #ZSM_MENU_BANK
+	jsr StartMusic
 	lda #M_HANDLE_INPUT				;next go to input menu mode
 	sta .menumode
 	lda #1
@@ -77,6 +84,9 @@ MenuHandler:
 	cmp #7
 	beq +
 	jsr .HandleUserInput
+	jsr Z_playmusic
+	lda #TRACK_BANK
+	sta RAM_BANK
 	rts
 
 +	lda #M_SHOW_START_SCREEN
@@ -328,6 +338,7 @@ MenuHandler:
 	jsr ClearTextLayer
 	jsr DisableLayer0		;temporary disable layer 0 while preparing racing track
 	jsr SetLayer0ToTileMode
+	jsr Z_stopmusic
 	lda #M_SHOW_MAIN_MENU
 	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
 	lda #ST_SETUPRACE
