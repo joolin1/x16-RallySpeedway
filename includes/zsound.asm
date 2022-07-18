@@ -2,8 +2,7 @@
 
 ;ZSound uses zeropage $22 -$2D
 
-!addr ZSOUND_ADDR   = $9766        ;ZSound is located at end of fixed RAM
-!addr ZSM_ADDR      = $A000        ;ZSM music is in banked RAM            
+!addr ZSOUND_ADDR   = $9766        ;ZSound is located at end of fixed RAM        
 
 ;ZSOUND jump table
 !addr Z_init_player	= $9766

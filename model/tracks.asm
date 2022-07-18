@@ -76,7 +76,7 @@ _routelength_lo:        !byte 0
 _routelength_hi:        !byte 0
 _route:                 !fill 1024,0    ;calculated route (every entry corresponds to the block map and contains which direction the route continues)
 
-_trackdata         = TRACK_ADDR        ;locate tracks in 8 KB memory bank            
+_trackdata         = BANK_ADDR         ;locate tracks in 8 KB memory bank            
 _tracknames        = _trackdata        ;5 track names * (17 characters + null) = 90
 .track_startblocks = _trackdata + 90   ;5 zero-indexed start positions (row, col)
 .tracks            = _trackdata + 100  ;5 tracks 32x32 blocks = 1024 bytes each

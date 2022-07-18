@@ -41,7 +41,11 @@
 ;              $A000: ZSM from bank 1
 
 TRACK_BANK              = 1
-!addr TRACK_ADDR        = $A000
+ZSM_TITLE_BANK          = 2
+ZSM_MENU_BANK           = 3
+ZSM_NAMEENTRY_BANK      = 4
+
+!addr BANK_ADDR        = $A000
 
 ;Sound resources to load
 .zsoundname     !text "ZSOUND.BIN",0
@@ -49,13 +53,9 @@ TRACK_BANK              = 1
 .zsmmenu        !text "MENU.ZSM",0
 .zsmnameentry   !text "NAMEENTRY.ZSM",0
 
-ZSM_TITLE_BANK = 2
-ZSM_MENU_BANK = 3
-ZSM_NAMEENTRY_BANK = 4
-
 StartMusic:              ;IN: .A = ram bank
-	ldx #<ZSM_ADDR
-	ldy #>ZSM_ADDR
+	ldx #<BANK_ADDR
+	ldy #>BANK_ADDR
 	jsr Z_startmusic
         rts
 
@@ -94,16 +94,16 @@ LoadResources:
         +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
-        +LoadResource .tracksname   , TRACK_ADDR    , LOAD_TO_RAM       , FILE_HAS_HEADER       
+        +LoadResource .tracksname   , BANK_ADDR    , LOAD_TO_RAM       , FILE_HAS_HEADER       
         lda #ZSM_TITLE_BANK
         sta RAM_BANK
-        +LoadResource .zsmtitle     , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmtitle     , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #ZSM_MENU_BANK
         sta RAM_BANK
-        +LoadResource .zsmmenu      , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmmenu      , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #ZSM_NAMEENTRY_BANK
         sta RAM_BANK
-        +LoadResource .zsmnameentry , ZSM_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmnameentry , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
         lda _fileerrorflag

@@ -137,6 +137,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jmp .HandlePause
 
 +       jsr SfxTick                     ;update all sound effects that are currently playing
+        jsr Z_playmusic                 ;continue to play music if something is currently playing
+        lda #TRACK_BANK                 ;music is in different ram banks, default bank is track bank
+        sta RAM_BANK
 
         lda _gamestatus
         cmp #ST_RACING                  ;race is on
@@ -322,9 +325,6 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .RaceOver:
-        jsr Z_playmusic
-       	lda #TRACK_BANK
-	sta RAM_BANK
         lda _boardinputflag     ;check if we should wait for player to enter name because of new record
         beq +
         jsr .WaitForPlayerName

@@ -1,10 +1,13 @@
 ;*** Menu.asm - Start screen, menu, annoncements *******************************
 
 ;Menu status
-M_SHOW_START_SCREEN 	= 0
-M_UPDATE_START_SCREEN	= 1
-M_SHOW_MAIN_MENU 		= 2
-M_HANDLE_INPUT 			= 3
+M_START_MUSIC			= 0
+M_SHOW_TITLE_IMAGE      = 1
+M_UPDATE_TITLE_IMAGE    = 2
+M_SHOW_CREDITS 			= 3
+M_UPDATE_CREDITS		= 4
+M_SHOW_MAIN_MENU 		= 5
+M_HANDLE_INPUT 			= 6
 
 ;Menu item mapping
 START_RACE		= 0
@@ -33,32 +36,74 @@ FIRST_LINE_DIV 	= 38	;&
 MENU_WHITE = $01
 MENU_BLACK = $0b
 
+SHORT_INACTIVITY_DELAY	 = 3	;title image and credit screen will take turns when user is inactive. 7 = 30 sec (= 7 * 256 / 60)
+LONG_INACTIVITY_DELAY	 = 7    ;menu will go to credit screen when user for is inactive for a longer period of time
+
 ;*** Public methods ********************************************************************************
 
 MenuHandler:
 	lda .menumode
 
-	;show start screen
-	cmp #M_SHOW_START_SCREEN
+	;start title music
+	cmp #M_START_MUSIC
 	bne +
-	jsr .ShowStartScreen
 	lda #ZSM_TITLE_BANK
-	jsr StartMusic
-	inc .menumode					;go to next mode - update start screen (change bg colors)
+	jsr StartMusic					;start title music
+	inc .menumode					;go to show title image
+	rts								
+
+	;show title image
++	cmp #M_SHOW_TITLE_IMAGE
+	bne +
+	jsr .ShowTitleImage
+	stz .inactivitytimer_lo
+	stz .inactivitytimer_hi
+	inc .menumode					;go to update title image mode
 	rts
 
-	;update start screen
-+	cmp #M_UPDATE_START_SCREEN
+	;update title image
++   cmp #M_UPDATE_TITLE_IMAGE
 	bne ++
+	+Inc16bit .inactivitytimer_lo
+	lda .inactivitytimer_hi
+	cmp #SHORT_INACTIVITY_DELAY
+	bne +
+	lda #M_SHOW_CREDITS
+	sta .menumode					;go to credit screen when user inactive
+	rts
++	lda _joy0
+	cmp #$ff
+	beq +
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode					;go to menu when user presses something
++	rts
+
+	;show credits screen
+++	cmp #M_SHOW_CREDITS
+	bne +
+	jsr .ShowCreditsScreen
+	stz .inactivitytimer_lo
+	stz .inactivitytimer_hi
+	inc .menumode					;go update credit screen mode
+	rts
+
+	;update credits screen
++	cmp #M_UPDATE_CREDITS
+	bne ++
+	+Inc16bit .inactivitytimer_lo
+	lda .inactivitytimer_hi
+	cmp #SHORT_INACTIVITY_DELAY
+	bne +
+	lda #M_SHOW_TITLE_IMAGE
+	sta .menumode					;go to title image when user inactive
+	rts
++	jsr .UpdateRandomBgColor
 	jsr .UpdateRandomBgColor
-	jsr .UpdateRandomBgColor
-	jsr Z_playmusic
-	lda #TRACK_BANK
-	sta RAM_BANK
 	lda _joy0
 	cmp #$ff
 	beq +
-	inc .menumode           		;if anything at all is pressed, go to next mode - show menu
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode           		;go to menu when user presses something
 +   rts
 
 	;show menu
@@ -66,12 +111,12 @@ MenuHandler:
 	bne +
 	jsr .ShowMainMenu
 	lda #ZSM_MENU_BANK
-	jsr StartMusic
-	lda #M_HANDLE_INPUT				;next go to input menu mode
+	jsr StartMusic					;switch to menu music
+	lda #M_HANDLE_INPUT				;go to input menu mode
 	sta .menumode
 	lda #1
 	sta .inputwait					;wait for controller to be released before accepting input again
-	stz .inactivitytimer_lo			;reset timer that takes user back to start screen after 30 secs inactivity
+	stz .inactivitytimer_lo
 	stz .inactivitytimer_hi
 	rts
 
@@ -81,16 +126,15 @@ MenuHandler:
 	rts
 
 +   lda .inactivitytimer_hi
-	cmp #7
+	cmp #LONG_INACTIVITY_DELAY
 	beq +
 	jsr .HandleUserInput
-	jsr Z_playmusic
-	lda #TRACK_BANK
-	sta RAM_BANK
 	rts
 
-+	lda #M_SHOW_START_SCREEN
-	sta .menumode
++   lda #ZSM_TITLE_BANK
+	jsr StartMusic					;switch to title music
+	lda #M_SHOW_CREDITS
+	sta .menumode					;go to back to title image when user inactive
 	rts
 
 .menumode				!byte 0
@@ -377,7 +421,7 @@ MenuHandler:
 +	stz .quitconfirmationflag	
 	lda .answer
 	beq +
-	lda #M_SHOW_START_SCREEN
+	lda #M_START_MUSIC
 	sta .menumode					;set menu mode to start screen in case user starts game again
 	lda #ST_QUITGAME
 	sta _gamestatus					;set game status to break main loop, clean up and exit
@@ -488,6 +532,9 @@ NO_POSITION  = 27
 	rts
 
 .ShowTitleImage:
+	ldx #<L1_MAP_ADDR
+	ldy #>L1_MAP_ADDR
+	jsr ClearTextLayer
 	jsr SetLayer0ToBitmapMode	;display title image by simply switching to bitmap mode
 	rts
 
@@ -501,7 +548,7 @@ NO_POSITION  = 27
     jsr SetLayer0ToTextMode
 	rts
 
-.ShowStartScreen:
+.ShowCreditsScreen:
 	jsr .InitScreen
 
 	lda #<.startscreenbgblocks	;set block table pointer as in parameter

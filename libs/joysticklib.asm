@@ -60,7 +60,7 @@ InitJoysticks:
         rts
 
 GetJoys:                        ;OUT: status of both controllers in _joy0 and _joy1
-        jsr joystick_scan
+        ;jsr joystick_scan      ;only necessary if default irq handler is skipped
         lda .joy0mapping
         jsr .wrapped_joystick_get
         sta _joy0
