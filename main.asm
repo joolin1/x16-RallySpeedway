@@ -124,6 +124,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 	lda .defaulthandler_hi
 	sta IRQ_HANDLER_H
 	cli
+        jsr Z_stopmusic
         jsr RestoreScreenAndSprites
         rts
 

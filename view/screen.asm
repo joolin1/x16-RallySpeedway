@@ -12,7 +12,7 @@ SCREEN_HEIGHT = 240
         sta VERA_ADDR_H                 ;increment = 1
 
         ldy #0           
--       lda .source,y        ;loop through 5 palettes * 16 colors * 2 bytes = 160
+-       lda .source,y        ;loop through number of palettes * 16 colors * 2 bytes
         sta VERA_DATA0     
         iny
         cpy #.count*32             
@@ -76,7 +76,7 @@ InitScreenAndSprites:
         ldy #>_charset
         jsr screen_set_charset
 
-        +CopyPalettesToVRAM .palettes, 0, 5
+        +CopyPalettesToVRAM .palettes, 0, 6     ;
 
         ;init badge sprites
         jsr InitBadgeSprites
@@ -219,6 +219,16 @@ SetLayer0ToTextMode:                    ;Layer 0 serves as a text mode backgroun
         stz L0_HSCROLL_H
         rts
 
+SetLayer0ToBitmapMode:
+        lda #%00000110                  ;Bitmap mode, 4 bpp = 16 colors
+        sta L0_CONFIG
+        lda #IMAGE_ADDR>>9              ;set bitmap address and width 320 pixels
+        and #%11111100
+        sta L0_TILEBASE 
+        lda #5                          ;set palette index                
+        sta L0_HSCROLL_H
+        rts
+
 ClearTextLayer:				;IN: .X, .Y = address of layer
 	stx VERA_ADDR_L
 	tya
@@ -279,6 +289,8 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
 .trackpalette
         !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000    ;tiles
+.titleimagepalette
+        !word $0011, $0000, $0122, $0333, $0555, $0677, $0889, $0BBA, $0BB9, $0DCC, $0FFF, $0762, $0B93, $0FE7, $0FD4, $0431
 
 .originalpalette
         !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;original colors, used for restoring colors when quitting game

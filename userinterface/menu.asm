@@ -486,7 +486,11 @@ NO_POSITION  = 27
 	lda #END_LINE_DIV
 	jsr VPrintLineBreak
 	rts
-	
+
+.ShowTitleImage:
+	jsr SetLayer0ToBitmapMode	;display title image by simply switching to bitmap mode
+	rts
+
 .InitScreen:
 	ldx #<L0_MAP_ADDR
 	ldy #>L0_MAP_ADDR
