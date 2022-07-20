@@ -340,16 +340,27 @@
 .UpdateTileInformation:
         ;1 - get address of current block
         lda .block              ;load block index from block map
-        stz ZP0
+
+        cmp #64                 ;set RAM bank. block 0-63 is in first bank, 64-127 in second
+        bcc +
+        ldx #BLOCK_BANK_1
+        stx RAM_BANK
+        sec
+        sbc #64                 ;block 64 is block 0 in second bank and so on
+        bra ++
++       ldx #BLOCK_BANK_0
+        stx RAM_BANK
+
+++      stz ZP0
         lsr                     ;interpret block index as the high byte, that means index * 256, shift right to get index * 128 which gives the address of the block
         sta ZP1                 ;store high byte result
         ror ZP0                 ;now ZP0 and ZP1 = block index * 128
         lda ZP0                         
         clc             
-        adc #<_blocks           ;add base address
+        adc #<BANK_ADDR         ;add base address
         sta ZP0
         lda ZP1
-        adc #>_blocks
+        adc #>BANK_ADDR
         sta ZP1                 ;now ZP0 and ZP1 = address of current block
       
         ;2 - get which tile in block the car is located in
@@ -376,6 +387,8 @@
         adc #0
         sta ZP1                 ;now ZP0 and ZP1 = address of current block + tile x offset + tile y offset
         lda (ZP0)               ;load current tile
+        ldx #TRACK_BANK         ;set back ram bank to default bank
+        stx RAM_BANK
 
         ;3 - check collision status
         tay

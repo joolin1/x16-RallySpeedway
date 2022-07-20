@@ -322,15 +322,16 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 
 ++      ldy .tileoffset                 ;write tile to the buffer that currently is not displayed
         ; !byte $db
-        ; lda .blockdef_bank
-        ; sta RAM_BANK
+        lda .blockdef_bank
+        ;lda #BLOCK_BANK_0
+        sta RAM_BANK
         lda (.blockdef_lo),y
         sta VERA_DATA0
         iny
         lda (.blockdef_lo),y
         sta VERA_DATA0
-        ; lda #TRACK_BANK
-        ; sta RAM_BANK
+        lda #TRACK_BANK
+        sta RAM_BANK
 
         ;next column      
         inc .currentxtile               ;increase tile position and wrap around
@@ -399,26 +400,30 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 
         ;get current block
         lda (.block_lo)                 ;read current block from block map
-;         cmp #64                         ;blocks are in two banks with 64 blocks in each bank
-;         bcc +
-;         ldx #BLOCK_BANK_1
-;         stx .blockdef_bank              ;block 0-63 is in first bank
-;         sec 
-;         sbc #64
-;         bra ++
-; +       ldx #BLOCK_BANK_0
-;         stx .blockdef_bank              ;block 64-127 is in second bank
-;++
+        cmp #64                         ;blocks are in two banks with 64 blocks in each bank
+        bcc +
+        pha
+        lda #BLOCK_BANK_1
+        sta .blockdef_bank              ;block 0-63 is in first bank
+        pla
+        sec 
+        sbc #64
+        bra ++
++       pha
+        lda #BLOCK_BANK_0
+        sta .blockdef_bank              ;block 64-127 is in second bank
+        pla
+++
         lsr
         sta .blockdef_hi
         stz .blockdef_lo
         ror .blockdef_lo                ;multiply by 128 to get offset in block definitions
 
-        lda #<_blocks                   ;add base address of block definitions
+        lda #<BANK_ADDR                 ;add base address of block definitions
         clc
         adc .blockdef_lo                 
         sta .blockdef_lo
-        lda #>_blocks
+        lda #>BANK_ADDR
         adc .blockdef_hi                 
         sta .blockdef_hi                ;(continue with .GetTile)
 

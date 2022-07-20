@@ -451,8 +451,3 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         sta (ZP0)
         +Inc16bit _routelength_lo       ;add 1 to route length
         rts
-
-;*** block data ***********************************************************************************
-
-_blocks:                               ;NOTE! Blocks of 128 bytes each will be loaded here!
-                                       ;Make sure there is space!

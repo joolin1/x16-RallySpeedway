@@ -90,10 +90,9 @@ LoadResources:
         +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .imagename    , IMAGE_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
-        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM       , FILE_HAS_HEADER
-        ; lda #BLOCK_BANK_0
-        ; sta RAM_BANK
-        ; +LoadResource .blocksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER
+        lda #BLOCK_BANK_0
+        sta RAM_BANK
+        +LoadResource .blocksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
         +LoadResource .tracksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER       
