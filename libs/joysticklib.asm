@@ -13,10 +13,15 @@ JOY_DOWN                = 4
 JOY_LEFT                = 2
 JOY_RIGHT               = 1
 
-;What controllers are used (= what _joy0 and joy1 will correspond to) depends on how many game controllers are present
+;what controllers are used (= what _joy0 and joy1 will correspond to) depends on how many game controllers are present
 .joy0mapping:   !byte 0 ;can be keyboard or game controller 1
 .joy1mapping:   !byte 0 ;can be nothing, game controller 1 or game controller 2
 .joystick_count !byte 0
+
+.joy_record     !byte 0 ;boolean - turn on or off recording of controllers
+.joy_playback   !byte 0 ;boolean - turn on or off whether recorded data or actual status of controllers should be returned by GetJoys
+.record_addr_lo !byte 0
+.record_addr_hi !byte 0
 
 _joy0:          !byte 0 ;status for first controller
 _joy1:          !byte 0 ;status for second controller
@@ -61,15 +66,24 @@ InitJoysticks:
 
 GetJoys:                        ;OUT: status of both controllers in _joy0 and _joy1
         ;jsr joystick_scan      ;only necessary if default irq handler is skipped
-        lda .joy0mapping
-        jsr .wrapped_joystick_get
+        ; lda .joy_playback
+        ; beq +
+        ; jsr .PlaybackJoysticks
+        ; rts
+
++       lda .joy0mapping
+        jsr .Wrapped_joystick_get
         sta _joy0
         lda .joy1mapping
-        jsr .wrapped_joystick_get
+        jsr .Wrapped_joystick_get
         sta _joy1
+        ; lda .joy_record
+        ; bne +
         rts
+; +       jsr .RecordJoysticks              
+;         rts
 
-.wrapped_joystick_get:
+.Wrapped_joystick_get:
         jsr joystick_get
         ora #64         ;keep all except bit 6
         sta ZP0
@@ -79,3 +93,96 @@ GetJoys:                        ;OUT: status of both controllers in _joy0 and _j
         ror             ;move result to bit 6
         and ZP0         ;merge with other info
         rts
+
+; StartJoyRecording:
+;         lda #1
+;         sta .joy_record
+;         stz .joy_playback
+;         lda #<BANK_ADDR         ;init pointer for recording
+;         sta .record_addr_lo
+;         lda #>BANK_ADDR
+;         sta .record_addr_hi
+;         rts
+
+; EndJoyRecording:
+;         stz .joy_record
+;         jsr .SaveJoyRecording
+;         rts
+
+; StartJoyPlayback:
+;         lda #1
+;         sta .joy_playback
+;         stz .joy_record
+;         lda #<BANK_ADDR         ;init pointer for recording
+;         sta .record_addr_lo
+;         lda #>BANK_ADDR
+;         sta .record_addr_hi
+;         rts
+
+; EndJoyPlayback:
+;         stz .joy_playback
+;         rts
+
+; .PlaybackJoysticks:
+;         lda #RACE_RECORDING_BANK
+;         sta RAM_BANK
+;         lda .record_addr_lo
+;         sta ZP0
+;         lda .record_addr_hi
+;         sta ZP1
+;         lda (ZP0)
+;         sta _joy0
+;         +Inc16bit ZP0
+;         lda (ZP0)
+;         sta _joy1
+;         +Inc16bit ZP0
+;         lda ZP0
+;         sta .record_addr_lo
+;         lda ZP1
+;         sta .record_addr_hi
+;         lda #TRACK_BANK
+;         sta RAM_BANK
+;         rts
+
+; .RecordJoysticks:
+;         lda #RACE_RECORDING_BANK
+;         sta RAM_BANK
+;         lda .record_addr_lo
+;         sta ZP0
+;         lda .record_addr_hi
+;         sta ZP1
+;         lda _joy0
+;         sta (ZP0)
+;         +Inc16bit ZP0
+;         lda _joy1
+;         sta (ZP0)
+;         +Inc16bit ZP0
+;         lda ZP0
+;         sta .record_addr_lo
+;         lda ZP1
+;         sta .record_addr_hi
+;         lda #TRACK_BANK
+;         sta RAM_BANK
+;         rts
+
+; .SaveJoyRecording:
+;         lda #RACE_RECORDING_BANK
+;         sta RAM_BANK
+;         lda #<.savedracename
+;         sta ZP0
+;         lda #>.savedracename
+;         sta ZP1
+;         lda #<BANK_ADDR
+;         sta ZP2
+;         lda #>BANK_ADDR
+;         sta ZP3
+;         lda .record_addr_lo
+;         sta ZP4
+;         lda .record_addr_hi
+;         sta ZP5
+;         jsr SaveFile
+;         lda #TRACK_BANK
+;         sta RAM_BANK
+;         rts
+
+; .savedracename  !text "SAVEDRACE.BIN",0 

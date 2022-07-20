@@ -1,11 +1,13 @@
 ;*** Commander X16 constants ***********************************************************************
 
-;*** RAM **************************************************
+TRUE     = 1
+FALSE    = 0
 
-BANK_ADDR      = $A000
+;*** BANKED RAM AND ROM ***************
+!addr BANK_ADDR  = $A000
 
-!addr RAM_BANK = $00
-!addr ROM_BANK = $01
+!addr RAM_BANK   = $00
+!addr ROM_BANK   = $01
 
 ;*** Zeropage *************************
 !addr ZP0   = $02

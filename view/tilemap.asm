@@ -1,4 +1,4 @@
-;*** Map.asm - Operations on tilemap  **************************************************************
+;*** tilemap.asm - Operations on tilemap  **********************************************************
 ;The tilemap is of size 32x32. We are just interested in the topleftmost 21x16 tiles (= 336 x 256 pixels) that we buffer all information about for use in next frame. 
 
 ;*** local variables *******************************************************************************
@@ -39,6 +39,7 @@ _camypos_hi             !byte 0
 .block_hi               = ZPC
 .blockdef_lo            = ZPD           ;address of definition of current block
 .blockdef_hi            = ZPE
+.blockdef_bank          !byte 0         ;RAM bank for definition of current block
 .tileoffset             = ZPF           ;current tile offset in definition of current block
 
 ;*** Public subroutines ****************************************************************************
@@ -320,11 +321,16 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 +       jsr .GetTile                    ;block remains the same, we only need to get new tile data
 
 ++      ldy .tileoffset                 ;write tile to the buffer that currently is not displayed
+        ; !byte $db
+        ; lda .blockdef_bank
+        ; sta RAM_BANK
         lda (.blockdef_lo),y
         sta VERA_DATA0
         iny
         lda (.blockdef_lo),y
         sta VERA_DATA0
+        ; lda #TRACK_BANK
+        ; sta RAM_BANK
 
         ;next column      
         inc .currentxtile               ;increase tile position and wrap around
@@ -393,6 +399,16 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 
         ;get current block
         lda (.block_lo)                 ;read current block from block map
+;         cmp #64                         ;blocks are in two banks with 64 blocks in each bank
+;         bcc +
+;         ldx #BLOCK_BANK_1
+;         stx .blockdef_bank              ;block 0-63 is in first bank
+;         sec 
+;         sbc #64
+;         bra ++
+; +       ldx #BLOCK_BANK_0
+;         stx .blockdef_bank              ;block 64-127 is in second bank
+;++
         lsr
         sta .blockdef_hi
         stz .blockdef_lo

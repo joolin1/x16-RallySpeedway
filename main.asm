@@ -216,6 +216,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr EnableLayer0
         lda #ST_READYTORACE
         sta _gamestatus
+        ;jsr StartJoyRecording            ;TEMP!!!
         rts
 
 .ResumeRace:
@@ -322,6 +323,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr StartMusic
         lda #ST_RACEOVER
         sta _gamestatus
+        ;jsr EndJoyRecording     ;TEMP!!!
         rts
 
 .RaceOver:

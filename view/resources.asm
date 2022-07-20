@@ -15,7 +15,7 @@
 !addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        15 Kb | 15 text sprites      (64 rows x 16 bytes/row) ->  15 x 64 x 16  = $3C00 bytes
 !addr BADGES_ADDR       = TEXT_ADDR + $3C00       ;       0.5 Kb | 2 badge sprites      (16 rows x 16 bytes/row) ->   2 x 16 x 16  =  $200 bytes
 !addr IMAGE_ADDR        = BADGES_ADDR + $200      ;        37 Kb | 1 title image        (320x240 px x 2 px/byte) -> 320 x 240 x .5 = $9600 bytes
-                                                  ; Total 121 Kb of graphical resources
+                                                  ;  Total 83 Kb of graphical resources
 
 !addr CAR_PALETTES       = PALETTE + $20
 !addr YCAR_PALETTE       = PALETTE + $20
@@ -35,17 +35,16 @@
 
 ;RAM Memory layout for graphic and music resources
 ;              $0810: game code
-;Directly after code: graphic blocks of 128 bytes each
 ;              $9766: ZSound
-;              $A000: Tracks in bank 0
-;              $A000: ZSM from bank 1
+;              $A000: RAM banks containing tracks, blocks, music and race recordings
 
 TRACK_BANK              = 1
-ZSM_TITLE_BANK          = 2
-ZSM_MENU_BANK           = 3
-ZSM_NAMEENTRY_BANK      = 4
-
-!addr BANK_ADDR        = $A000
+BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
+BLOCK_BANK_1            = 3
+ZSM_TITLE_BANK          = 4
+ZSM_MENU_BANK           = 5
+ZSM_NAMEENTRY_BANK      = 6
+RACE_RECORDING_BANK     = 7
 
 ;Sound resources to load
 .zsoundname     !text "ZSOUND.BIN",0
@@ -90,20 +89,23 @@ LoadResources:
         +LoadResource .textname     , TEXT_ADDR     , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .imagename    , IMAGE_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
-        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM       , FILE_HAS_HEADER
         +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
+        +LoadResource .blocksname   , _blocks       , LOAD_TO_RAM       , FILE_HAS_HEADER
+        ; lda #BLOCK_BANK_0
+        ; sta RAM_BANK
+        ; +LoadResource .blocksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
-        +LoadResource .tracksname   , BANK_ADDR    , LOAD_TO_RAM       , FILE_HAS_HEADER       
+        +LoadResource .tracksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER       
         lda #ZSM_TITLE_BANK
         sta RAM_BANK
-        +LoadResource .zsmtitle     , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmtitle     , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #ZSM_MENU_BANK
         sta RAM_BANK
-        +LoadResource .zsmmenu      , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmmenu      , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #ZSM_NAMEENTRY_BANK
         sta RAM_BANK
-        +LoadResource .zsmnameentry , BANK_ADDR      , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmnameentry , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
         lda _fileerrorflag
