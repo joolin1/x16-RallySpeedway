@@ -23,6 +23,20 @@
 !addr SPRITETEXT_PALETTE = PALETTE + $60
 !addr TRACKS_PALETTE     = PALETTE + $80
 
+;RAM Memory layout
+;              $0810: game code
+;              $9766: ZSound
+;              $A000: RAM banks
+
+;RAM banks
+TRACK_BANK              = 1
+BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
+BLOCK_BANK_1            = 3
+ZSM_TITLE_BANK          = 4     ;title tune take 2 banks (12 KB)
+ZSM_MENU_BANK           = 6
+ZSM_NAMEENTRY_BANK      = 7
+SAVEDRACE_BANK          = 8
+
 ;Graphic resources to load
 .tilesname              !text "TILES.BIN",0
 .carsname               !text "CARS.BIN",0
@@ -32,19 +46,7 @@
 .blocksname             !text "BLOCKS.BIN",0
 .tracksname             !text "TRACKS.BIN",0
 .imagename              !text "IMAGE.BIN",0
-
-;RAM Memory layout for graphic and music resources
-;              $0810: game code
-;              $9766: ZSound
-;              $A000: RAM banks containing tracks, blocks, music and race recordings
-
-TRACK_BANK              = 1
-BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
-BLOCK_BANK_1            = 3
-ZSM_TITLE_BANK          = 4
-ZSM_MENU_BANK           = 5
-ZSM_NAMEENTRY_BANK      = 6
-RACE_RECORDING_BANK     = 7
+.savedracename          !text "SAVEDRACE.BIN",0
 
 ;Sound resources to load
 .zsoundname     !text "ZSOUND.BIN",0
@@ -56,6 +58,8 @@ StartMusic:              ;IN: .A = ram bank
 	ldx #<BANK_ADDR
 	ldy #>BANK_ADDR
 	jsr Z_startmusic
+      	lda #0
+	jsr Z_force_loop
         rts
 
 _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
@@ -105,6 +109,9 @@ LoadResources:
         lda #ZSM_NAMEENTRY_BANK
         sta RAM_BANK
         +LoadResource .zsmnameentry , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        lda #SAVEDRACE_BANK
+        sta RAM_BANK
+        +LoadResource .savedracename, BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #TRACK_BANK
         sta RAM_BANK
         lda _fileerrorflag

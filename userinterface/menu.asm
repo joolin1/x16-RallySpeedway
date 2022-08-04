@@ -4,10 +4,12 @@
 M_START_MUSIC			= 0
 M_SHOW_TITLE_IMAGE      = 1
 M_UPDATE_TITLE_IMAGE    = 2
-M_SHOW_CREDITS 			= 3
-M_UPDATE_CREDITS		= 4
-M_SHOW_MAIN_MENU 		= 5
-M_HANDLE_INPUT 			= 6
+M_START_DEMO_RACE       = 3
+M_END_DEMO_RACE         = 4
+M_SHOW_CREDITS 			= 5
+M_UPDATE_CREDITS		= 6
+M_SHOW_MAIN_MENU 		= 7
+M_HANDLE_INPUT 			= 8
 
 ;Menu item mapping
 START_RACE		= 0
@@ -67,9 +69,9 @@ MenuHandler:
 	+Inc16bit .inactivitytimer_lo
 	lda .inactivitytimer_hi
 	cmp #SHORT_INACTIVITY_DELAY
-	bne +
-	lda #M_SHOW_CREDITS
-	sta .menumode					;go to credit screen when user inactive
+	bne +	
+	lda #M_START_DEMO_RACE
+	sta .menumode
 	rts
 +	lda _joy0
 	cmp #$ff
@@ -78,8 +80,26 @@ MenuHandler:
 	sta .menumode					;go to menu when user presses something
 +	rts
 
+	;set up demo race
+++	cmp #M_START_DEMO_RACE
+	bne +
+	jsr .SaveMenuSelections
+	jsr .StartDemoRace
+	lda #M_END_DEMO_RACE
+	sta .menumode
+	rts
+
+	;clean up after demo race
++	cmp #M_END_DEMO_RACE
+	bne +
+    jsr EndJoyPlayback
+	jsr .RestoreMenuSelections		;after demo race, restore menu selections
+	lda #M_SHOW_CREDITS
+	sta .menumode
+	rts
+
 	;show credits screen
-++	cmp #M_SHOW_CREDITS
++	cmp #M_SHOW_CREDITS
 	bne +
 	jsr .ShowCreditsScreen
 	stz .inactivitytimer_lo
@@ -246,6 +266,9 @@ MenuHandler:
 +	lda .handrow
 	cmp #START_RACE
 	bne +
+	jsr Z_stopmusic
+	lda #M_SHOW_MAIN_MENU
+	sta .menumode			;prepare for the next time the menu handler will be called, after race go to main menu
 	jsr .CloseMainMenu
 	rts
 
@@ -376,15 +399,41 @@ MenuHandler:
 	jsr .HandleQuitGame
 +	rts
 
+.StartDemoRace:				;a demo race is almost like an ordinary race, the main difference is that controller data are fetched from a saved file
+	lda #1					;demo race recording contains two players, track 1, normal max speed
+	sta _noofplayers
+	lda #NORMAL_MAX_SPEED
+	sta _max_speed
+	lda #1
+	sta _track
+	jsr StartJoyPlayback
+	jsr .CloseMainMenu
+	rts
+
+.SaveMenuSelections:
+	lda _noofplayers		;save current selections in menu
+	sta .noofplayers
+	lda _track
+	sta .track
+	lda _max_speed
+	sta .max_speed
+	rts
+
+.RestoreMenuSelections:
+	lda .noofplayers		;restore current selections in menu
+	sta _noofplayers
+	lda .max_speed
+	sta _max_speed
+	lda .track
+	sta _track
+	rts
+
 .CloseMainMenu:
 	ldx #<L1_MAP_ADDR
 	ldy #>L1_MAP_ADDR
 	jsr ClearTextLayer
 	jsr DisableLayer0		;temporary disable layer 0 while preparing racing track
 	jsr SetLayer0ToTileMode
-	jsr Z_stopmusic
-	lda #M_SHOW_MAIN_MENU
-	sta .menumode			;prepare for the next time the menu handler will be called, then we skip start screen and go directly to the main menu
 	lda #ST_SETUPRACE
 	sta _gamestatus         ;update game status to start race, the menu handler will no longer be called
 	rts
@@ -811,3 +860,7 @@ STARTSCREEN_ROW_COUNT = 12
 				!byte $b
 
 MENU_ROW_COUNT = 20
+
+.noofplayers	!byte 0			;used to store current selections when a demo race is about to start
+.max_speed		!byte 0
+.track			!byte 0

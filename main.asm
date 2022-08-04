@@ -131,12 +131,19 @@ _max_speed              !byte NORMAL_MAX_SPEED
 .GameTick:                              ;this subroutine is called every jiffy and advances the game one "frame"
         jsr GetJoys                     ;read game controllers and store for all routines to use           
 
-        lda _gamestatus                 ;first of all check if game paused, then everything including sound effects should be freezed
+        lda _joy_playback               ;first of all check if demo race
+        beq +
+        jsr GetRealJoy0
+        cmp #JOY_NOTHING_PRESSED
+        beq +
+        jmp .HandleFinishedRace         ;abort demo race if anything is pressed on first controller
+
++       lda _gamestatus                 ;second check if game paused, then everything including sound effects should be freezed
         cmp #ST_PAUSED                  
         bne +
         jmp .HandlePause
 
-+       jsr SfxTick                     ;update all sound effects that are currently playing
++       jsr SfxTick                     ;update all sound effects
         jsr Z_playmusic                 ;continue to play music if something is currently playing
         lda #TRACK_BANK                 ;music is in different ram banks, default bank is track bank
         sta RAM_BANK
@@ -216,7 +223,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr EnableLayer0
         lda #ST_READYTORACE
         sta _gamestatus
-        ;jsr StartJoyRecording            ;TEMP!!!
+        ;jsr StartJoyRecording          ;uncomment when a race should be recorded
         rts
 
 .ResumeRace:
@@ -313,17 +320,18 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .HandleFinishedRace:
+        jsr StopCarSounds
+        lda _joy_playback
+        bne .CloseTrack         ;go directly to menu after a demo race
         jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr CheckForRecord
         jsr ShowRaceOverText
         jsr PrintBoard
-        jsr StopCarSounds
-        ;jsr PlayFinishedSound
         lda #ZSM_NAMEENTRY_BANK 
         jsr StartMusic
-        lda #ST_RACEOVER
++       lda #ST_RACEOVER
         sta _gamestatus
-        ;jsr EndJoyRecording     ;TEMP!!!
+        ;jsr EndJoyRecording     ;uncomment when a race should be recorded
         rts
 
 .RaceOver:
@@ -334,14 +342,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       lda _joy0
         and _joy1
         and #JOY_BUTTON_B       ;B button pressed on any game control?
-        beq +
-        rts
-+       jsr HideText
-        jsr HideCars
-        jsr HideBadges
-        jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
-        lda #ST_MENU
-        sta _gamestatus
+        beq .CloseTrack
         rts
 
 .WaitForPlayerName:
@@ -351,10 +352,13 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       stz _boardinputflag
         lda _track
         jsr SetLeaderboardName
-        jsr SaveLeaderboard
+        jsr SaveLeaderboard     ;and then continue with closing track ...
+
+.CloseTrack:
         jsr HideText
         jsr HideCars
         jsr HideBadges
+        jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
         lda #ST_MENU
         sta _gamestatus
         rts
