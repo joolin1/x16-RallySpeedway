@@ -7,6 +7,7 @@ BCar_ResumeRace                 = .ResumeRace
 BCar_CarTick                    = .CarTick
 BCar_TimeAddSeconds             = .TimeAddSeconds
 BCar_TimeSubSeconds             = .TimeSubSeconds
+BCar_Collide                    = .Collide
 
 BCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 4,0,$01

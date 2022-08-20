@@ -10,24 +10,45 @@ _anglefliptable         !byte   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
                         !byte   1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3
                         !byte   3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2
 
-COLLISION_MASK = %00010000
+YCAR_COLLISION_MASK = %00110000
+BCAR_COLLISION_MASK = %01010000
+TCAR_COLLISION_MASK = %01100000
+
+YCAR_BCAR_COLLISION = 16
+YCAR_TCAR_COLLISION = 32
+BCAR_TCAR_COLLISION = 64
+
+TRAFFIC_SPRITE0_INDEX = 1 + 2 + TEXTSPRITE_COUNT + 2     ;first traffic car sprite is after sprite 0, 2 car sprites, all text sprites and 2 badge sprites) 
+TRAFFIC_SPRITE0 = $FC00 + TRAFFIC_SPRITE0_INDEX * 8     
+TRAFFIC_COUNT = 8
 
 YCar_Show:
-        +VPokeI SPR1_ATTR_0,COLLISION_MASK+8    ;enable sprite and set collision mask
-        +VPokeI SPR1_ATTR_1, %10100000 + 1      ;set palette 1 for yellow car
+        +VPokeI SPR1_ATTR_0,YCAR_COLLISION_MASK+8       ;enable sprite and set collision mask
+        +VPokeI SPR1_ATTR_1, %10100000 + 1              ;set palette 1 for yellow car
         rts
 
 BCar_Show:
-        +VPokeI SPR2_ATTR_0,COLLISION_MASK+8    ;enable sprite and set collision mask
-        +VPokeI SPR2_ATTR_1, %10100000 + 2      ;set palette 2 for blue car
+        +VPokeI SPR2_ATTR_0,BCAR_COLLISION_MASK+8       ;enable sprite and set collision mask
+        +VPokeI SPR2_ATTR_1, %10100000 + 2              ;set palette 2 for blue car
+        rts
+
+Traffic_Show:
+        ;TEMP just one car for now
+        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_0,      1, TCAR_COLLISION_MASK+8      ;enable cars and set collision mask
+        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_1,      1, %10100000 + 6              ;set palette 6 for traffic cars
         rts
 
 HideCars:
         +VPokeI SPR1_ATTR_0,0    ;disable sprite 1
         +VPokeI SPR2_ATTR_0,0    ;disable sprite 2
+        jsr HideTraffic
         rts
 
-!macro SetSprite .index, .angle {       ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees
+HideTraffic:
+        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_0, TRAFFIC_COUNT, 0 ;disable all traffic cars
+        rts
+
+!macro SetSprite .index, .base_addr, .collision_mask, .angle {       ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees
         lda .angle            
         lsr                             ;get rid of fraction
         lsr
@@ -37,20 +58,46 @@ HideCars:
         sta ZP0
         stz ZP1
         +MultiplyBy16 ZP0               ;multiply with 16 to get actual offset
+        
+        +Add16 ZP0, <(.base_addr>>5), >(.base_addr>>5) ;add address of first sprite
         lda ZP0
         +VPoke SPR0_ADDR_L+.index*8      
         lda ZP1
-        clc
-        adc #$04                        ;add base address of sprites (sprite 1 located at $8000 and $8000/32=$400)
         +VPoke SPR0_MODE_ADDR_H+.index*8
 
         ;flip sprite if necessary
         pla
         tay                                          
         lda _anglefliptable,y
-        ora #COLLISION_MASK+8          ;don't forget to set bit 4 to keep a z depth of 2 (= between layers)
+        ora #.collision_mask+8          ;don't forget to set bit 4 to keep a z depth of 2 (= between layers)
         +VPoke SPR0_ATTR_0+.index*8
 }
+
+; !macro SetSprite .index, .collision_mask, .angle {       ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees
+;         lda .angle            
+;         lsr                             ;get rid of fraction
+;         lsr
+;         pha
+;         tay
+;         lda _anglespritetable,y
+;         sta ZP0
+;         stz ZP1
+;         +MultiplyBy16 ZP0               ;multiply with 16 to get actual offset
+        
+;         lda ZP0
+;         +VPoke SPR0_ADDR_L+.index*8      
+;         lda ZP1
+;         clc
+;         adc #$04                        ;add base address of sprites (sprite 1 located at $8000 and $8000/32=$400)
+;         +VPoke SPR0_MODE_ADDR_H+.index*8
+
+;         ;flip sprite if necessary
+;         pla
+;         tay                                          
+;         lda _anglefliptable,y
+;         ora #.collision_mask+8          ;don't forget to set bit 4 to keep a z depth of 2 (= between layers)
+;         +VPoke SPR0_ATTR_0+.index*8
+; }
 
 !macro PositionSprite .pos_lo, .pos_hi, .campos_lo, .campos_hi, .screencenter {        
         ;calculate screen coordinates for sprite in relation to camera
@@ -89,7 +136,7 @@ YCar_UpdateSprite:
         +PositionSprite _ycarypos_lo, _ycarypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
         +VPoke SPR1_YPOS_L, ZP0
         +VPoke SPR1_YPOS_H, ZP1
-        +SetSprite 1, _ycardisplayangle
+        +SetSprite 1, CARS_ADDR, YCAR_COLLISION_MASK, _ycardisplayangle
         rts
 
 BCar_UpdateSprite:
@@ -99,7 +146,17 @@ BCar_UpdateSprite:
         +PositionSprite _bcarypos_lo, _bcarypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
         +VPoke SPR2_YPOS_L, ZP0
         +VPoke SPR2_YPOS_H, ZP1
-        +SetSprite 2, _bcardisplayangle
+        +SetSprite 2, CARS_ADDR, BCAR_COLLISION_MASK, _bcardisplayangle
+        rts
+
+TCar_UpdateSprite:
+        +PositionSprite _tcarxpos_lo, _tcarxpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE0 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE0 + XPOS_H, ZP1
+        +PositionSprite _tcarypos_lo, _tcarypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE0 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE0 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _tcarangle
         rts
 
 BlowUpCars:                             ;Blow up one car or both depending on the collision flag of each car

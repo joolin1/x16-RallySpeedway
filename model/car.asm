@@ -420,10 +420,12 @@
         beq +
         rts
 +       lda .finishflag
-        beq +
+        beq .Collide
         stz .speed                      ;car has collided but also finished the race, in this case ignore collision and just abruptly set speed to 0
         rts
-+       lda #ST_SETUPCOLLISION          ;car has collided
+
+.Collide:       
+        lda #ST_SETUPCOLLISION          ;car has collided
         sta _gamestatus
         lda #1
         sta .collisionflag

@@ -33,7 +33,7 @@ MIN_SPEED = 8           ;minimum speed,the user can brake down to, when car is o
 LOW_MAX_SPEED = 19      ;definition of max speeds
 NORMAL_MAX_SPEED = 22
 HIGH_MAX_SPEED = 25
-MAX_EXTRA_ROTATION = 24;16 ;how much extra the car is rotated when skidding
+MAX_EXTRA_ROTATION =    24;16 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road or skidding
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated
@@ -41,6 +41,8 @@ CAR_START_DISTANCE = 24 ;space between cars when two players
 
 PENALTY_TIME = 1        ;NOT FULLY IMPLEMENTED - how much time that is added to a car that has been outdistanced
 COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for a car that has collided with the background 
+
+TRAFFIC_MAX_SPEED = 16  ;max speed for traffic
 
 ;*** Main program **********************************************************************************
 
@@ -99,18 +101,20 @@ _max_speed              !byte NORMAL_MAX_SPEED
 
 .IrqHandler:
         lda VERA_ISR
+        sta VERA_ISR
         bit #4                          ;sprite collision interrupt?
         beq +
-        sta VERA_ISR
-        lda .sprcoltrigger
+        ;sta VERA_ISR
+        ldx .sprcoltrigger
         bne +
-        lda #1
+        and #%11110000                  ;keep only collision info
+        ;lda #1
         sta .sprcoltrigger
         jmp (.defaulthandler_lo)
 +       bit #1                          ;vertical blank interrupt?
         beq +
         sta .vsynctrigger
-        sta VERA_ISR
+        ;sta VERA_ISR
         lda _gamestatus
         cmp #ST_RACING
         bne +
@@ -186,6 +190,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         bcc +
         rts
 +       ;jsr YCar_PrintDebugInformation  ;TEMP
+        jsr TCar_CarTick
         jsr YCar_CarTick                ;Move car and take actions depending on new block and tile position
         lda _noofplayers
         cmp #1
@@ -193,11 +198,21 @@ _max_speed              !byte NORMAL_MAX_SPEED
         ;jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_CarTick
         jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
-        lda .sprcoltrigger
++       lda .sprcoltrigger
+        beq ++
+        bit #YCAR_TCAR_COLLISION
         beq +
-        jsr SetClash                    ;make clash calculations if sprite collision interrupt has been triggered    
-        stz .sprcoltrigger
-+       jsr CheckIfRaceOver             ;check for winner and if race is completely over (= cars have stopped)
+        jsr YCar_Collide                ;yellow car has collided with traffic
+        lda .sprcoltrigger
++       bit #BCAR_TCAR_COLLISION        ;blue car has collided with traffic
+        beq +
+        jsr BCar_Collide
+        lda .sprcoltrigger
++       bit #YCAR_BCAR_COLLISION
+        beq ++
+        jsr SetClash                    ;yellow and blue car have collided (only if two players of course)    
+        stz .sprcoltrigger              ;immediately open for new collision interrupts
+++      jsr CheckIfRaceOver             ;check for winner and if race is completely over (= cars have stopped)
         jsr UpdateMap                   ;update all tilemap information
         rts
 
@@ -208,6 +223,8 @@ _max_speed              !byte NORMAL_MAX_SPEED
 
 .SetUpRace:
         jsr SetTrack                    ;set track
+        jsr InitTraffic
+        jsr Traffic_Show
         jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
@@ -239,9 +256,12 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr UpdateRaceView
         lda #ST_READYTORACE
         sta _gamestatus
+        stz .sprcoltrigger              ;open up for new sprite collision interrupts
         rts
 
 .ReadyToRace:
+        jsr TCar_CarTick        ;let traffic start even before rage begins
+        jsr TCar_UpdateSprite
         jsr .CheckForPause
         bcs +
         lda _joy0
@@ -296,12 +316,16 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr PlayExplosionSound
         jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr BlowUpCars          ;start explosion, one or in rare cases both cars will blow up
+        jsr TCar_CarTick        ;continue traffic
+        jsr TCar_UpdateSprite
         lda #ST_COLLISION
         sta _gamestatus
         rts
 
 .HandleCollision:
         jsr BlowUpCars          ;continue explosion
+        jsr TCar_CarTick        ;continue traffic
+        jsr TCar_UpdateSprite
         lda _ycarcollisionflag
         bne +
         lda _bcarcollisionflag
@@ -400,5 +424,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 !src "model/bluecar.asm"
 !zone
 !src "model/carinteraction.asm"
+!zone
+!src "model/traffic.asm"
 !zone
 !src "model/tracks.asm"

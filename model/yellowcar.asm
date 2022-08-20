@@ -7,6 +7,7 @@ YCar_ResumeRace                 = .ResumeRace
 YCar_CarTick                    = .CarTick
 YCar_TimeAddSeconds             = .TimeAddSeconds
 YCar_TimeSubSeconds             = .TimeSubSeconds
+YCar_Collide                    = .Collide
 
 YCar_PrintDebugInformation:             ;DEBUG
         +SetPrintParams 1,0,$01

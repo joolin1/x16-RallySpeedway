@@ -149,6 +149,15 @@ PSG_V4_WF_PW            = $F9D3
 ;Sprite attributes, base $1FC00
 !addr SPR_ADDR          = $FC00
 
+ADDR_L      = 0
+MODE_ADDR_H = 1
+XPOS_L      = 2
+XPOS_H      = 3
+YPOS_L      = 4
+YPOS_H      = 5
+ATTR_0      = 6
+ATTR_1      = 7
+
 !addr SPR0_ADDR_L       = $FC00
 !addr SPR0_MODE_ADDR_H  = $FC01
 !addr SPR0_XPOS_L       = $FC02

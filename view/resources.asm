@@ -11,11 +11,12 @@
                                                   
 !addr TILES_ADDR        = $4000                   ;        16 Kb | room for 128 tiles   (16 rows x  8 bytes/row) -> 128 x 16 x  8  = $4000 bytes
 !addr CARS_ADDR         = $8000                   ;       8.5 Kb | 17 car sprites       (32 rows x 16 bytes/row) ->  17 x 32 x 16  = $2200 bytes 
-!addr EXPLOSION_ADDR    = CARS_ADDR + $2200       ;         6 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16  = $1800 bytes
-!addr TEXT_ADDR         = EXPLOSION_ADDR + $1800  ;        15 Kb | 15 text sprites      (64 rows x 16 bytes/row) ->  15 x 64 x 16  = $3C00 bytes
-!addr BADGES_ADDR       = TEXT_ADDR + $3C00       ;       0.5 Kb | 2 badge sprites      (16 rows x 16 bytes/row) ->   2 x 16 x 16  =  $200 bytes
-!addr IMAGE_ADDR        = BADGES_ADDR + $200      ;        37 Kb | 1 title image        (320x240 px x 2 px/byte) -> 320 x 240 x .5 = $9600 bytes
-                                                  ;  Total 83 Kb of graphical resources
+!addr EXPLOSION_ADDR    = $A200                   ;         6 Kb | 12 explosion sprites (32 rows x 16 bytes/row) ->  12 x 32 x 16  = $1800 bytes
+!addr TEXT_ADDR         = $BA00                   ;        15 Kb | 15 text sprites      (64 rows x 16 bytes/row) ->  15 x 64 x 16  = $3C00 bytes
+!addr BADGES_ADDR       = $F600                   ;       0.5 Kb | 2 badge sprites      (16 rows x 16 bytes/row) ->   2 x 16 x 16  =  $200 bytes
+!addr IMAGE_ADDR        = $F800                   ;        37 Kb | 1 title image        (320x240 px x 2 px/byte) -> 320 x 240 x .5 = $9600 bytes
+!addr TRAFFIC_ADDR      = $18E00                  ;       8.5 Kb | 17 other car sprites (32 rows x 16 bytes/row) ->  17 x 32 x 16  = $2200 bytes
+                                                  ;Total 91.5 Kb of graphical resources
 
 !addr CAR_PALETTES       = PALETTE + $20
 !addr YCAR_PALETTE       = PALETTE + $20
@@ -46,6 +47,7 @@ SAVEDRACE_BANK          = 8
 .blocksname             !text "BLOCKS.BIN",0
 .tracksname             !text "TRACKS.BIN",0
 .imagename              !text "IMAGE.BIN",0
+.trafficname            !text "TRAFFIC.BIN",0
 .savedracename          !text "SAVEDRACE.BIN",0
 
 ;Sound resources to load
@@ -93,6 +95,7 @@ LoadResources:
         +LoadResource .textname     , TEXT_ADDR     , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .imagename    , IMAGE_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
+        +LoadResource .trafficname  , TRAFFIC_ADDR  , LOAD_TO_VRAM_BANK1, FILE_HAS_HEADER
         +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #BLOCK_BANK_0
         sta RAM_BANK
