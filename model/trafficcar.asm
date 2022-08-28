@@ -1,4 +1,4 @@
-;*** traffic.asm - Class definition ********************************************************************
+;*** trafficcar.asm - Class definition ************************************************************
 
 ;This file works as a class definition. Therefore every label is local. An instance of the class is made by including this source file
 ;in another file and then map the public funtions here to global instance specific labels.
@@ -23,43 +23,43 @@
 .block_ypos             !byte 0
 .old_block_xpos         !byte 0         ;former position in block map
 .old_block_ypos         !byte 0
-.block                  !byte 0         ;current block according to block map
-.routedirection         !byte 0         ;current direction of route according to route map
+.direction              !byte 0         ;current direction of route according to route map
 
 ;*** Public functions ******************************************************************************
 
-InitTraffic = .InitTraffic
-TCar_CarTick = .TrafficTick
-_tcarxpos_lo = .xpos_lo_int
-_tcarxpos_hi = .xpos_hi_int
-_tcarypos_lo = .ypos_lo_int
-_tcarypos_hi = .ypos_hi_int
-_tcarangle = .angle
-
-.InitTraffic:                      
-        lda #10
-        sta .speed
-        lda _startdirection
-        sta .routedirection
+.InitCar:                         ;IN: .A = direction, .X = x startblock, .Y = y startblock         
+        ;set start block
         sta .angle
+        sta .direction
+        stx .block_xpos
+        sty .block_ypos
+        lda #8
+        sta .speed              
 
-        ;set start block and init block history
-        lda _xstartblock
-        sta .block_xpos
-        sta .old_block_xpos
-        lda _ystartblock
-        sta .block_ypos
-        sta .old_block_ypos
-
-        ;where to put car in startblock
-        lda #64                 ;center car
+        ;set offset in start block
+        jsr GetRandomNumber2
+        and #31                 ;max offset = 31
+        clc 
+        adc #48
+        sta ZP0
+        lda .direction
+        cmp #ROUTE_EAST
+        beq +
+        cmp #ROUTE_WEST
+        beq +
+        lda ZP0
         sta .xstartoffset
-        lda #44
+        lda #64
+        sta .ystartoffset
+        bra ++
++       lda #64
+        sta .xstartoffset
+        lda ZP0
         sta .ystartoffset
 
         ;position car in start block
 ++      stz .xpos_lo
-        lda _xstartblock
+        lda .block_xpos
         sta .xpos_hi
         lsr .xpos_hi            ;start block in high byte divided by 2 = 128 * block.        
         ror .xpos_lo
@@ -73,7 +73,7 @@ _tcarangle = .angle
         +MultiplyBy16 .xpos_lo  ;fixed point 12.4. Upper 12 bits represent the integer part
 
         stz .ypos_lo
-        lda _ystartblock
+        lda .block_ypos
         sta .ypos_hi
         lsr .ypos_hi
         ror .ypos_lo
@@ -87,22 +87,18 @@ _tcarangle = .angle
         +MultiplyBy16 .ypos_lo
 
         ;jsr .PlayEngineSound
-        jsr .UpdateCarProperties
-        jsr .UpdateRouteInformation     ;explicitly call this routine here, it is otherwise only called when car is entering a new block        
+        jsr .UpdateCarProperties   
         rts
 
 .TrafficTick:                       ;advance one jiffy, calculate new positions of cars according to speed and direction
-        ;TODO: Move car! Just speed for now ...
-        jsr .UpdateCarPosition
+        jsr .MoveCar
         jsr .UpdateCarProperties
         rts
 
-.UpdateCarPosition:
-        lda .speed
-        lsr
-        lsr                     ;get rid of fraction
-        sta ZP0                 ;speed will also be turning speed
-        lda .routedirection
+;*** Private functions **************************************************************************** 
+
+.MoveCar:
+        lda .direction
         cmp #ROUTE_OFFROAD
         bne +
         rts        
@@ -121,17 +117,41 @@ _tcarangle = .angle
 +       cmp #ROUTE_SOUTH
         bne ++
         jsr .DirectSouth
-
-++      ldx ZP0                 ;speed in .x
-        lda .angle              ;angle in .A
-        jsr .Move               ;move car in current direction
+++      lda .speed
+        lsr
+        lsr                     ;get rid of fraction
+        tax                     ;speed in .X
+        lda .angle
+        lsr
+        lsr                     ;skip fraction, angle is fixed point 6.2
+        asl                     ;multiply by two to get right offset for sin and cos values (16 bit words)
+        tay
+-       lda .xpos_lo 
+        clc 
+        adc _anglecos,y         ;add cosine value represented by a 4 bit fraction
+        sta .xpos_lo
+        lda .xpos_hi
+        adc _anglecos+1,y
+        sta .xpos_hi
+        lda .ypos_lo 
+        sec
+        sbc _anglesin,y         ;add sine value represented by a 4 bit fraction
+        sta .ypos_lo
+        lda .ypos_hi
+        sbc _anglesin+1,y
+        sta .ypos_hi
+        dex
+        bne -
         rts
 
 .DirectEast:
         lda .angle
-        bne +                   
+        bne +
+        stz .turningspeed                   
         rts                     ;if angle = 0 deg do nothing
-+       cmp #128
++       jsr .GetTurningSpeed    ;speed in ZP0
+        lda .angle
+        cmp #128
         bcc +
         lda .angle
         clc
@@ -148,8 +168,12 @@ _tcarangle = .angle
         lda .angle
         cmp #128
         bne +
+        stz .turningspeed                   
         rts                     ;if angle = 180 deg do nothing
-+       bcc +
++       jsr .GetTurningSpeed    ;speed in ZP0
+        lda .angle
+        cmp #128
+        bcc +
         lda .angle
         sec
         sbc ZP0
@@ -165,8 +189,12 @@ _tcarangle = .angle
         lda .angle
         cmp #64
         bne +
+        stz .turningspeed                   
         rts                     ;if angle = 90 deg do nothing
-+       bcc +  
++       jsr .GetTurningSpeed    ;speed in ZP0
+        lda .angle
+        cmp #64
+        bcc +        
         cmp #192
         bcs +                   
         lda .angle      
@@ -184,8 +212,12 @@ _tcarangle = .angle
         lda .angle
         cmp #192
         bne +
+        stz .turningspeed                  
         rts                     ;if angle = 90 deg do nothing
-+       bcs +  
++       jsr .GetTurningSpeed    ;speed in ZP0
+        lda .angle
+        cmp #192
+        bcs +  
         cmp #64
         bcc +                   
         lda .angle      
@@ -198,6 +230,40 @@ _tcarangle = .angle
         sbc ZP0
         sta .angle
         rts
+
+.GetTurningSpeed:               ;randomize a turning speed for each turn and keep it until turn completed
+        lda .turningspeed       ;OUT: ZP0 = current turning speed
+        bne +
+        jsr GetRandomNumber
+        and #3
+        inc                     ;now speed = 1, 2, 3 and 4
+        sta .turningspeed       ;
++       dec                     ;now speed = 0, 1, 2 and 3
+        asl
+        asl
+        asl                     ;multiply by 8 to get right row in speed table
+        clc
+        adc .turningspeed_index ;add col
+        tay
+        lda .turningspeeds,y
+        sta ZP0
+        lda .turningspeed_index
+        inc
+        and #7
+        sta .turningspeed_index ;add column and wrap at 8
+        rts
+
+.turningspeed           !byte 0
+.turningspeeds          !byte 1,1,1,2,1,1,1,2   ;1.25
+                        !byte 1,2,1,2,1,2,1,2   ;1.5
+                        !byte 1,2,2,2,1,2,2,2   ;1.75
+                        !byte 2,2,2,2,2,2,2,2   ;2
+.turningspeed_index     !byte 0
+
+
+        rts
+
+.turning_toggle !byte 0
 
 .UpdateCarProperties:
         ;update integer value of car position
@@ -247,102 +313,7 @@ _tcarangle = .angle
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
-
-        +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block
-        lda (ZP0)
-        sta .block
-        tay
         +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction that current block is leading to
         lda (ZP0)
-        sta .routedirection
-        rts
-
-.Move:                          ;IN: .A = angle, .X = speed. Move car in given direction.
-        lsr
-        lsr                     ;skip fraction, angle is fixed point 6.2
-        asl                     ;multiply by two to get right offset for sin and cos values (16 bit words)
-        tay
--       lda .xpos_lo 
-        clc 
-        adc _anglecos,y         ;add cosine value represented by a 4 bit fraction
-        sta .xpos_lo
-        lda .xpos_hi
-        adc _anglecos+1,y
-        sta .xpos_hi
-        lda .ypos_lo 
-        sec
-        sbc _anglesin,y         ;add sine value represented by a 4 bit fraction
-        sta .ypos_lo
-        lda .ypos_hi
-        sbc _anglesin+1,y
-        sta .ypos_hi
-        dex
-        bne -
-        rts
-
-.IncreaseSpeed:
-        ldx .speed
-        cpx #TRAFFIC_MAX_SPEED
-        bcc +
-        rts
-+       inc .speeddelay
-        lda .speeddelay
-        cmp #SPEED_DELAY
-        bcc +
-        stz .speeddelay        
-        inc .speed              ;fixed 6.2, 24 = 6.0
-+       rts
-
-.speeddelay     !byte 0
-
-.DecreaseSpeed:
-        inc .brakedelay
-        lda .brakedelay
-        cmp #BRAKE_DELAY
-        bne +
-        stz .brakedelay
-        lda .speed              ;fixed 6.2, 14 = 3.5
-        cmp #MIN_SPEED
-        beq +
-        bcc +
-        dec
-        sta .speed
-+       rts
-
-.StopCar:
-        inc .brakedelay
-        lda .brakedelay
-        cmp #BRAKE_DELAY
-        bne +
-        stz .brakedelay
-
-        lda .speed
-        beq +
-        dec
-        sta .speed
-        beq +
-        dec
-        sta .speed       
-+       rts
-
-.brakedelay     !byte 0
-
-.TurnLeft:
-        lda .speed
-        bne +
-        rts
-+       lda .angle              ;fixed 6.2, 256 = 64.0 = 360 deg
-        inc
-        inc                     ;increase angle for car
-        sta .angle
-        rts
-
-.TurnRight:
-        lda .speed
-        bne +
-        rts
-+       lda .angle              ;fixed 6.2, 256 = 64.0 = 360 deg
-        dec
-        dec
-        sta .angle
+        sta .direction
         rts

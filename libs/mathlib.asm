@@ -245,7 +245,7 @@
 ;*** Random Numbers ********************************************************************************
 
 GetRandomNumber:
-	lda .randomnumber
+	lda .randomnumber       ;OUT: .A = pseudo random number between 0 and $ff
 	beq +
 	asl
 	beq ++		        ;if the input was $80, skip the EOR
@@ -256,27 +256,37 @@ GetRandomNumber:
 
 .randomnumber	!byte 0
 
-; GetRandomNumber:		;Super Mario World version
-; 	lda .rndseed1
-; 	asl
-; 	asl
-; 	sec
-; 	adc .rndseed1
-; 	sta .rndseed1
-; 	asl .rndseed2
-; 	lda #$20
-; 	bit .rndseed2
-; 	bcc +
-; 	beq +++
-; 	bne ++
-; +	bne +++
-; ++	inc .rndseed2
-; +++	lda .rndseed2
-; 	eor .rndseed1
-; 	sta .randomnumber
-; 	rts
-; .rndseed1	!byte $12
-; .rndseed2	!byte $7b
+SetRandomNumberSeed:
+        jsr RDTIM
+        sta .randomnumber
+        rts
+
+GetRandomNumber2:		;Super Mario World version
+	lda .rndseed1           ;;OUT: .A = pseudo random number between 0 and $ff
+	asl
+	asl
+	sec
+	adc .rndseed1
+	sta .rndseed1
+	asl .rndseed2
+	lda #$20
+	bit .rndseed2
+	bcc +
+	beq +++
+	bne ++
++	bne +++
+++	inc .rndseed2
++++	lda .rndseed2
+	eor .rndseed1
+	rts
+.rndseed1	!byte $12
+.rndseed2	!byte $7b
+
+SetRandomNumber2Seed:
+        jsr RDTIM
+        sta .rndseed1
+        stx .rndseed2
+        rts
 
 ;*** Various ***************************************************************************************
 

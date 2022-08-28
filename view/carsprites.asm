@@ -12,15 +12,23 @@ _anglefliptable         !byte   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 
 YCAR_COLLISION_MASK = %00110000
 BCAR_COLLISION_MASK = %01010000
-TCAR_COLLISION_MASK = %01100000
+TCAR_COLLISION_MASK = %11100000
 
 YCAR_BCAR_COLLISION = 16
 YCAR_TCAR_COLLISION = 32
 BCAR_TCAR_COLLISION = 64
+TCAR_TCAR_COLLISION = 128
 
 TRAFFIC_SPRITE0_INDEX = 1 + 2 + TEXTSPRITE_COUNT + 2     ;first traffic car sprite is after sprite 0, 2 car sprites, all text sprites and 2 badge sprites) 
+
 TRAFFIC_SPRITE0 = $FC00 + TRAFFIC_SPRITE0_INDEX * 8     
-TRAFFIC_COUNT = 8
+TRAFFIC_SPRITE1 = TRAFFIC_SPRITE0 + 8
+TRAFFIC_SPRITE2 = TRAFFIC_SPRITE1 + 8
+TRAFFIC_SPRITE3 = TRAFFIC_SPRITE2 + 8
+TRAFFIC_SPRITE4 = TRAFFIC_SPRITE3 + 8
+TRAFFIC_SPRITE5 = TRAFFIC_SPRITE4 + 8
+TRAFFIC_SPRITE6 = TRAFFIC_SPRITE5 + 8
+TRAFFIC_SPRITE7 = TRAFFIC_SPRITE6 + 8
 
 YCar_Show:
         +VPokeI SPR1_ATTR_0,YCAR_COLLISION_MASK+8       ;enable sprite and set collision mask
@@ -33,9 +41,8 @@ BCar_Show:
         rts
 
 Traffic_Show:
-        ;TEMP just one car for now
-        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_0,      1, TCAR_COLLISION_MASK+8      ;enable cars and set collision mask
-        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_1,      1, %10100000 + 6              ;set palette 6 for traffic cars
+        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_0, TRAFFIC_COUNT, TCAR_COLLISION_MASK + 8    ;enable cars and set collision mask
+        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_1, TRAFFIC_COUNT, %10100000 + 6              ;set palette 6 for traffic cars
         rts
 
 HideCars:
@@ -149,14 +156,78 @@ BCar_UpdateSprite:
         +SetSprite 2, CARS_ADDR, BCAR_COLLISION_MASK, _bcardisplayangle
         rts
 
-TCar_UpdateSprite:
-        +PositionSprite _tcarxpos_lo, _tcarxpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+Traffic_UpdateSprites:
+        ;Car 0
+        +PositionSprite _car0_xpos_lo, _car0_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
         +VPoke TRAFFIC_SPRITE0 + XPOS_L, ZP0
         +VPoke TRAFFIC_SPRITE0 + XPOS_H, ZP1
-        +PositionSprite _tcarypos_lo, _tcarypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +PositionSprite _car0_ypos_lo, _car0_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
         +VPoke TRAFFIC_SPRITE0 + YPOS_L, ZP0
         +VPoke TRAFFIC_SPRITE0 + YPOS_H, ZP1
-        +SetSprite TRAFFIC_SPRITE0_INDEX, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _tcarangle
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 0, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car0_angle
+
+        ;Car 1
+        +PositionSprite _car1_xpos_lo, _car1_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE1 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE1 + XPOS_H, ZP1
+        +PositionSprite _car1_ypos_lo, _car1_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE1 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE1 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 1, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car1_angle
+
+        ;Car 2
+        +PositionSprite _car2_xpos_lo, _car2_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE2 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE2 + XPOS_H, ZP1
+        +PositionSprite _car2_ypos_lo, _car2_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE2 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE2 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 2, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car2_angle
+
+        ;Car 3
+        +PositionSprite _car3_xpos_lo, _car3_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE3 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE3 + XPOS_H, ZP1
+        +PositionSprite _car3_ypos_lo, _car3_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE3 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE3 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 3, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car3_angle
+
+        ;Car 4
+        +PositionSprite _car4_xpos_lo, _car4_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE4 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE4 + XPOS_H, ZP1
+        +PositionSprite _car4_ypos_lo, _car4_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE4 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE4 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 4, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car4_angle
+
+        ;Car 5
+        +PositionSprite _car5_xpos_lo, _car5_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE5 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE5 + XPOS_H, ZP1
+        +PositionSprite _car5_ypos_lo, _car5_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE5 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE5 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 5, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car5_angle
+
+        ;Car 6
+        +PositionSprite _car6_xpos_lo, _car6_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE6 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE6 + XPOS_H, ZP1
+        +PositionSprite _car6_ypos_lo, _car6_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE6 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE6 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 6, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car6_angle
+
+        ;Car 7
+        +PositionSprite _car7_xpos_lo, _car7_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
+        +VPoke TRAFFIC_SPRITE7 + XPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE7 + XPOS_H, ZP1
+        +PositionSprite _car7_ypos_lo, _car7_ypos_hi, _camypos_lo, _camypos_hi, SCREEN_HEIGHT/2
+        +VPoke TRAFFIC_SPRITE7 + YPOS_L, ZP0
+        +VPoke TRAFFIC_SPRITE7 + YPOS_H, ZP1
+        +SetSprite TRAFFIC_SPRITE0_INDEX + 7, TRAFFIC_ADDR, TCAR_COLLISION_MASK, _car7_angle
         rts
 
 BlowUpCars:                             ;Blow up one car or both depending on the collision flag of each car
