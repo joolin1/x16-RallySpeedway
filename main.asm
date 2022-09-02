@@ -102,7 +102,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         lda VERA_ISR
         sta VERA_ISR
         bit #4                          ;sprite collision interrupt?
-        beq +
+        beq +        
         ldx .sprcoltrigger
         bne +
         and #%11110000                  ;keep only collision info
@@ -193,20 +193,20 @@ _max_speed              !byte NORMAL_MAX_SPEED
         beq +
         ;jsr BCar_PrintDebugInformation  ;TEMP        
         jsr BCar_CarTick
-        jsr CheckInteraction            ;check if one car has outdistanced the other or if cars have collided
+        jsr CheckInteraction            ;check if one car has outdistanced the other
 +       lda .sprcoltrigger
         beq ++
-        bit #TCAR_TCAR_COLLISION
-        beq +                           ;just skip if traffic cars collide (this should never happen)
-        ;stz .sprcoltrigger
-        bra ++
-+       bit #YCAR_TCAR_COLLISION
+        bit #YCAR_TCAR_COLLISION
         beq +
-        jsr YCar_Collide                ;yellow car has collided with traffic
+        lda #0
+        jsr SetTrafficClash 
+        stz .sprcoltrigger
         lda .sprcoltrigger
 +       bit #BCAR_TCAR_COLLISION        ;blue car has collided with traffic
         beq +
-        jsr BCar_Collide
+        lda #1
+        jsr SetTrafficClash 
+        stz .sprcoltrigger
         lda .sprcoltrigger
 +       bit #YCAR_BCAR_COLLISION
         beq ++

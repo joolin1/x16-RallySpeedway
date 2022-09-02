@@ -5,7 +5,6 @@
 ;By including the file, all variables will be added once for every instance. The drawback is that the code is will as well (like a macro). 
 
 ;Car properties
-.speed                  !byte 0         ;fixed point 6.2. 256 = 64.0 = theoretical max speed (+1)
 .angle                  !byte 0         ;fixed point 6.2. 256 = 64.0 = 360 deg
 .xpos_lo                !byte 0         ;current position in game world, a fixed point number 12.4 (0-4095) 
 .xpos_hi                !byte 0
@@ -24,6 +23,7 @@
 .old_block_xpos         !byte 0         ;former position in block map
 .old_block_ypos         !byte 0
 .direction              !byte 0         ;current direction of route according to route map
+.old_direction          !byte 0
 
 ;*** Public functions ******************************************************************************
 
@@ -32,9 +32,7 @@
         sta .angle
         sta .direction
         stx .block_xpos
-        sty .block_ypos
-        lda #8
-        sta .speed              
+        sty .block_ypos          
 
         ;set offset in start block
         jsr GetRandomNumber2
@@ -117,7 +115,7 @@
 +       cmp #ROUTE_SOUTH
         bne ++
         jsr .DirectSouth
-++      lda .speed
+++      lda #TRAFFIC_SPEED
         lsr
         lsr                     ;get rid of fraction
         tax                     ;speed in .X
@@ -254,16 +252,11 @@
         rts
 
 .turningspeed           !byte 0
-.turningspeeds          !byte 1,1,1,2,1,1,1,2   ;1.25
-                        !byte 1,2,1,2,1,2,1,2   ;1.5
-                        !byte 1,2,2,2,1,2,2,2   ;1.75
+.turningspeeds          !byte 1,1,1,2,1,1,1,1   ;1.125
+                        !byte 1,2,1,2,1,2,1,1   ;1.375
+                        !byte 1,2,2,2,1,2,1,2   ;1.625
                         !byte 2,2,2,2,2,2,2,2   ;2
 .turningspeed_index     !byte 0
-
-
-        rts
-
-.turning_toggle !byte 0
 
 .UpdateCarProperties:
         ;update integer value of car position
@@ -313,7 +306,13 @@
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
+        lda .direction
+        sta .old_direction
         +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction that current block is leading to
         lda (ZP0)
         sta .direction
-        rts
+        cmp #ROUTE_CROSSING
+        bne +
+        lda .old_direction
+        sta .direction
++       rts

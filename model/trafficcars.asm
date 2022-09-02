@@ -1,16 +1,20 @@
 ;*** trafficcars.asm ******************************************************************************
 
 TRAFFIC_COUNT = 8
+TRAFFIC_SPEED = 8
 
 .block_xpos         !byte 0
 .block_ypos         !byte 0
 .direction          !byte 0
+.old_direction      !byte 0
 
 InitTraffic:
     lda _xstartblock
     sta .block_xpos
     lda _ystartblock
     sta .block_ypos
+    lda _startdirection
+    sta .old_direction
 
     jsr .GoRandomlyForward
     jsr Car0_Init
@@ -31,14 +35,19 @@ InitTraffic:
     rts
 
 .GoRandomlyForward:                 ;OUT: .A = direction, .X and .Y = block position
-    jsr GetRandomNumber
+-   jsr GetRandomNumber
     and #15
-    inc
+    cmp #2
+    bcc -
 -   pha
     +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction for current block
     lda (ZP0)
     sta .direction
-    jsr .GoToNextBlock
+    cmp #ROUTE_CROSSING
+    bne +
+    lda .old_direction
+    sta .direction          ;if crossing continue straight forward
++   jsr .GoToNextBlock
     pla
     dec
     bne -
@@ -49,6 +58,7 @@ InitTraffic:
 
 .GoToNextBlock:
     lda .direction
+    sta .old_direction
     cmp #ROUTE_EAST
     bne +
     +IncAndWrap32 .block_xpos

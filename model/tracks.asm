@@ -6,6 +6,8 @@ ROUTE_NORTH     = 64    ;...
 ROUTE_WEST      = 128
 ROUTE_SOUTH     = 192
 ROUTE_OFFROAD   = -1    ;not part of route
+ROUTE_CROSSING  = 1     ;This is for crossings without any arrow pointing in a certain direction. Route will continue straight forward.
+                        ;Therefore information about where car is coming from must be available. 
 
 ;Type of tiles (used for collision detection)
 TILE_ROAD = 0                   ;car is on road
@@ -63,6 +65,7 @@ _route_hi               !byte 0
 .row                    !byte 0
 .col                    !byte 0
 .direction              !byte 0
+.old_direction          !byte 0         ;keep history be able to track routes straight forward in crossings
 .finishedflag           !byte 0
 .errorflag              !byte 0
 .errormessage1          !scr "ERROR IN TRACK ",0
@@ -247,6 +250,10 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
 
         ;add block to the route after checking that road is not broken between last block and current block 
 +       ldx .direction
+        cpx #ROUTE_CROSSING
+        bne +
+        ldx .old_direction              ;if coming from a crossing keep old direction to go straight forward through crossing
++       stx .old_direction              ;save current direction as history before calculating new direction
         cpx #ROUTE_EAST
         bne +
         jsr .RouteComingFromWest
@@ -269,8 +276,9 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         sta ZP1
         bra .ReturnError                ;route is broken (eg an east-west road is followed by a north-south road)
 +       lda .finishedflag
-        beq -                           ;continue route tracking with next block
-        clc                             ;route tracking complete, no errors found!
+        bne +                           ;continue route tracking with next block
+        jmp -
++       clc                             ;route tracking complete, no errors found!
         rts
 
 .ReturnError:
@@ -305,7 +313,7 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         rts
 +       cmp #BLOCK_CROSSING
         bne +
-        lda #ROUTE_EAST
+        lda #ROUTE_CROSSING
         sta .direction
         jsr .AddToRoute
         +IncAndWrap32 .col
@@ -346,7 +354,7 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         rts
 +       cmp #BLOCK_CROSSING
         bne +
-        lda #ROUTE_NORTH
+        lda #ROUTE_CROSSING
         sta .direction
         jsr .AddToRoute
         +DecAndWrap32 .row
@@ -387,7 +395,7 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         rts
 +       cmp #BLOCK_CROSSING
         bne +
-        lda #ROUTE_WEST
+        lda #ROUTE_CROSSING
         sta .direction
         jsr .AddToRoute
         +DecAndWrap32 .col
@@ -428,7 +436,7 @@ VerifyTracks:                   ;Verify that all tracks have a coherent route
         rts
 +       cmp #BLOCK_CROSSING
         bne +
-        lda #ROUTE_SOUTH
+        lda #ROUTE_CROSSING
         sta .direction
         jsr .AddToRoute
         +IncAndWrap32 .row

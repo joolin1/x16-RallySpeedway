@@ -80,32 +80,6 @@ HideTraffic:
         +VPoke SPR0_ATTR_0+.index*8
 }
 
-; !macro SetSprite .index, .collision_mask, .angle {       ;update car sprite to point in right direction, a skidding car will be rotated some extra degrees
-;         lda .angle            
-;         lsr                             ;get rid of fraction
-;         lsr
-;         pha
-;         tay
-;         lda _anglespritetable,y
-;         sta ZP0
-;         stz ZP1
-;         +MultiplyBy16 ZP0               ;multiply with 16 to get actual offset
-        
-;         lda ZP0
-;         +VPoke SPR0_ADDR_L+.index*8      
-;         lda ZP1
-;         clc
-;         adc #$04                        ;add base address of sprites (sprite 1 located at $8000 and $8000/32=$400)
-;         +VPoke SPR0_MODE_ADDR_H+.index*8
-
-;         ;flip sprite if necessary
-;         pla
-;         tay                                          
-;         lda _anglefliptable,y
-;         ora #.collision_mask+8          ;don't forget to set bit 4 to keep a z depth of 2 (= between layers)
-;         +VPoke SPR0_ATTR_0+.index*8
-; }
-
 !macro PositionSprite .pos_lo, .pos_hi, .campos_lo, .campos_hi, .screencenter {        
         ;calculate screen coordinates for sprite in relation to camera
 
@@ -130,8 +104,8 @@ HideTraffic:
         bcs +                           ;(a position of for example 1024+50 would display the sprite at pos 50 otherwise...)
         cmp #$02
         bcc +
-        stz ZP0                         ;sprite should not be displayed, to achieve this just set xpos to 512
-        lda #2
+        stz ZP0                         ;sprite should not be displayed, to achieve this just set pos to 768
+        lda #3                          ;when vertically positioned this line is not rendered thus collisions will not be triggered.
         sta ZP1
 +       
 }

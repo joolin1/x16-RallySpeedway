@@ -19,20 +19,6 @@ InitCarInteraction:
         stz _winner
         rts
 
-; CheckForWinner:                 ;OUT: _winner = 0-3 
-;         ;set winner if any
-;         lda _winner
-;         bne ++                  ;if winner is set continue to check if race is over
-;         lda _ycarfinishflag
-;         ora _winner
-;         sta _winner             ;set bit 0 if yellow car has finished
-;         lda _bcarfinishflag
-;         beq +
-;         lda #2
-;         ora _winner
-;         sta _winner             ;set bit 1 if blue car has finished
-; +       rts                     ;(race is not over when winner is set, it takes a short wile before cars have stopped)
-
 CheckIfRaceOver:                       ;check if race over (= cars have crossed finish line and stopped)
         lda _ycarfinishflag
         beq ++
@@ -356,3 +342,214 @@ GetClashAngle:                  ;Get collision/clash angle. The yellow car is th
         sbc .collisionangle
         sta .collisionangle
 +       rts
+
+SetTrafficClash:                ;IN: .A = car that has collided with traffic. 0 = yellow car, 1 = blue car
+        sta .collidingcarflag
+        jsr GetCollidingTrafficCarRelativePosition
+        jsr GetClashAngle
+        lda .collisionangle        
+        clc
+        adc #128                ;add 180 deg
+        sta .tclashangle         ;set angle in which direction race car is pushed by traffic car (the opposite direction)
+
+        ;calculate how much race car is pushed by traffic car
+        lda #TRAFFIC_SPEED
+        lsr
+        lsr                     ;skip fraction
+        tax                     ;traffic car speed in .X
+        lda .tclashangle
+        sec
+        sbc .tcarangle          ;difference between collision angle and movement angle is needed to calculate in which speed traffic car is moving against race car
+        lsr
+        lsr                     ;skip fraction, angle is fixed point 6.2
+        asl                     ;multiply by two to get right offset for cos value (16 bit words)
+        tay
+        lda #0
+-       clc 
+        adc  _anglecos,y        ;add 4 bit fraction
+        dex
+        bne -
+        bit #$80
+        beq +
+        lda #8
+        sta .rcarclashpush      ;if traffic car actually is moving away just set a small standard value
+        bra ++
++       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
+        lsr                     
+        sta ZP0
+        lsr 
+        clc
+        adc ZP0                 ;add 50% extra push just to make a better game and make sure cars are not left above each other
+        cmp #8
+        bcs +
+        lda #8        
++       sta .rcarclashpush
+
+++      jsr PlayClashSound
+
+        lda .collidingcarflag
+        bne +
+        lda .tclashangle
+        sta _ycarclashangle
+        lda .rcarclashpush
+        sta _ycarclashpush
+        lda #MIN_SPEED
+        sta _ycarspeed
+        rts
++       lda .tclashangle
+        sta _bcarclashangle
+        lda .rcarclashpush
+        sta _bcarclashpush
+        lda #MIN_SPEED
+        sta _bcarspeed
+        rts      
+
+.collidingcarflag       !byte 0 ;which race car that has collided with traffic car
+.tclashangle            !byte 0 ;direction race car is pushed by traffic car
+.tcarangle              !byte 0 ;direction traffic car is moving
+.rcarclashpush          !byte 0 ;how much race car is pushed by traffic car
+
+GetCollidingTrafficCarRelativePosition:         ;IN: .A = flag, 0 = yellow car, 1 = blue car, OUT: distance variables will be set
+        ldx _car0_xpos_lo
+        stx ZP10
+        ldx _car0_xpos_hi
+        stx ZP11
+        ldy _car0_ypos_lo
+        sty ZP12
+        ldy _car0_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0 ;x distance < 32 (sprite width and height is 32)
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0 ;y distance < 32
+        bcs +
+        lda _car0_angle
+        sta .tcarangle
+        rts
+
++       ldx _car1_xpos_lo
+        stx ZP10
+        ldx _car1_xpos_hi
+        stx ZP11
+        ldy _car1_ypos_lo
+        sty ZP12
+        ldy _car1_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car1_angle
+        sta .tcarangle
+        rts
+
++       ldx _car2_xpos_lo
+        stx ZP10
+        ldx _car2_xpos_hi
+        stx ZP11
+        ldy _car2_ypos_lo
+        sty ZP12
+        ldy _car2_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car2_angle
+        sta .tcarangle
+        rts
+
++       ldx _car3_xpos_lo
+        stx ZP10
+        ldx _car3_xpos_hi
+        stx ZP11
+        ldy _car3_ypos_lo
+        sty ZP12
+        ldy _car3_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car3_angle
+        sta .tcarangle
+        rts
+
++       ldx _car4_xpos_lo
+        stx ZP10
+        ldx _car4_xpos_hi
+        stx ZP11
+        ldy _car4_ypos_lo
+        sty ZP12
+        ldy _car4_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car4_angle
+        sta .tcarangle
+        rts
+
++       ldx _car5_xpos_lo
+        stx ZP10
+        ldx _car5_xpos_hi
+        stx ZP11
+        ldy _car5_ypos_lo
+        sty ZP12
+        ldy _car5_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car5_angle
+        sta .tcarangle
+        rts
+
++       ldx _car6_xpos_lo
+        stx ZP10
+        ldx _car6_xpos_hi
+        stx ZP11
+        ldy _car6_ypos_lo
+        sty ZP12
+        ldy _car6_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        +Cmp16 .absxdist_lo, 32, 0
+        bcs +
+        +Cmp16 .absydist_lo, 32, 0
+        bcs +
+        lda _car6_angle
+        sta .tcarangle
+        rts
+
++       ldx _car7_xpos_lo
+        stx ZP10
+        ldx _car7_xpos_hi
+        stx ZP11
+        ldy _car7_ypos_lo
+        sty ZP12
+        ldy _car7_ypos_hi
+        sty ZP13        
+        jsr CalculateDistanceToTrafficCar
+        lda _car7_angle
+        sta .tcarangle
+        rts
+
+CalculateDistanceToTrafficCar:  ;IN: ZP10, ZP11 = xpos of traffic car, ZP12, ZP13 = ypos of traffic car
+                                ;OUT: distance variables will be set
+        lda .collidingcarflag
+        beq +
+        jmp ++
++       +CalculateDistance _ycarxpos_lo, ZP10, .xdist_lo, .absxdist_lo
+        +CalculateDistance _ycarypos_lo, ZP12, .ydist_lo, .absydist_lo
+        rts
+++      +CalculateDistance _bcarxpos_lo, ZP10, .xdist_lo, .absxdist_lo
+        +CalculateDistance _bcarypos_lo, ZP12, .ydist_lo, .absydist_lo
+        rts

@@ -37,6 +37,7 @@
 .checkpointdirection    !byte 0         ;current direction for checkpoint
 .block                  !byte 0         ;current block according to block map
 .routedirection         !byte 0         ;current direction of route according to route map
+.old_routedirection     !byte 0
 .distance_lo            !byte 0         ;distance in blocks left to go
 .distance_hi            !byte 0
 .distanceleft_lo        !byte 0         ;DECIMAL number! (it takes 3 bytes to hold a 16 bit binary number)
@@ -124,10 +125,8 @@
         ;set start block and init block history
         lda .checkpoint_xpos
         sta .block_xpos
-        sta .old_block_xpos
         lda .checkpoint_ypos
         sta .block_ypos
-        sta .old_block_ypos
 
         ;decide where to put car/cars in startblock
         lda _noofplayers
@@ -306,6 +305,9 @@
         sta .old_block_xpos
         lda .block_ypos
         sta .old_block_ypos
+        lda .routedirection
+        sta .old_routedirection
+
         +GetElementInArray _blockmap_lo, 5, .block_ypos, .block_xpos    ;get current block
         lda (ZP0)
         sta .block
@@ -321,21 +323,25 @@
         +Countdown16bitDec .distanceleft_lo
         pla
 +       cmp #BLOCK_EW_STARTFINISH
-        beq +
+        beq ++
         cmp #BLOCK_NS_STARTFINISH
-        beq +
+        beq ++
         +GetElementInArray _route_lo, 5, .block_ypos, .block_xpos       ;get direction that current block is leading to
         lda (ZP0)
         sta .routedirection
-        cmp #ROUTE_OFFROAD
-        beq +
+        cmp #ROUTE_CROSSING
+        bne +
+        lda .old_routedirection
+        sta .routedirection             ;if crossing continue straight forward!
++       cmp #ROUTE_OFFROAD
+        beq ++
         lda .routedirection
         sta .checkpointdirection        ;if car is on road AND road is part of route AND not finish block, then update checkpoint information
         lda .block_xpos
         sta .checkpoint_xpos
         lda .block_ypos
         sta .checkpoint_ypos
-+       rts
+++      rts
 
 .UpdateTileInformation:
         ;1 - get address of current block
