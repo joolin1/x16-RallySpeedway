@@ -244,7 +244,29 @@
 
 ;*** Random Numbers ********************************************************************************
 
-GetRandomNumber:
+SetRandomSeed:
+        jsr SetRandom1Seed
+        jsr SetRandom2Seed
+        rts
+
+SetRandomSeedZero:
+        stz .randomnumber
+        stz .rndseed1
+        stz .rndseed2
+        rts
+
+SetRandom1Seed:
+        jsr RDTIM
+        sty .randomnumber
+        rts
+
+SetRandom2Seed:
+        jsr RDTIM
+        stx .rndseed1
+        sty .rndseed2
+        rts
+
+GetRandomNumber1:
 	lda .randomnumber       ;OUT: .A = pseudo random number between 0 and $ff
 	beq +
 	asl
@@ -256,10 +278,7 @@ GetRandomNumber:
 
 .randomnumber	!byte 0
 
-SetRandomNumberSeed:
-        jsr RDTIM
-        sta .randomnumber
-        rts
+
 
 GetRandomNumber2:		;Super Mario World version
 	lda .rndseed1           ;;OUT: .A = pseudo random number between 0 and $ff
@@ -282,12 +301,6 @@ GetRandomNumber2:		;Super Mario World version
 .rndseed1	!byte $12
 .rndseed2	!byte $7b
 
-SetRandomNumber2Seed:
-        jsr RDTIM
-        sta .rndseed1
-        stx .rndseed2
-        rts
-
 ;*** Various ***************************************************************************************
 
 !macro IncAndWrap32 .pos {
@@ -302,6 +315,13 @@ SetRandomNumber2Seed:
         dec
         and #31
         sta .pos
+}
+
+!macro DecToZero .val {
+        dec .val
+        bpl +
+        stz .val
++        
 }
 
 ;*** Time comparison. Time is represented by three bytes (minutes, seconds, jiffies) ***************

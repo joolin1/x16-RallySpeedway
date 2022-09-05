@@ -94,6 +94,7 @@ MenuHandler:
 	bne +
     jsr EndJoyPlayback
 	jsr .RestoreMenuSelections		;after demo race, restore menu selections
+	jsr SetRandomSeed				;start randomize in a more unpredictable way after the demo race
 	lda #M_SHOW_CREDITS
 	sta .menumode
 	rts
@@ -406,6 +407,7 @@ MenuHandler:
 	sta _max_speed
 	lda #1
 	sta _track
+	jsr SetRandomSeedZero	;randomize everything in the same way when displaying demo race
 	jsr StartJoyPlayback
 	jsr .CloseMainMenu
 	rts
@@ -737,7 +739,7 @@ NO_POSITION  = 27
 	lda #$20
 	sta VERA_ADDR_H
 	lda #>L0_MAP_ADDR
--	jsr GetRandomNumber
+-	jsr GetRandomNumber1
 	and #30
 	cmp #28					;get even random number from 0-26
 	bcc +
@@ -749,7 +751,7 @@ NO_POSITION  = 27
 	inc
 	sta VERA_ADDR_L			;set col 0 second byte which contains color information
 
-	jsr GetRandomNumber
+	jsr GetRandomNumber1
 	and #7					;only 8 colors in table
 	tay
 	lda .colors,y			;load random color

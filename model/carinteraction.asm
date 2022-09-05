@@ -263,17 +263,16 @@ SetClash:
         beq +
         stz _bcarclashpush      ;if yellow car actually is moving away it is of course not pushing
         bra ++
+
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
         lsr                    
         sta ZP0
         lsr
         clc
         adc ZP0                 ;add 50% extra push just to make a better game and make sure cars are not left above each other
-        cmp #4
-        bcs +
-        lda #4
-+       sta _bcarclashpush
-
+        jsr .TrimPush
+        sta _bcarclashpush
+        
         ;calculate how much yellow car is pushed by blue car
 ++      lda _bcarspeed
         lsr
@@ -294,18 +293,39 @@ SetClash:
         bit #$80
         beq +
         stz _ycarclashpush      ;if blue car actually is moving away it is of course not pushing
-        rts
+        bra ++
 +       lsr                     ;convert from fixed point 4.4 to fixed point 6.2
         lsr                     
         sta ZP0
         lsr 
         clc
         adc ZP0                 ;add 50% extra push just to make a better game and make sure cars are not left above each other
-        cmp #4
+        jsr .TrimPush:
+        sta _ycarclashpush
+
+++      dec _bcarspeed          ;slow down cars one step each time they collide but not below min speed
+        lda _bcarspeed
+        cmp #MIN_SPEED
         bcs +
-        lda #4        
-+       sta _ycarclashpush
-        rts      
+        lda #MIN_SPEED
+        sta _bcarspeed
++       dec _ycarspeed
+        lda _ycarspeed
+        cmp #MIN_SPEED
+        bcs +
+        lda #MIN_SPEED
+        sta _ycarspeed
++       rts 
+
+.TrimPush:                      ;Set limits for how much a car can be pushed. IN: .A = push value. OUT: .A = trimmed value
+        cmp #4
+        bcs +                   
+        lda #4
+        rts
++       cmp #17
+        bcc +
+        lda #16
++       rts
 
 GetClashAngle:                  ;Get collision/clash angle. The yellow car is the reference point (for exemaple if blue car is exactly above yellow, the collision angle is 90 deg)
         lda .absydist_lo

@@ -58,7 +58,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
        	jsr Z_init_player               ;init ZSound
-        jsr SetRandomNumberSeed
+        jsr SetRandomSeed
         jsr .SetupIrqHandler
 
         ;main loop
@@ -223,6 +223,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 
 .SetUpRace:
         jsr SetTrack                    ;set track
+        ;jsr SetRandomSeedZero          ;RACE RECORDING: uncomment whan a race should be recorded
         jsr InitTraffic
         lda _joy_playback
         bne +                           ;Hide traffic when demo race. Traffic is randomized and demo race prerecorded ... 
@@ -242,7 +243,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr EnableLayer0
         lda #ST_READYTORACE
         sta _gamestatus
-        ;jsr StartJoyRecording          ;uncomment when a race should be recorded
+        ;jsr StartJoyRecording          ;RACE RECORDING: uncomment when a race should be recorded.
         rts
 
 .ResumeRace:
@@ -262,8 +263,6 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .ReadyToRace:
-        ; jsr Traffic_Tick        ;let traffic start even before rage begins
-        ; jsr Traffic_UpdateSprites
         jsr .CheckForPause
         bcs +
         lda _joy0
@@ -357,7 +356,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr StartMusic
 +       lda #ST_RACEOVER
         sta _gamestatus
-        ;jsr EndJoyRecording     ;uncomment when a race should be recorded
+        ;jsr EndJoyRecording     ;RACE RECORDING: uncomment when a race should be recorded
         rts
 
 .RaceOver:

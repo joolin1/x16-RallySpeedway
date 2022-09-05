@@ -232,7 +232,7 @@
 .GetTurningSpeed:               ;randomize a turning speed for each turn and keep it until turn completed
         lda .turningspeed       ;OUT: ZP0 = current turning speed
         bne +
-        jsr GetRandomNumber
+        jsr GetRandomNumber1
         and #3
         inc                     ;now speed = 1, 2, 3 and 4
         sta .turningspeed       ;
