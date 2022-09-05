@@ -224,8 +224,10 @@ _max_speed              !byte NORMAL_MAX_SPEED
 .SetUpRace:
         jsr SetTrack                    ;set track
         jsr InitTraffic
+        lda _joy_playback
+        bne +                           ;Hide traffic when demo race. Traffic is randomized and demo race prerecorded ... 
         jsr Traffic_Show
-        jsr InitCarInteraction
++       jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
         jsr DisplayYCarBadge

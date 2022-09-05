@@ -796,12 +796,12 @@ NO_POSITION  = 27
 !scr "       for atari and commodore 64",0
 !scr "           by john anderson",0
 !scr 0
-!scr "             copyright 2020",0
+!scr "             copyright 2022",0
 !scr "          by johan k;rlin and",0
 !scr "        clergy games productions",0
 !scr "          all rights reserved",0
 !scr 0
-!scr "             version 1.0.1",0
+!scr "             version 1.1",0
 
 STARTSCREEN_ROW_COUNT = 12
 
