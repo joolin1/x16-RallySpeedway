@@ -223,8 +223,8 @@ _max_speed              !byte NORMAL_MAX_SPEED
 
 .SetUpRace:
         jsr SetTrack                    ;set track
-        ;jsr SetRandomSeedZero          ;RACE RECORDING: uncomment whan a race should be recorded
-        jsr InitTraffic
+        ;jsr SetRandomSeedZero           ;RACE RECORDING: uncomment whan a race should be recorded
+        jsr InitTraffic                 ;RACE RECORDING: comment when a race should be recorded
         lda _joy_playback
         bne +                           ;Hide traffic when demo race. Traffic is randomized and demo race prerecorded ... 
         jsr Traffic_Show

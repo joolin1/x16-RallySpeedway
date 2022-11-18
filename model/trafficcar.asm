@@ -252,10 +252,10 @@
         rts
 
 .turningspeed           !byte 0
-.turningspeeds          !byte 2,1,1,1,2,1,1,1   ;1.25
-                        !byte 2,1,2,1,2,1,2,1   ;1.5
-                        !byte 2,2,2,1,2,2,2,1   ;1.75
-                        !byte 2,2,2,2,2,2,2,2   ;2
+.turningspeeds          !byte 2,1,2,1,2,1,2,1   ;1.5
+                        !byte 2,2,1,2,2,2,2,1   ;1.75
+                        !byte 2,2,2,1,2,2,2,2   ;1.875
+                        !byte 2,2,2,2,2,2,2,2   ;2.0
 .turningspeed_index     !byte 0
 
 .UpdateCarProperties:

@@ -401,7 +401,7 @@ MenuHandler:
 +	rts
 
 .StartDemoRace:				;a demo race is almost like an ordinary race, the main difference is that controller data are fetched from a saved file
-	lda #1					;demo race recording contains two players, track 1, normal max speed
+	lda #1					;demo race recording contains one player, track 1, normal max speed
 	sta _noofplayers
 	lda #NORMAL_MAX_SPEED
 	sta _max_speed
@@ -792,18 +792,18 @@ NO_POSITION  = 27
 !byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
 
 .startscreentext:
-!scr "   john karlin's rally speedway 2020",0
+!scr "       john karlin's rally speedway",0
 !scr 0
 !scr "     a tribute to the original game",0
 !scr "       for atari and commodore 64",0
 !scr "           by john anderson",0
 !scr 0
-!scr "     using zsound for playing music",0
 !scr "             copyright 2022",0
 !scr "          by johan k;rlin and",0
 !scr "        clergy games productions",0
-!scr 0
 !scr "             version 1.1",0
+!scr 0
+!scr "   using zsound by zerobyte for music",0
 
 STARTSCREEN_ROW_COUNT = 12
 
