@@ -273,6 +273,10 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         lda #$8e       
         jsr BSOUT               ;trigger kernal to upload original character set from ROM to VRAM
 
+-       jsr GETIN
+        cmp #0
+        bne -
+
         lda #147
         jsr BSOUT               ;clear screen
 

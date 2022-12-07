@@ -14,18 +14,19 @@
 ;*** Game globals **********************************************************************************
 
 ;Status for game
-ST_MENU           = 0   ;show start screen or menu
-ST_SETUPRACE      = 1   ;init track and cars, reset time
-ST_RESUMERACE     = 2   ;resume at last checkpoint, 
-ST_READYTORACE    = 3   ;wait for player/s to start race
-ST_RACING         = 4   ;race on
-ST_PAUSED         = 5   ;game paused, quit/resume menu displayed
-ST_SETUPCOLLISION = 6   ;init collision
-ST_COLLISION      = 7   ;one car (or possibly both) has/have crashed
-ST_OUTDISTANCED   = 8   ;one car has outdistanced the other (if two players)
-ST_FINISH         = 9   ;race is finished, announce winner
-ST_RACEOVER       = 10  ;wait for player/s to continue game
-ST_QUITGAME       = 11  ;quit game
+ST_INITMENU       = 0   ;start title music
+ST_SHOWMENU       = 1   ;show start screen or menu
+ST_SETUPRACE      = 2   ;init track and cars, reset time
+ST_RESUMERACE     = 3   ;resume at last checkpoint, 
+ST_READYTORACE    = 4   ;wait for player/s to start race
+ST_RACING         = 5   ;race on
+ST_PAUSED         = 6   ;game paused, quit/resume menu displayed
+ST_SETUPCOLLISION = 7   ;init collision
+ST_COLLISION      = 8   ;one car (or possibly both) has/have crashed
+ST_OUTDISTANCED   = 9   ;one car has outdistanced the other (if two players)
+ST_FINISH         = 10   ;race is finished, announce winner
+ST_RACEOVER       = 11  ;wait for player/s to continue game
+ST_QUITGAME       = 12  ;quit game
 
 ;Constants for car behaviour
 SKID_LIMIT = 24         ;how deep the turn needs to be before the car starts to skid
@@ -53,7 +54,7 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 +       jsr VerifyTracks                ;make sure there are coherent routes on all tracks
         bcc +
         rts
-+       lda #ST_MENU
++       lda #ST_INITMENU
         sta _gamestatus
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
@@ -152,7 +153,10 @@ _max_speed              !byte NORMAL_MAX_SPEED
         cmp #ST_RACING                  ;race is on
         bne +
         jmp .RaceTick
-+       cmp #ST_MENU                    ;show start screen and menu
++       cmp #ST_INITMENU
+        bne +
+        jmp .InitMenu
++       cmp #ST_SHOWMENU                ;show start screen and menu
         bne +
         jmp .ShowMenu
 +       cmp #ST_SETUPRACE               ;set up race, prepare everything
@@ -216,6 +220,14 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr UpdateMap                   ;update all tilemap information
         rts
 
+.InitMenu:
+        jsr Z_stopmusic
+	lda #ZSM_TITLE_BANK
+	jsr StartMusic
+        lda #ST_SHOWMENU
+        sta _gamestatus
+	rts		
+
 .ShowMenu:
         jsr EnableLayers
         jsr MenuHandler
@@ -226,9 +238,12 @@ _max_speed              !byte NORMAL_MAX_SPEED
         ;jsr SetRandomSeedZero           ;RACE RECORDING: uncomment whan a race should be recorded
         jsr InitTraffic                 ;RACE RECORDING: comment when a race should be recorded
         lda _joy_playback
-        bne +                           ;Hide traffic when demo race. Traffic is randomized and demo race prerecorded ... 
-        jsr Traffic_Show
-+       jsr InitCarInteraction
++       bne +                           ;do not show traffic and let music play when demo race. (Traffic is randomized and demo race prerecorded ...)
+        jsr Traffic_Show 
+        jsr Z_stopmusic
+        bra ++
++       jsr HideTraffic
+++      jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
         jsr DisplayYCarBadge
@@ -297,7 +312,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         beq +
         jsr HideCars
         jsr HideBadges
-        lda #ST_MENU
+        lda #ST_SHOWMENU
         sta _gamestatus         ;quit race
         rts
 +       ldx #<L1_MAP_ADDR       ;delete menu by simply clearing text layer     
@@ -352,8 +367,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr CheckForRecord
         jsr ShowRaceOverText
         jsr PrintBoard
-        lda #ZSM_NAMEENTRY_BANK 
-        jsr StartMusic
+        jsr Z_stopmusic
+        lda #ZSM_FINISHED_BANK 
+        jsr StartMusicNoLoop
 +       lda #ST_RACEOVER
         sta _gamestatus
         ;jsr EndJoyRecording     ;RACE RECORDING: uncomment when a race should be recorded
@@ -367,8 +383,12 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       lda _joy0
         and _joy1
         and #JOY_BUTTON_B       ;B button pressed on any game control?
-        beq .CloseTrack
-        rts
+        bne +
+        jsr Z_stopmusic
+        lda #ZSM_TITLE_BANK
+        jsr StartMusic
+        bra .CloseTrack
++       rts
 
 .WaitForPlayerName:
         jsr InputString         ;receive input and blink cursor
@@ -378,13 +398,17 @@ _max_speed              !byte NORMAL_MAX_SPEED
         lda _track
         jsr SetLeaderboardName
         jsr SaveLeaderboard     ;and then continue with closing track ...
+        jsr Z_stopmusic
+        lda #ZSM_FINISHED_BANK
+        jsr StartMusic
 
 .CloseTrack:
         jsr HideText
         jsr HideCars
+        jsr HideTraffic
         jsr HideBadges
         jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
-        lda #ST_MENU
+        lda #ST_SHOWMENU
         sta _gamestatus
         rts
 

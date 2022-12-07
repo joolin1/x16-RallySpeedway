@@ -322,9 +322,7 @@ UpdateMap:                              ;prepare the not displayed buffer with t
 +       jsr .GetTile                    ;block remains the same, we only need to get new tile data
 
 ++      ldy .tileoffset                 ;write tile to the buffer that currently is not displayed
-        ; !byte $db
         lda .blockdef_bank
-        ;lda #BLOCK_BANK_0
         sta RAM_BANK
         lda (.blockdef_lo),y
         sta VERA_DATA0

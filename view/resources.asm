@@ -33,9 +33,8 @@
 TRACK_BANK              = 1
 BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
 BLOCK_BANK_1            = 3
-ZSM_TITLE_BANK          = 4     ;title tune take 2 banks (12 KB)
-ZSM_MENU_BANK           = 6
-ZSM_NAMEENTRY_BANK      = 7
+ZSM_TITLE_BANK          = 4     ;title tune take 3 banks (23 KB)
+ZSM_FINISHED_BANK       = 7
 SAVEDRACE_BANK          = 8
 
 ;Graphic resources to load
@@ -53,8 +52,7 @@ SAVEDRACE_BANK          = 8
 ;Sound resources to load
 .zsoundname     !text "ZSOUND.BIN",0
 .zsmtitle       !text "TITLE.ZSM",0
-.zsmmenu        !text "MENU.ZSM",0
-.zsmnameentry   !text "NAMEENTRY.ZSM",0
+.zsmfinished    !text "FINISHED.ZSM",0
 
 StartMusic:              ;IN: .A = ram bank
 	ldx #<BANK_ADDR
@@ -62,6 +60,13 @@ StartMusic:              ;IN: .A = ram bank
 	jsr Z_startmusic
       	lda #0
 	jsr Z_force_loop
+        rts
+
+StartMusicNoLoop:       ;IN: .A = ram bank
+	ldx #<BANK_ADDR
+	ldy #>BANK_ADDR
+	jsr Z_startmusic
+        jsr Z_disable_loop
         rts
 
 _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
@@ -106,12 +111,9 @@ LoadResources:
         lda #ZSM_TITLE_BANK
         sta RAM_BANK
         +LoadResource .zsmtitle     , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
-        lda #ZSM_MENU_BANK
+        lda #ZSM_FINISHED_BANK
         sta RAM_BANK
-        +LoadResource .zsmmenu      , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
-        lda #ZSM_NAMEENTRY_BANK
-        sta RAM_BANK
-        +LoadResource .zsmnameentry , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
+        +LoadResource .zsmfinished , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_NO_HEADER
         lda #SAVEDRACE_BANK
         sta RAM_BANK
         +LoadResource .savedracename, BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER

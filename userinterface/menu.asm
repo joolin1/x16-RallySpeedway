@@ -1,15 +1,14 @@
 ;*** Menu.asm - Start screen, menu, annoncements *******************************
 
 ;Menu status
-M_START_MUSIC			= 0
-M_SHOW_TITLE_IMAGE      = 1
-M_UPDATE_TITLE_IMAGE    = 2
-M_START_DEMO_RACE       = 3
-M_END_DEMO_RACE         = 4
-M_SHOW_CREDITS 			= 5
-M_UPDATE_CREDITS		= 6
-M_SHOW_MAIN_MENU 		= 7
-M_HANDLE_INPUT 			= 8
+M_SHOW_TITLE_IMAGE      = 0
+M_UPDATE_TITLE_IMAGE    = 1
+M_START_DEMO_RACE       = 2
+M_END_DEMO_RACE         = 3
+M_SHOW_CREDITS 			= 4
+M_UPDATE_CREDITS		= 5
+M_SHOW_MAIN_MENU 		= 6
+M_HANDLE_INPUT 			= 7
 
 ;Menu item mapping
 START_RACE		= 0
@@ -44,15 +43,7 @@ LONG_INACTIVITY_DELAY	 = 7    ;menu will go to credit screen when user for is in
 ;*** Public methods ********************************************************************************
 
 MenuHandler:
-	lda .menumode
-
-	;start title music
-	cmp #M_START_MUSIC
-	bne +
-	lda #ZSM_TITLE_BANK
-	jsr StartMusic					;start title music
-	inc .menumode					;go to show title image
-	rts								
+	lda .menumode				
 
 	;show title image
 +	cmp #M_SHOW_TITLE_IMAGE
@@ -131,8 +122,6 @@ MenuHandler:
 ++  cmp #M_SHOW_MAIN_MENU
 	bne +
 	jsr .ShowMainMenu
-	lda #ZSM_MENU_BANK
-	jsr StartMusic					;switch to menu music
 	lda #M_HANDLE_INPUT				;go to input menu mode
 	sta .menumode
 	lda #1
@@ -152,9 +141,7 @@ MenuHandler:
 	jsr .HandleUserInput
 	rts
 
-+   lda #ZSM_TITLE_BANK
-	jsr StartMusic					;switch to title music
-	lda #M_SHOW_CREDITS
++   lda #M_SHOW_CREDITS
 	sta .menumode					;go to back to title image when user inactive
 	rts
 
@@ -267,7 +254,6 @@ MenuHandler:
 +	lda .handrow
 	cmp #START_RACE
 	bne +
-	jsr Z_stopmusic
 	lda #M_SHOW_MAIN_MENU
 	sta .menumode			;prepare for the next time the menu handler will be called, after race go to main menu
 	jsr .CloseMainMenu
@@ -472,7 +458,7 @@ MenuHandler:
 +	stz .quitconfirmationflag	
 	lda .answer
 	beq +
-	lda #M_START_MUSIC
+	lda #M_SHOW_TITLE_IMAGE
 	sta .menumode					;set menu mode to start screen in case user starts game again
 	lda #ST_QUITGAME
 	sta _gamestatus					;set game status to break main loop, clean up and exit
@@ -799,11 +785,11 @@ NO_POSITION  = 27
 !scr "           by john anderson",0
 !scr 0
 !scr "             copyright 2022",0
-!scr "          by johan k;rlin and",0
-!scr "        clergy games productions",0
+!scr "            by johan k;rlin",0
 !scr "             version 1.1",0
 !scr 0
-!scr "   using zsound by zerobyte for music",0
+!scr "          music by kliepatsch",0
+!scr "   powered by zsound by zerobyte",0
 
 STARTSCREEN_ROW_COUNT = 12
 

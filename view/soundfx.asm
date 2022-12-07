@@ -38,9 +38,9 @@ _playingtable   !fill 12,0      ;boolean table for sound effects (NOTE: Make sur
         jsr StopSound
         bra +++
 
-++      lda #<PSG_ADDR          ;start with base address of PSG
+++      lda #<PSG_ADDR_V8       ;start with base address of PSG (voice 8 and upwards are used)
         sta ZP0
-        lda #>PSG_ADDR
+        lda #>PSG_ADDR_V8
         sta ZP1
         lda #.voice
         asl
@@ -100,9 +100,9 @@ AdjustEngineSound:
 +       rts
 
 StopSound:                      ;IN: .A = voice to silence      
-        ldx #<PSG_ADDR          ;start with base address of PSG
+        ldx #<PSG_ADDR_V8       ;start with base address of PSG (voice 8 and upwards are used)
         stx ZP0
-        ldx #>PSG_ADDR
+        ldx #>PSG_ADDR_V8
         stx ZP1
         asl
         asl
