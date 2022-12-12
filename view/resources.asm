@@ -25,8 +25,8 @@
 !addr TRACKS_PALETTE     = PALETTE + $80
 
 ;RAM Memory layout
-;              $0810: game code
-;              $9766: ZSound
+;              $0810: ZSound
+;                   : Game Code 
 ;              $A000: RAM banks
 
 ;RAM banks
@@ -34,8 +34,8 @@ TRACK_BANK              = 1
 BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
 BLOCK_BANK_1            = 3
 ZSM_TITLE_BANK          = 4     ;title tune take 3 banks (23 KB)
-ZSM_FINISHED_BANK       = 7
-SAVEDRACE_BANK          = 8
+ZSM_FINISHED_BANK       = 8
+SAVEDRACE_BANK          = 9
 
 ;Graphic resources to load
 .tilesname              !text "TILES.BIN",0
@@ -50,7 +50,7 @@ SAVEDRACE_BANK          = 8
 .savedracename          !text "SAVEDRACE.BIN",0
 
 ;Sound resources to load
-.zsoundname     !text "ZSOUND.BIN",0
+; .zsoundname     !text "ZSOUND.BIN",0
 .zsmtitle       !text "TITLE.ZSM",0
 .zsmfinished    !text "FINISHED.ZSM",0
 
@@ -101,7 +101,7 @@ LoadResources:
         +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .imagename    , IMAGE_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .trafficname  , TRAFFIC_ADDR  , LOAD_TO_VRAM_BANK1, FILE_HAS_HEADER
-        +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
+        ; +LoadResource .zsoundname   , ZSOUND_ADDR   , LOAD_TO_RAM       , FILE_HAS_HEADER
         lda #BLOCK_BANK_0
         sta RAM_BANK
         +LoadResource .blocksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER

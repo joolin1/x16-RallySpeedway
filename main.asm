@@ -5,11 +5,26 @@
 !src "includes/x16.asm"
 !src "includes/zsound.asm"
 
-;*** Basic program ("10 SYS 2064") *****************************************************************
+;*** Basic program ("1 SYS2061") *****************************************************************
 
 *=$0801
-	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
-*=$0810
+; 	!byte $0E,$08,$0A,$00,$9E,$20,$32,$30,$36,$34,$00,$00,$00,$00,$00
+; *=$0810
+
+BASIC:	!BYTE $0B,$08,$01,$00,$9E,$32,$30,$36,$31,$00,$00,$00   ;Adds BASIC line:  1 SYS 2061
+
+        jmp .StartGame
+
+;It is required that zsound load in at $0810, because it is
+;a pre-built binary compiled from C.  So, the binary is
+;placed here in the source code, and as you can see there
+;is a JMP command right before it to bypass it.  
+
+!BINARY "ZSOUND.PRG"		;ZSsound program binary.
+
+;pad 47 bytes for zsound variable space.
+!BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+!BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 
 ;*** Game globals **********************************************************************************
 
