@@ -33,10 +33,20 @@ SPR_O2 = 136
 SPR_F2 = 144
 
 ShowPenaltyText:                ;.A = text color. 0 = yellow, 1 = blue
-        ;set palette
-        clc
-        adc #224 + 1
-        +VPokeSprites SPR_ATTR_1, TEXTSPRITE_COUNT
+
+        ;set text color
+        cmp #0
+        bne +
+        lda #<SPRITETEXT_YELLOW
+        sta ZP0
+        lda #>SPRITETEXT_YELLOW
+        sta ZP1
+        bra ++
++       lda #<SPRITETEXT_BLUE
+        sta ZP0
+        lda #>SPRITETEXT_BLUE
+        sta ZP1
+++      jsr .SetTextColor
 
         ;enable letters
         +VPokeI SPR_ATTR_0 + SPR_P, 12
@@ -68,9 +78,12 @@ ShowPenaltyText:                ;.A = text color. 0 = yellow, 1 = blue
         rts
 
 ShowOffroadText:
-        ;set palette 3 = sprite text palette
-        lda #224 + 3
-        +VPokeSprites SPR_ATTR_1, TEXTSPRITE_COUNT
+        ;set text color
+        lda #<SPRITETEXT_GREY
+        sta ZP0
+        lda #>SPRITETEXT_GREY
+        sta ZP1
+        jsr .SetTextColor 
 
         ;enable letters
         +VPokeI SPR_ATTR_0 + SPR_O , 12
@@ -127,10 +140,13 @@ ShowRaceOverText:
         rts
 
 .ShowFinishedText:              ;show "FINISHED" text in yellow when one player
-        ;set palette
-        lda #224 + 1
-        +VPokeSprites SPR_ATTR_1, TEXTSPRITE_COUNT
-        
+        ;set text color
+        lda #<SPRITETEXT_YELLOW
+        sta ZP0
+        lda #>SPRITETEXT_YELLOW
+        sta ZP1
+        jsr .SetTextColor 
+
         ;enable letters
         +VPokeI SPR_ATTR_0 + SPR_F , 12         
         +VPokeI SPR_ATTR_0 + SPR_I , 12
@@ -159,13 +175,28 @@ ShowRaceOverText:
         +VPokeSpritesI SPR_YPOS_H, TEXTSPRITE_COUNT, 0          
         rts
 
-.ShowWinnerText:                ;show "WINNER" text in yellow or blue color depending on winner
-        ;set palette
-        lda _winner         
-        dec
-        clc
-        adc #224 + 1
-        +VPokeSprites SPR_ATTR_1, TEXTSPRITE_COUNT
+.ShowWinnerText:                        ;show "WINNER" text in yellow or blue color depending on winner
+        ;set text color
+        lda _winner       
+        cmp #1
+        bne +
+        lda #<SPRITETEXT_YELLOW         ;yellow car won
+        sta ZP0
+        lda #>SPRITETEXT_YELLOW
+        sta ZP1
+        bra ++
++       cmp #2
+        bne +
+        lda #<SPRITETEXT_BLUE           ;blue car won
+        sta ZP0
+        lda #>SPRITETEXT_BLUE
+        sta ZP1
+        bra ++
++       lda #<SPRITETEXT_GREY           ;race ended in a draw
+        sta ZP0
+        lda #>SPRITETEXT_GREY
+        sta ZP1      
+++      jsr .SetTextColor
         
         ;enable letters
         +VPokeI SPR_ATTR_0 + SPR_W , 12
@@ -188,6 +219,13 @@ ShowRaceOverText:
         ;set vertical position
         +VPokeSpritesI SPR_YPOS_L, TEXTSPRITE_COUNT, FINISH_TEXT_POSITION 
         +VPokeSpritesI SPR_YPOS_H, TEXTSPRITE_COUNT, 0          
+        rts
+
+.SetTextColor:          ;IN: ZP0,ZP1 = color
+        +VPoke SPRITETEXT_FG  , ZP0
+        +VPoke SPRITETEXT_FG+1, ZP1
+        +VPokeI SPRITETEXT_BG  , <SPRITETEXT_BLACK
+        +VPokeI SPRITETEXT_BG+1, >SPRITETEXT_BLACK
         rts
 
 HideText:

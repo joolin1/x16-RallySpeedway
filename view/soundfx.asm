@@ -275,18 +275,18 @@ PlayExplosionSound:
 .explosion_index        !byte 0
 .explosion_delay        !byte 0
 
-PlayFinishedSound:
-        ldy #PLAYING_WINNER1
-        lda #1
-        sta _playingtable,y
-        stz .winner1_index
-        stz .winner1_delay
-        ldy #PLAYING_WINNER2            ;use two voices
-        lda #1
-        sta _playingtable,y
-        stz .winner2_index
-        stz .winner2_delay
-        rts
+; PlayFinishedSound:
+;         ldy #PLAYING_WINNER1
+;         lda #1
+;         sta _playingtable,y
+;         stz .winner1_index
+;         stz .winner1_delay
+;         ldy #PLAYING_WINNER2            ;use two voices
+;         lda #1
+;         sta _playingtable,y
+;         stz .winner2_index
+;         stz .winner2_delay
+;         rts
 
 .winner1_index           !byte 0
 .winner1_delay           !byte 0
@@ -302,11 +302,11 @@ SfxTick:
         +SfxPlay PLAYING_BSKIDDING1,   4,  SKIDDING_LENGTH,    1,   .skidding1fx, .bskidding1_index, .bskidding1_delay
         +SfxPlay PLAYING_BSKIDDING2,   5,  SKIDDING_LENGTH,    1,   .skidding1fx, .bskidding2_index, .bskidding2_delay       
         +SfxPlay PLAYING_CLASH,        6,  CLASH_LENGTH,       0,       .clashfx,      .clash_index,      .clash_delay
-        +SfxPlay PLAYING_OUTRUN1,      7,  OUTRUN_LENGTH,      0,     .outrun1fx,    .outrun1_index,    .outrun1_delay
-        +SfxPlay PLAYING_OUTRUN2,      8,  OUTRUN_LENGTH,      0,     .outrun2fx,    .outrun2_index,    .outrun2_delay
+        +SfxPlay PLAYING_OUTRUN1,      6,  OUTRUN_LENGTH,      0,     .outrun1fx,    .outrun1_index,    .outrun1_delay
+        +SfxPlay PLAYING_OUTRUN2,      7,  OUTRUN_LENGTH,      0,     .outrun2fx,    .outrun2_index,    .outrun2_delay
         +SfxPlay PLAYING_EXPLOSION,    7,  EXPLOSION_LENGTH,   0,   .explosionfx,  .explosion_index,  .explosion_delay
-        +SfxPlay PLAYING_WINNER1,      7,  WINNER_LENGTH,      0,     .winner1fx,    .winner1_index,    .winner1_delay
-        +SfxPlay PLAYING_WINNER2,      8,  WINNER_LENGTH,      0,     .winner2fx,    .winner2_index,    .winner2_delay
+        ; +SfxPlay PLAYING_WINNER1,      7,  WINNER_LENGTH,      0,     .winner1fx,    .winner1_index,    .winner1_delay
+        ; +SfxPlay PLAYING_WINNER2,      8,  WINNER_LENGTH,      0,     .winner2fx,    .winner2_index,    .winner2_delay
         rts         
 
 ;*** definitions of sound effects ******************************************************************
@@ -372,29 +372,29 @@ OUTRUN_LENGTH = 8
                 !byte 190, 2, RIGHT_PAN + 48, TRIANGLE + 12, 4
                 !byte 190, 2, RIGHT_PAN + 32, TRIANGLE + 12, 4
 
-WINNER_LENGTH = 12
-.winner1fx      !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 20 ;C4
-                !byte 190,2, LEFT_PAN + 48, TRIANGLE + 52,  4 ;C4
-                !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 12 ;C4
-                !byte 117,3, LEFT_PAN + 63, TRIANGLE + 52, 12 ;E4
-                !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52, 12 ;G4
-                !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 12 ;C4
-                !byte 117,3, LEFT_PAN + 63, TRIANGLE + 52, 12 ;E4
-                !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52, 12 ;G4
-                !byte 125,5, LEFT_PAN + 63, TRIANGLE + 52, 24 ;C5
-                !byte 234,6, LEFT_PAN + 63, TRIANGLE + 52, 16 ;E5
-                !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52,  8 ;G4
-                !byte 125,5, LEFT_PAN + 63, TRIANGLE + 52, 48 ;C5
+; WINNER_LENGTH = 12
+; .winner1fx      !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 20 ;C4
+;                 !byte 190,2, LEFT_PAN + 48, TRIANGLE + 52,  4 ;C4
+;                 !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 12 ;C4
+;                 !byte 117,3, LEFT_PAN + 63, TRIANGLE + 52, 12 ;E4
+;                 !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52, 12 ;G4
+;                 !byte 190,2, LEFT_PAN + 63, TRIANGLE + 52, 12 ;C4
+;                 !byte 117,3, LEFT_PAN + 63, TRIANGLE + 52, 12 ;E4
+;                 !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52, 12 ;G4
+;                 !byte 125,5, LEFT_PAN + 63, TRIANGLE + 52, 24 ;C5
+;                 !byte 234,6, LEFT_PAN + 63, TRIANGLE + 52, 16 ;E5
+;                 !byte  28,4, LEFT_PAN + 63, TRIANGLE + 52,  8 ;G4
+;                 !byte 125,5, LEFT_PAN + 63, TRIANGLE + 52, 48 ;C5
 
-.winner2fx      !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 20 ;G3
-                !byte  14,2, RIGHT_PAN + 48, TRIANGLE + 52,  4 ;G3
-                !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;G3
-                !byte 190,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;C4
-                !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;E4
-                !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;G3
-                !byte 190,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;C4
-                !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;E4
-                !byte  28,4, RIGHT_PAN + 63, TRIANGLE + 52, 24 ;G4
-                !byte 125,5, RIGHT_PAN + 63, TRIANGLE + 52, 16 ;C5
-                !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52,  8 ;E4
-                !byte  28,4, RIGHT_PAN + 63, TRIANGLE + 52, 48 ;G4
+; .winner2fx      !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 20 ;G3
+;                 !byte  14,2, RIGHT_PAN + 48, TRIANGLE + 52,  4 ;G3
+;                 !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;G3
+;                 !byte 190,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;C4
+;                 !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;E4
+;                 !byte  14,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;G3
+;                 !byte 190,2, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;C4
+;                 !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52, 12 ;E4
+;                 !byte  28,4, RIGHT_PAN + 63, TRIANGLE + 52, 24 ;G4
+;                 !byte 125,5, RIGHT_PAN + 63, TRIANGLE + 52, 16 ;C5
+;                 !byte 117,3, RIGHT_PAN + 63, TRIANGLE + 52,  8 ;E4
+;                 !byte  28,4, RIGHT_PAN + 63, TRIANGLE + 52, 48 ;G4

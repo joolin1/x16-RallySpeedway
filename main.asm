@@ -20,7 +20,7 @@ BASIC:	!BYTE $0B,$08,$01,$00,$9E,$32,$30,$36,$31,$00,$00,$00   ;Adds BASIC line:
 ;placed here in the source code, and as you can see there
 ;is a JMP command right before it to bypass it.  
 
-!BINARY "ZSOUND.PRG"		;ZSsound program binary.
+!BINARY "ZSOUND.BIN"		;ZSsound program binary.
 
 ;pad 47 bytes for zsound variable space.
 !BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
@@ -49,7 +49,7 @@ MIN_SPEED = 8           ;minimum speed,the user can brake down to, when car is o
 LOW_MAX_SPEED = 19      ;definition of max speeds
 NORMAL_MAX_SPEED = 22
 HIGH_MAX_SPEED = 25
-MAX_EXTRA_ROTATION =    24;16 ;how much extra the car is rotated when skidding
+MAX_EXTRA_ROTATION = 24 ;how much extra the car is rotated when skidding
 SPEED_DELAY = 4         ;how fast the car is accelerating
 BRAKE_DELAY = 8         ;how fast the car is braking/slowing down when off road or skidding
 ANIMATION_DELAY = 6     ;how fast an exploding car is animated

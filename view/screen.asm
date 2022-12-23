@@ -176,8 +176,8 @@ InitScreenAndSprites:
         sta ZP1
         jsr .VPokeSpriteAddr
 
-        +VPokeSpritesI SPR3_ATTR_0, TEXTSPRITE_COUNT, 0         ;disable all text sprites for now
-        +VPokeSpritesI SPR3_ATTR_1, TEXTSPRITE_COUNT, %11100000 ;set height to 64 pixels and width to 32
+        +VPokeSpritesI SPR3_ATTR_0, TEXTSPRITE_COUNT, 0                                      ;disable all text sprites for now
+        +VPokeSpritesI SPR3_ATTR_1, TEXTSPRITE_COUNT, %11100000 + SPRITETEXTPALETTEINDEX     ;set height = 64, width 32 and palette index 
         rts
 
 .VPokeSpriteAddr:               ;set address attributes for sprites
@@ -285,14 +285,14 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
 .original_l1_mapbase    !byte 0
 
 .palettes                                       
-        !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $005f, $0ee7, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but 6 = lighter blue and 11 = black instead of dark grey)
+        !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $046f, $0fd2, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but blue and yellow adjusted and 11 = black instead of dark grey)
 .carspritepalettes
-        !word $0000, $0000, $0EE7, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car (C64 palette but 1 = black, 2 = yellow)
-        !word $0000, $0000, $008F, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car   (C64 palette but 1 = black, 2 = light blue)
+        !word $0000, $0FA0, $0000, $0333, $0FD2, $0666, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car
+        !word $0000, $046F, $0000, $0333, $06AF, $0666,$000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb     ;red car
 .spritetextpalette
         !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
 .trackpalette
-        !word $0000, $0000, $0334, $0A33, $0453, $0B42, $0171, $0666, $06B5, $0BBB, $06E6, $0CF0, $0BF6, $0FFF, $0000, $0000    ;tiles
+        !word $0000, $0BBB, $0FFF, $0A33, $05A0, $0AF0, $0555, $0470, $0DF8, $0FE0, $0A30, $0CF0, $0334, $0630, $0358, $048D    ;tiles
 .titleimagepalette
         !word $0011, $0000, $0122, $0333, $0555, $0677, $0889, $0BBA, $0BB9, $0DCC, $0FFF, $0762, $0B93, $0FE7, $0FD4, $0431
 .trafficpalette
@@ -300,3 +300,14 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
 
 .originalpalette
         !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;original colors, used for restoring colors when quitting game
+
+;colors used for sprite texts
+SPRITETEXT_GREY    = $0666
+SPRITETEXT_YELLOW  = $0FD2
+SPRITETEXT_BLUE    = $046F
+SPRITETEXT_BLACK   = $0000
+
+SPRITETEXT_FG = SPRITETEXT_PALETTE + 4  ;color 2 is main color of text sprites
+SPRITETEXT_BG = SPRITETEXT_PALETTE + 2  ;color 1 is shadow of text sprites
+
+SPRITETEXTPALETTEINDEX = 3
