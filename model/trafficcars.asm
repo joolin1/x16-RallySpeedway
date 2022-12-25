@@ -35,7 +35,7 @@ InitTraffic:
     rts
 
 .GoRandomlyForward:                 ;OUT: .A = direction, .X and .Y = block position
--   jsr GetRandomNumber1
+-   jsr GetRandomNumber2
     and #15
     cmp #2
     bcc -

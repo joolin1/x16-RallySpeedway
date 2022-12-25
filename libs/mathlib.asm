@@ -257,13 +257,13 @@ SetRandomSeedZero:
 
 SetRandom1Seed:
         jsr RDTIM
-        sty .randomnumber
+        sta .randomnumber
         rts
 
 SetRandom2Seed:
         jsr RDTIM
-        stx .rndseed1
-        sty .rndseed2
+        sta .rndseed1
+        stx .rndseed2
         rts
 
 GetRandomNumber1:
@@ -277,8 +277,6 @@ GetRandomNumber1:
 	rts
 
 .randomnumber	!byte 0
-
-
 
 GetRandomNumber2:		;Super Mario World version
 	lda .rndseed1           ;;OUT: .A = pseudo random number between 0 and $ff

@@ -87,6 +87,9 @@ InitInputString:
         stz .inputpos
         jsr .InitTextBox
         jsr .InitString
+-       jsr GETIN                   ;empty keyboard buffer before starting to receive input
+        cmp #0
+        bne -
         rts
 
 .InitTextBox:

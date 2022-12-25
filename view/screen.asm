@@ -292,12 +292,11 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
 .spritetextpalette
         !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
 .trackpalette
-        !word $0000, $0BBB, $0FFF, $0A33, $05A0, $0AF0, $0555, $0470, $0DF8, $0FE0, $0A30, $0CF0, $0334, $0630, $0358, $048D    ;tiles
+        !word $0000, $0BBB, $0FFF, $0A33, $05A0, $0AF0, $0555, $0470, $0DF8, $0FE0, $0931, $0744, $0358, $038D, $0453, $029E    ;tiles
 .titleimagepalette
         !word $0011, $0000, $0122, $0333, $0555, $0677, $0889, $0BBA, $0BB9, $0DCC, $0FFF, $0762, $0B93, $0FE7, $0FD4, $0431
 .trafficpalette
         !word $0000, $0000, $0a11, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;other car (C64 palette but 1 = black, 2 = red)
-
 .originalpalette
         !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;original colors, used for restoring colors when quitting game
 

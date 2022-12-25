@@ -384,7 +384,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr PrintBoard
         jsr Z_stopmusic
         lda #ZSM_FINISHED_BANK 
-        jsr StartMusicNoLoop
+        jsr StartMusic
 +       lda #ST_RACEOVER
         sta _gamestatus
         ;jsr EndJoyRecording     ;RACE RECORDING: uncomment when a race should be recorded
@@ -414,7 +414,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr SetLeaderboardName
         jsr SaveLeaderboard     ;and then continue with closing track ...
         jsr Z_stopmusic
-        lda #ZSM_FINISHED_BANK
+        lda #ZSM_TITLE_BANK
         jsr StartMusic
 
 .CloseTrack:

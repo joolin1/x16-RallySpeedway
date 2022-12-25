@@ -26,6 +26,8 @@ _tilecollisionstatus:   !byte 0,0,0,0,1,0,0,1   ;road tiles come first. those wi
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
                         !byte 2,2,2,2,2,2,2,2
+                        !byte 2,2,2,2,2,2,2,2
+                        !byte 2,2,2,2,2,2,2,2
 
 ;Type of blocks
 BLOCK_TERRAIN         = 0
@@ -41,15 +43,15 @@ BLOCK_NS_STARTFINISH  = 9    ;road from north to south which marks start and fin
 
 ;Table for character of blocks
 _blockroadstatus:
-                        !byte  8,1,1,1,1,1,1,1,1,1,1,1,1,1              ;14 horizontal blocks
-                        !byte  9,2,2,2,2,2,2,2,2,2,2,2,2,2              ;14 vertical blocks
-                        !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2              ;14 narrow road blocks 
-                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2              ;28 curve blocks
+                        !byte  8,1,1,1,1,1,1,1,1,1,1,1,1,1                      ;14 horizontal blocks
+                        !byte  9,2,2,2,2,2,2,2,2,2,2,2,2,2                      ;14 vertical blocks
+                        !byte  1,2,3,4,5,6,1,1,1,1,2,2,2,2                      ;14 narrow road blocks 
+                        !byte  3,4,5,6,1,1,1,1,1,1,1,1,2,2                      ;28 curve blocks
                         !byte  2,2,2,2,2,2,1,1,2,2,1,2,1,2
-                        !byte  7,3,3,4,4,5,5,6,6,7,7,7                  ;12 crossings
-                        !byte  1,1,2,2,1,1,2,2                          ; 8 t-junctions
-                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0      ;18 terrain blocks
-                                                                        ;Total 108 blocks
+                        !byte  7,3,3,4,4,5,5,6,6,7,7,7                          ;12 crossings
+                        !byte  1,1,2,2,1,1,2,2                                  ; 8 t-junctions
+                        !byte  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0      ;22 terrain blocks
+                                                                                ;Total 112 blocks
 
 ;Global infor about current track
 _track		        !byte 1	        ;selected track - track one is preselected (NOTE not zero-indexed!)
