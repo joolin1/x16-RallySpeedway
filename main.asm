@@ -74,7 +74,6 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
        	jsr Z_init_player               ;init ZSound
-        jsr SetRandomSeed
         jsr .SetupIrqHandler
 
         ;main loop
@@ -249,6 +248,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .SetUpRace:
+        jsr SetRandomSeed               ;set random number seed based on computer time here to use the fact that the user will press "start race" at different times.
         jsr SetTrack                    ;set track
         ;jsr SetRandomSeedZero           ;RACE RECORDING: uncomment whan a race should be recorded
         jsr InitTraffic                 ;RACE RECORDING: comment when a race should be recorded
