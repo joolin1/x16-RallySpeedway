@@ -16,18 +16,18 @@ _debug                  !byte 0         ;DEBUG - flag for breaking into debugger
 
 ChangeDebugColor:
         jsr VPoke                
-        !word TRACKS_PALETTE + 8 * 2        
+        !word TRACKS_PALETTE + 4 * 2        
         !byte $00               
         jsr VPoke               
-        !word TRACKS_PALETTE + 8 * 2 + 1        
+        !word TRACKS_PALETTE + 4 * 2 + 1        
         !byte $00               
         rts
 
 RestoreDebugColor:
         jsr VPoke               
-        !word TRACKS_PALETTE + 8 * 2        
+        !word TRACKS_PALETTE + 4 * 2        
         !byte $c5               
         jsr VPoke               
-        !word TRACKS_PALETTE + 8 * 2 + 1        
+        !word TRACKS_PALETTE + 4 * 2 + 1        
         !byte $00               
         rts

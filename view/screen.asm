@@ -3,7 +3,7 @@
 SCREEN_WIDTH = 320
 SCREEN_HEIGHT = 240
 
-!macro CopyPalettesToVRAM .source,.deststart, .count {      ;IN .deststart = first palette index to copy to, .count = number of palettes (max 8!)
+!macro CopyPalettesToVRAM .source,.deststart, .count {      ;IN .deststart = first palette index to copy to, .count = number of palettes (max 7!)
         lda #<PALETTE+.deststart*32
         sta VERA_ADDR_L
         lda #>PALETTE+.deststart*32           
@@ -76,7 +76,8 @@ InitScreenAndSprites:
         ldy #>_charset
         jsr screen_set_charset
 
-        +CopyPalettesToVRAM .palettes, 0, 7
+        +CopyPalettesToVRAM .palettes, 0, 6
+        +CopyPalettesToVRAM .trafficpalettes, 6, 4
 
         ;init badge sprites
         jsr InitBadgeSprites
@@ -288,16 +289,19 @@ RestoreScreenAndSprites:        ;Restore screen and sprites when user ends game
         !word $0000, $0fff, $0800, $0afe, $0c4c, $0080, $046f, $0fd2, $0d85, $0640, $0f77, $0000, $0777, $0af6, $008f, $0bbb    ;user interface (C64 palette but blue and yellow adjusted and 11 = black instead of dark grey)
 .carspritepalettes
         !word $0000, $0FA0, $0000, $0333, $0FD2, $0666, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;yellow car
-        !word $0000, $046F, $0000, $0333, $06AF, $0666,$000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb     ;red car
+        !word $0000, $046F, $0000, $0333, $06AF, $0666, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;blue car
 .spritetextpalette
         !word $0000, $0000, $0666, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;sprite text (C64 palette but 1 = black, 2 = grey)
 .trackpalette
-        !word $0000, $0BBB, $0FFF, $0A33, $05A0, $0AF0, $0555, $0470, $0DF8, $0FE0, $0931, $0744, $0358, $038D, $0453, $029E    ;tiles
+        !word $000f, $0BBB, $0FFF, $0A33, $05A0, $0AF0, $0555, $0470, $0DF8, $0FE0, $0931, $0744, $0358, $038D, $0453, $029E    ;tiles
 .titleimagepalette
         !word $0011, $0000, $0122, $0333, $0555, $0677, $0889, $0BBA, $0BB9, $0DCC, $0FFF, $0762, $0B93, $0FE7, $0FD4, $0431
-.trafficpalette
-        !word $0000, $0B13, $0000, $0333, $0F03, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
-        ;!word $0000, $0000, $0a11, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;other car (C64 palette but 1 = black, 2 = red)
+.trafficpalettes
+        !word $0000, $0b13, $0e46, $0555, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;red
+        !word $0000, $0d85, $0e92, $0555, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;yellow
+        !word $0000, $046f, $06af, $0555, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000    ;blue
+.explosionpalette
+        !word $0000, $0B13, $0E50, $0FA0, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
 .originalpalette
         !word $0000, $0fff, $0800, $0afe, $0c4c, $00c5, $000a, $0ee7, $0d85, $0640, $0f77, $0333, $0777, $0af6, $008f, $0bbb    ;original colors, used for restoring colors when quitting game
 

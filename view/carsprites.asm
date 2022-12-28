@@ -40,9 +40,35 @@ BCar_Show:
         +VPokeI SPR2_ATTR_1, %10100000 + 2              ;set palette 2 for blue car
         rts
 
+.GetRandomTrafficPalette:
+-       jsr GetRandomNumber1            ;OUT: .A = attr 1 one for att traffic car = size and palette index
+        and #3
+        cmp #3
+        beq -
+        clc
+        adc #6                          ;add 6 because palette index 6 is first traffic car palette
+        ora #%10100000
+        rts
+
 Traffic_Show:
         +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_0, TRAFFIC_COUNT, TCAR_COLLISION_MASK + 8    ;enable cars and set collision mask
-        +VPokeSpritesI TRAFFIC_SPRITE0 + ATTR_1, TRAFFIC_COUNT, %10100000 + 6              ;set palette 6 for traffic cars
+
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE0 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE1 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE2 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE3 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE4 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE5 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE6 + ATTR_1 ;set sprite size and palette index
+        jsr .GetRandomTrafficPalette
+        +VPoke TRAFFIC_SPRITE7 + ATTR_1 ;set sprite size and palette index
         rts
 
 HideCars:
@@ -211,7 +237,7 @@ Traffic_UpdateSprites:
 
 BlowUpCars:                             ;Blow up one car or both depending on the collision flag of each car
         lda .animationindex             ;load current animation index
-        cmp #12                         ;12 sprites in explosion animation
+        cmp #10                         ;10 sprites in explosion animation
         bne +
         jmp ++    
 
@@ -229,11 +255,13 @@ BlowUpCars:                             ;Blow up one car or both depending on th
         beq +
         +VPoke SPR1_ADDR_L, ZP0         ;set low address of next sprite in animation
         +VPoke SPR1_MODE_ADDR_H, ZP1    ;set high address of next sprite in animation
+        +VPokeI SPR1_ATTR_1, %10101001  ;palette index 9
 
 +       lda _bcarcollisionflag
         beq +
         +VPoke SPR2_ADDR_L, ZP0         ;set low address of next sprite in animation
         +VPoke SPR2_MODE_ADDR_H, ZP1    ;set high address of next sprite in animation
+        +VPokeI SPR2_ATTR_1, %10101001   ;palette index 9
 
 +       inc .animationdelay             ;wait a certain amount of interrupt calls before advancing frame
         lda .animationdelay
@@ -247,7 +275,7 @@ BlowUpCars:                             ;Blow up one car or both depending on th
 
 ++      inc .animationdelay              ;after animation is over, add a short wait
         lda .animationdelay
-        cmp #30
+        cmp #40
         beq +++
         rts
 
@@ -255,15 +283,20 @@ BlowUpCars:                             ;Blow up one car or both depending on th
         stz .animationdelay
         lda _ycarcollisionflag
         beq +
+        +VPokeI SPR1_ATTR_1, %10100001  ;restore palette index 1
         lda #COLLISION_TIME             
         jsr YCar_TimeAddSeconds         ;add extra time for yellow car if just blown up
 +       lda _bcarcollisionflag
         beq +
+        +VPokeI SPR2_ATTR_1, %10100010  ;restore palette index 2
         lda #COLLISION_TIME
         jsr BCar_TimeAddSeconds         ;add extra time for blue car if just blown up
 +       stz _ycarcollisionflag
         stz _bcarcollisionflag
         rts
 
+ANIMATION_COUNT = 10
+
 .animationindex !byte 0         ;current sprite in explosion animation
 .animationdelay !byte 0         ;delay counter to slow down animation 
+
