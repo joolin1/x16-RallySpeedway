@@ -248,17 +248,16 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .SetUpRace:
-        jsr SetRandomSeed               ;set random number seed based on computer time here to use the fact that the user will press "start race" at different times.
         jsr SetTrack                    ;set track
-        ;jsr SetRandomSeedZero           ;RACE RECORDING: uncomment whan a race should be recorded
-        jsr InitTraffic                 ;RACE RECORDING: comment when a race should be recorded
         lda _joy_playback
-+       bne +                           ;do not show traffic and let music play when demo race. (Traffic is randomized and demo race prerecorded ...)
-        jsr Traffic_Show 
-        jsr Z_stopmusic
+        beq +
+        jsr SetRandomSeedZero           ;if demo race, randomize traffic in exactly the same way as when race was recorded
         bra ++
-+       jsr HideTraffic
-++      jsr InitCarInteraction
++       jsr SetRandomSeed               ;if real race, randomize traffic different each time, by using current time as seed
+        jsr Z_stopmusic                 ;stop music when real race (let it play when demo race)
+++      jsr InitTraffic                 
+        jsr Traffic_Show 
+        jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
         jsr DisplayYCarBadge
@@ -325,10 +324,10 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 +       cmp #0
         beq +
-        jsr HideCars
-        jsr HideBadges
-        lda #ST_SHOWMENU
-        sta _gamestatus         ;quit race
+        ldx #<L1_MAP_ADDR       ;delete menu by simply clearing text layer     
+        ldy #>L1_MAP_ADDR
+        jsr ClearTextLayer
+        jsr .CloseTrack
         rts
 +       ldx #<L1_MAP_ADDR       ;delete menu by simply clearing text layer     
         ldy #>L1_MAP_ADDR
@@ -399,9 +398,6 @@ _max_speed              !byte NORMAL_MAX_SPEED
         and _joy1
         and #JOY_BUTTON_B       ;B button pressed on any game control?
         bne +
-        jsr Z_stopmusic
-        lda #ZSM_TITLE_BANK
-        jsr StartMusic
         bra .CloseTrack
 +       rts
 
@@ -423,6 +419,12 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr HideTraffic
         jsr HideBadges
         jsr DisableLayer0       ;temporary disable layer 0 while preparing main menu
+        lda _joy_playback
+        bne +
+        lda #ST_INITMENU        ;start music and show menu
+        sta _gamestatus
+        rts
++       jsr EndJoyPlayback      ;end demo mode where game controller data is fetched from saved file
         lda #ST_SHOWMENU
         sta _gamestatus
         rts

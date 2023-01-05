@@ -33,9 +33,9 @@
 TRACK_BANK              = 1
 BLOCK_BANK_0            = 2     ;blocks neeed 2 banks = 128 blocks of 128 bytes each
 BLOCK_BANK_1            = 3
-ZSM_TITLE_BANK          = 4     ;title tune take 3 banks (23 KB)
-ZSM_FINISHED_BANK       = 8
-SAVEDRACE_BANK          = 9
+ZSM_TITLE_BANK          = 4     ;title tune takes 3 banks (23 KB)
+ZSM_FINISHED_BANK       = 8     ;finished tune take 2 banks (11 KB)
+SAVEDRACE_BANK          = 10
 
 ;Graphic resources to load
 .tilesname              !text "TILES.BIN",0

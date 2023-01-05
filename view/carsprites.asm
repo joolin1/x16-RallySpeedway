@@ -158,10 +158,6 @@ BCar_UpdateSprite:
 
 Traffic_UpdateSprites:
 
-        lda _joy_playback       ;do not update sprite positions if demo race, updating position will set zero depth = enable sprite
-        beq +
-        rts
-
         ;Car 0
 +       +PositionSprite _car0_xpos_lo, _car0_xpos_hi, _camxpos_lo, _camxpos_hi, SCREEN_WIDTH/2
         +VPoke TRAFFIC_SPRITE0 + XPOS_L, ZP0

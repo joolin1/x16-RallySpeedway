@@ -37,8 +37,8 @@ FIRST_LINE_DIV 	= 38	;&
 MENU_WHITE = $01
 MENU_BLACK = $0b
 
-SHORT_INACTIVITY_DELAY	 = 3	;title image and credit screen will take turns when user is inactive. 7 = 30 sec (= 7 * 256 / 60)
-LONG_INACTIVITY_DELAY	 = 7    ;menu will go to credit screen when user for is inactive for a longer period of time
+SHORT_INACTIVITY_DELAY	 = 3  ; = 3 * 256 / 60 secs
+LONG_INACTIVITY_DELAY	 = 4  ;
 
 ;*** Public methods ********************************************************************************
 
@@ -61,7 +61,7 @@ MenuHandler:
 	lda .inactivitytimer_hi
 	cmp #SHORT_INACTIVITY_DELAY
 	bne +	
-	lda #M_START_DEMO_RACE
+	lda #M_SHOW_CREDITS
 	sta .menumode
 	rts
 +	lda _joy0
@@ -83,10 +83,8 @@ MenuHandler:
 	;clean up after demo race
 +	cmp #M_END_DEMO_RACE
 	bne +
-    jsr EndJoyPlayback
 	jsr .RestoreMenuSelections		;after demo race, restore menu selections
-	jsr SetRandomSeed				;start randomize in a more unpredictable way after the demo race
-	lda #M_SHOW_CREDITS
+	lda #M_SHOW_MAIN_MENU
 	sta .menumode
 	rts
 
@@ -96,7 +94,8 @@ MenuHandler:
 	jsr .ShowCreditsScreen
 	stz .inactivitytimer_lo
 	stz .inactivitytimer_hi
-	inc .menumode					;go update credit screen mode
+	lda #M_UPDATE_CREDITS
+	sta .menumode					;go update credit screen mode
 	rts
 
 	;update credits screen
@@ -106,7 +105,7 @@ MenuHandler:
 	lda .inactivitytimer_hi
 	cmp #SHORT_INACTIVITY_DELAY
 	bne +
-	lda #M_SHOW_TITLE_IMAGE
+	lda #M_START_DEMO_RACE
 	sta .menumode					;go to title image when user inactive
 	rts
 +	jsr .UpdateRandomBgColor
@@ -393,7 +392,6 @@ MenuHandler:
 	sta _max_speed
 	lda #1
 	sta _track
-	jsr SetRandomSeedZero	;randomize everything in the same way when displaying demo race
 	jsr StartJoyPlayback
 	jsr .CloseMainMenu
 	rts
@@ -778,18 +776,18 @@ NO_POSITION  = 27
 !byte 2,2,2,2,2,2,2,2,2,2,2,2,2,2,0		;table for how many rows each block is, zero terminated
 
 .startscreentext:
-!scr "       john karlin's rally speedway",0
+!scr "      john karlin's rally speedway",0
 !scr 0
 !scr "     a tribute to the original game",0
 !scr "       for atari and commodore 64",0
 !scr "           by john anderson",0
 !scr 0
-!scr "             copyright 2022",0
-!scr "            by johan k;rlin",0
-!scr "             version 1.1",0
-!scr 0
+!scr "          code by johan k;rlin",0
+!scr "          graphics by mopspear",0
 !scr "          music by kliepatsch",0
-!scr "   powered by zsound by zerobyte",0
+!scr "        using zsound by zerobyte",0
+!scr 0
+!scr "              version 1.5",0
 
 STARTSCREEN_ROW_COUNT = 12
 
