@@ -787,7 +787,7 @@ NO_POSITION  = 27
 !scr "          music by kliepatsch",0
 !scr "        using zsound by zerobyte",0
 !scr 0
-!scr "              version 1.5",0
+!scr "             version 1.5.1",0
 
 STARTSCREEN_ROW_COUNT = 12
 
