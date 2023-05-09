@@ -198,7 +198,7 @@ ResetLeaderboard:               ;copy default leaderboard to leaderboard
         bra -
 +       rts
 
-.leaderboardname        !raw "LEADERBOARD.BIN",0
+.leaderboardname        !raw "@:LEADERBOARD.BIN",0
 
 .heading                !scr "%%%%%%%%%%%% leaderboard %%%%%%%%%%%%%",0
 
