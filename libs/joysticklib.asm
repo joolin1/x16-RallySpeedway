@@ -30,13 +30,6 @@ _joy_playback   !byte 0 ;boolean - turn on or off whether recorded data or actua
 ;*** Public functions **********************************************************
 
 InitJoysticks:
-        ;*** TEMP *** Due to a bug in R42 it is not possible to check if controllers are present, thus this temporary solution
-        stz .joy0mapping        ;joy0 = keyboard
-        lda #1
-        sta .joy1mapping        ;joy1 = game controller 1
-        rts
-        ;*** END TEMP ***
-
         jsr joystick_scan
         lda #1
         sta .joystick_count     ;keyboard joystick is always present
