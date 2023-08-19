@@ -386,11 +386,11 @@ MenuHandler:
 +	rts
 
 .StartDemoRace:				;a demo race is almost like an ordinary race, the main difference is that controller data are fetched from a saved file
-	lda #1					;demo race recording contains one player, track 1, normal max speed
+	lda #1					;demo race recording contains one player, track 2, normal max speed
 	sta _noofplayers
 	lda #NORMAL_MAX_SPEED
 	sta _max_speed
-	lda #1
+	lda #2
 	sta _track
 	jsr StartJoyPlayback
 	jsr .CloseMainMenu

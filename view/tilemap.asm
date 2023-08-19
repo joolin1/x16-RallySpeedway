@@ -64,9 +64,12 @@ UpdateRaceView:                 ;this subroutine is called at vertical blank to 
         stz L0_VSCROLL_H
 
         inc .blinkcolor
+        lda _track
+        cmp #1
+        beq +
         jsr Traffic_UpdateSprites
 
-        jsr YCar_UpdateSprite   ;update sprite position and sprite selection for yellow car 
++       jsr YCar_UpdateSprite   ;update sprite position and sprite selection for yellow car 
         jsr .YCar_PrintInfo      ;print time and remaining distance
 
         lda _noofplayers

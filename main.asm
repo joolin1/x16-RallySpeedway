@@ -256,8 +256,13 @@ _max_speed              !byte NORMAL_MAX_SPEED
 +       jsr SetRandomSeed               ;if real race, randomize traffic different each time, by using current time as seed
         jsr Z_stopmusic                 ;stop music when real race (let it play when demo race)
 ++      jsr InitTraffic                 
+        lda _track
+        cmp #1
+        beq +                           
         jsr Traffic_Show 
-        jsr InitCarInteraction
+        bra ++
++       jsr HideTraffic                 ;do not add traffic for first training track
+++      jsr InitCarInteraction
 	jsr YCar_StartRace
         jsr YCar_Show
         jsr DisplayYCarBadge
