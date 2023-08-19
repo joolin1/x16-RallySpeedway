@@ -149,6 +149,10 @@ UpdatePauseMenu:
         bne +
         lda .selecteditem
         rts
++       bit #JOY_START
+        bne +
+        lda .selecteditem
+        rts
 
 +       bit #JOY_UP
         bne +

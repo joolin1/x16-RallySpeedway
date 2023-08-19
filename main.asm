@@ -312,15 +312,23 @@ _max_speed              !byte NORMAL_MAX_SPEED
         and _joy1
         and #JOY_START          ;start pressed by any player?
         beq +
+        lda #1
+        sta .startbuttonreleased
         clc
+        rts
++       lda .startbuttonreleased
+        bne +
         rts
 +       jsr StopCarSounds
         jsr ShowPauseMenu    
         lda #ST_PAUSED
         sta _gamestatus
+        stz .startbuttonreleased
         sec
         rts
  
+.startbuttonreleased    !byte 0
+
 .HandlePause:                   ;pause is made by just cutting sound and stop car movement
         jsr PrintCarInfo        ;make sure text is visible if it happens to be blinking
         jsr UpdatePauseMenu     ;OUT: .A = seleced menu item. -1 = nothing selected
