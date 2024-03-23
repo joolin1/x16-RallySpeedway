@@ -18,6 +18,8 @@
 !addr TRAFFIC_ADDR      = $18E00                  ;       8.5 Kb | 17 other car sprites (32 rows x 16 bytes/row) ->  17 x 32 x 16  = $2200 bytes
                                                   ;Total 91.5 Kb of graphical resources
 
+!addr FONT_ADDR         = $1F000
+
 !addr CAR_PALETTES       = PALETTE + $20
 !addr YCAR_PALETTE       = PALETTE + $20
 !addr BCAR_PALETTE       = PALETTE + $40
@@ -25,7 +27,7 @@
 !addr TRACKS_PALETTE     = PALETTE + $80
 
 ;RAM Memory layout
-;              $0810: ZSound
+;              $0810: zsmkit
 ;                   : Game Code 
 ;              $A000: RAM banks
 
@@ -36,6 +38,7 @@ BLOCK_BANK_1            = 3
 ZSM_TITLE_BANK          = 4     ;title tune takes 3 banks (23 KB)
 ZSM_FINISHED_BANK       = 8     ;finished tune take 2 banks (11 KB)
 SAVEDRACE_BANK          = 10
+ZSMKIT_BANK             = 11
 
 ;Graphic resources to load
 .tilesname              !text "TILES.BIN",0
@@ -48,25 +51,25 @@ SAVEDRACE_BANK          = 10
 .imagename              !text "IMAGE.BIN",0
 .trafficname            !text "TRAFFIC.BIN",0
 .savedracename          !text "SAVEDRACE.BIN",0
+.fontname               !text "FONT.BIN",0
 
 ;Sound resources to load
-; .zsoundname     !text "ZSOUND.BIN",0
 .zsmtitle       !text "TITLE.ZSM",0
 .zsmfinished    !text "FINISHED.ZSM",0
 
-StartMusic:              ;IN: .A = ram bank
-	ldx #<BANK_ADDR
-	ldy #>BANK_ADDR
-	jsr Z_startmusic
-      	lda #0
-	jsr Z_force_loop
+PlayMusic:                      ;IN: .A = memory bank where music is loaded     
+        sta RAM_BANK
+        ldx #0                  ;priority = 0
+        lda #<BANK_ADDR
+        ldy #>BANK_ADDR
+        jsr zsm_setmem
+        ldx #0
+        jsr zsm_play   
         rts
 
-StartMusicNoLoop:       ;IN: .A = ram bank
-	ldx #<BANK_ADDR
-	ldy #>BANK_ADDR
-	jsr Z_startmusic
-        jsr Z_disable_loop
+StopMusic:
+        ldx #0
+        jsr zsm_stop
         rts
 
 _fileerrorflag      !byte   0   ;at least one i/o error has occurred if set
@@ -101,6 +104,7 @@ LoadResources:
         +LoadResource .badgesname   , BADGES_ADDR   , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .imagename    , IMAGE_ADDR    , LOAD_TO_VRAM_BANK0, FILE_HAS_HEADER
         +LoadResource .trafficname  , TRAFFIC_ADDR  , LOAD_TO_VRAM_BANK1, FILE_HAS_HEADER
+        +LoadResource .fontname     , FONT_ADDR     , LOAD_TO_VRAM_BANK1, FILE_HAS_NO_HEADER
         lda #BLOCK_BANK_0
         sta RAM_BANK
         +LoadResource .blocksname   , BANK_ADDR     , LOAD_TO_RAM       , FILE_HAS_HEADER
@@ -124,37 +128,3 @@ LoadResources:
         rts
 +       clc                             ;clear carry to flag everything is ok
         rts
-
-_charset:
-        !byte $00,$00,$00,$00,$00,$00,$fe,$fe,$00,$38,$7c,$6c,$c6,$de,$de,$de
-        !byte $00,$f8,$cc,$f8,$cc,$fe,$fe,$fc,$00,$7c,$e6,$c0,$e6,$fe,$fe,$7c
-        !byte $00,$f8,$ec,$e6,$ee,$fe,$fe,$fc,$00,$f0,$c0,$f8,$c0,$fe,$fe,$fe
-        !byte $00,$fe,$f0,$fc,$f0,$f0,$f0,$f0,$00,$7c,$e0,$ec,$e6,$fe,$fe,$7c
-        !byte $00,$e6,$e6,$e6,$fe,$e6,$e6,$e6,$00,$fe,$38,$38,$38,$fe,$fe,$fe
-        !byte $00,$06,$06,$e6,$e6,$fe,$fe,$7c,$00,$e4,$ec,$f8,$f8,$fc,$ee,$ee
-        !byte $00,$c0,$c0,$c0,$c0,$fe,$fe,$fe,$00,$c6,$ee,$fe,$fe,$fe,$e6,$e6
-        !byte $00,$e6,$e6,$f6,$fe,$fe,$ee,$e6,$00,$7c,$e6,$e6,$e6,$fe,$fe,$7c
-        !byte $00,$fc,$e6,$e6,$fe,$fc,$f0,$f0,$00,$7c,$e6,$e6,$ee,$fc,$fe,$7e
-        !byte $00,$fc,$e6,$e6,$fe,$fc,$ee,$ee,$00,$7c,$e0,$7c,$0e,$fe,$fe,$fc
-        !byte $00,$fe,$fe,$fe,$38,$38,$38,$38,$00,$e6,$e6,$e6,$e6,$fe,$fe,$fe
-        !byte $00,$e6,$e6,$e6,$e6,$7c,$7c,$38,$00,$e6,$e6,$e6,$fe,$fe,$ee,$c6
-        !byte $00,$e6,$e6,$3c,$3c,$fe,$e6,$e6,$00,$e6,$e6,$fe,$7c,$38,$38,$38
-        !byte $00,$7e,$1c,$38,$70,$fe,$fe,$fe,$f0,$f0,$f0,$f0,$00,$00,$00,$00
-        !byte $0f,$0f,$0f,$0f,$00,$00,$00,$00,$00,$00,$00,$00,$f0,$f0,$f0,$f0
-        !byte $00,$00,$00,$00,$0f,$0f,$0f,$0f,$f0,$f0,$f0,$f0,$f0,$f0,$f0,$f0
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$38,$38,$38,$38,$38,$00,$38,$38
-        !byte $00,$00,$00,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff,$ff
-        !byte $ff,$ff,$ff,$ff,$00,$00,$00,$00,$00,$00,$00,$ff,$ff,$ff,$00,$00
-        !byte $ff,$ff,$ff,$ff,$ff,$ff,$00,$00,$00,$38,$38,$38,$18,$30,$00,$00
-        !byte $00,$1c,$38,$70,$70,$70,$38,$1c,$00,$70,$38,$1c,$1c,$1c,$38,$70
-        !byte $00,$c6,$38,$fe,$38,$c6,$00,$00,$00,$30,$30,$fc,$fc,$30,$30,$00
-        !byte $00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$00,$7c,$7c,$00,$00,$00
-        !byte $00,$00,$00,$00,$00,$38,$38,$38,$00,$06,$0e,$1c,$38,$70,$e0,$c0
-        !byte $00,$7c,$e6,$ee,$f6,$fe,$fe,$7c,$00,$38,$78,$38,$38,$fe,$fe,$fe
-        !byte $00,$7c,$ce,$1c,$78,$fe,$fe,$fe,$00,$7e,$06,$1c,$c6,$fe,$fe,$7c
-        !byte $00,$1c,$3c,$7c,$dc,$fe,$fe,$1c,$00,$fe,$e0,$fc,$06,$e6,$fe,$7c
-        !byte $00,$7c,$e0,$fc,$e6,$fe,$fe,$7c,$00,$fe,$0e,$1e,$3c,$7c,$f8,$f8
-        !byte $00,$7c,$ee,$7c,$ee,$fe,$fe,$7c,$00,$7c,$e6,$7e,$0e,$fe,$fc,$f8
-        !byte $00,$38,$38,$38,$00,$38,$38,$38,$38,$28,$7c,$6c,$c6,$de,$de,$de
-        !byte $df,$f0,$e3,$e7,$ee,$fb,$f0,$df,$ff,$00,$03,$fe,$03,$fe,$06,$fc
-        !byte $fc,$02,$fc,$00,$00,$00,$00,$00,$7c,$fe,$c6,$1c,$38,$00,$38,$38

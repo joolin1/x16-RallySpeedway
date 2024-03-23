@@ -785,9 +785,9 @@ NO_POSITION  = 27
 !scr "          code by johan k;rlin",0
 !scr "          graphics by mopspear",0
 !scr "          music by kliepatsch",0
-!scr "        using zsound by zerobyte",0
+!scr "      using zsmkit by mooinglemur",0
 !scr 0
-!scr "             version 1.5.4",0
+!scr "             version 1.5.5",0
 
 STARTSCREEN_ROW_COUNT = 12
 

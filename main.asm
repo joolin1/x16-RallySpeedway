@@ -3,7 +3,7 @@
 !cpu 65c02
 !to ".\\works\\prg\\rallyspeedway.prg", cbm
 !src "includes/x16.asm"
-!src "includes/zsound.asm"
+!src "includes/zsmkit.asm"
 
 ;*** Basic program ("1 SYS2061") *****************************************************************
 
@@ -20,11 +20,7 @@ BASIC:	!BYTE $0B,$08,$01,$00,$9E,$32,$30,$36,$31,$00,$00,$00   ;Adds BASIC line:
 ;placed here in the source code, and as you can see there
 ;is a JMP command right before it to bypass it.  
 
-!BINARY "ZSOUND.BIN"		;ZSsound program binary.
-
-;pad 47 bytes for zsound variable space.
-!BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-!BYTE	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+!BINARY "ZSMKIT.BIN"
 
 ;*** Game globals **********************************************************************************
 
@@ -62,6 +58,8 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
 
 .StartGame:
         ;init everything
+        lda #ZSMKIT_BANK
+        jsr zsm_init_engine
         jsr LoadLeaderboard             ;load leaderboard, if not successful a new file will be created       
         jsr LoadResources               ;load graphic and sound resources
         bcc +
@@ -73,7 +71,6 @@ COLLISION_TIME = 1      ;NOT FULLY IMPLEMENTED - how much time that is added for
         sta _gamestatus
         jsr InitScreenAndSprites
         jsr InitJoysticks               ;check which type of joysticks (game controllers) are being used 
-       	jsr Z_init_player               ;init ZSound
         jsr .SetupIrqHandler
 
         ;main loop
@@ -139,7 +136,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
 	lda .defaulthandler_hi
 	sta IRQ_HANDLER_H
 	cli
-        jsr Z_stopmusic
+        jsr StopMusic
         jsr RestoreScreenAndSprites
         rts
 
@@ -159,7 +156,8 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jmp .HandlePause
 
 +       jsr SfxTick                     ;update all sound effects
-        jsr Z_playmusic                 ;continue to play music if something is currently playing
+        lda #0
+        jsr zsm_tick                    ;continue to play music if something is currently playing
         lda #TRACK_BANK                 ;music is in different ram banks, default bank is track bank
         sta RAM_BANK
 
@@ -235,9 +233,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
         rts
 
 .InitMenu:
-        jsr Z_stopmusic
+        jsr StopMusic
 	lda #ZSM_TITLE_BANK
-	jsr StartMusic
+	jsr PlayMusic
         lda #ST_SHOWMENU
         sta _gamestatus
 	rts		
@@ -254,7 +252,7 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr SetRandomSeedZero           ;if demo race, randomize traffic in exactly the same way as when race was recorded
         bra ++
 +       jsr SetRandomSeed               ;if real race, randomize traffic different each time, by using current time as seed
-        jsr Z_stopmusic                 ;stop music when real race (let it play when demo race)
+        jsr StopMusic                 ;stop music when real race (let it play when demo race)
 ++      jsr InitTraffic                 
         lda _track
         cmp #1
@@ -394,9 +392,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
         jsr CheckForRecord
         jsr ShowRaceOverText
         jsr PrintBoard
-        jsr Z_stopmusic
+        jsr StopMusic
         lda #ZSM_FINISHED_BANK 
-        jsr StartMusic
+        jsr PlayMusic
 +       lda #ST_RACEOVER
         sta _gamestatus
         ;jsr EndJoyRecording     ;RACE RECORDING: uncomment when a race should be recorded
@@ -422,9 +420,9 @@ _max_speed              !byte NORMAL_MAX_SPEED
         lda _track
         jsr SetLeaderboardName
         jsr SaveLeaderboard     ;and then continue with closing track ...
-        jsr Z_stopmusic
+        jsr StopMusic
         lda #ZSM_TITLE_BANK
-        jsr StartMusic
+        jsr PlayMusic
 
 .CloseTrack:
         jsr HideText

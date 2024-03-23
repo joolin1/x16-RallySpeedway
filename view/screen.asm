@@ -71,11 +71,6 @@ InitScreenAndSprites:
         lda #0                  ;WARNING hard coded address, should be L1_MAP_ADDR>>9
         sta L1_MAPBASE          ;relocate text layer
 
-        lda #0                  ;init char set
-        ldx #<_charset
-        ldy #>_charset
-        jsr screen_set_charset
-
         +CopyPalettesToVRAM .palettes, 0, 6
         +CopyPalettesToVRAM .trafficpalettes, 6, 4
 
